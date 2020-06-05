@@ -1,7 +1,8 @@
 # faster
 F81-based Accurate Species Tree EstimatoR
 
-# Under Development
+# Compile for Linux/Unix
+g++ -std=gnu++11 -pthread faster.cpp -o faster
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
