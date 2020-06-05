@@ -4,6 +4,9 @@ F81-based Accurate Species Tree EstimatoR
 # Compile for Linux/Unix
 g++ -std=gnu++11 -pthread faster.cpp -o faster
 
+# Run
+faster [-o ofilepath -r nRound -t nThread] inputlist
+
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
 1. The gene trees are generated independently, and as the number of genes goes to infinity, FASTER is statistically consistent.
