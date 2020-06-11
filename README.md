@@ -5,7 +5,7 @@ F81-based Accurate Species Tree EstimatoR
 g++ -std=gnu++11 -pthread faster.cpp -o faster
 
 # Run
-faster [-o ofilepath -r nRound -t nThread] inputlist
+faster [-o oFilePath -r nRound -s nSample -p probability -t nThread] inputlist
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
