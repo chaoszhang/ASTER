@@ -30,13 +30,13 @@ struct PlacementAlgorithm{
 	
 	const vector<hash_t> taxonHash; // sum of hash = 0
 	vector<tuple<hash_t, hash_t, score_t> > tripHash;
-	const vector<int> order;
+	vector<int> order;
 	vector<Node> nodes;
-	int rootNodeId = -1, rootLeafId = 0, orderId = 0;
+	int rootNodeId = -1, rootLeafId = -1, orderId = 0;
 	
 	Tripartition trip;
 	
-	PlacementAlgorithm(const vector<hash_t> taxonHash, const vector<int> order, const TripartitionInitializer tripInit): taxonHash(taxonHash), order(order), trip(tripInit){}
+	PlacementAlgorithm(const vector<hash_t> taxonHash, const TripartitionInitializer tripInit): taxonHash(taxonHash), trip(tripInit){}
 	
 	int& heavy(int v){
 		return nodes[v].heavy;
@@ -74,11 +74,13 @@ struct PlacementAlgorithm{
 		return nodes[v].placeLight;
 	}
 	
-	void makeNode(int v, int u){
+	int makeNode(int v, int u, bool modifyRoot = false){
 		int w = nodes.size();
 		nodes.emplace_back(-1);
 		parent(w) = parent(v);
-		if (parent(v) == -1) rootNodeId = w;
+		if (parent(v) == -1) {
+			if (modifyRoot) rootNodeId = w;
+		}
 		else if (heavy(parent(w)) == v) heavy(parent(w)) = w;
 		else light(parent(w)) = w;
 		parent(v) = w; parent(u) = w;
@@ -91,24 +93,27 @@ struct PlacementAlgorithm{
 			}
 			leafCnt(w) = leafCnt(heavy(w)) + leafCnt(light(w));
 		}
+		return nodes.size() - 1;
 	}
 	
 	void addSibling(int v, int i){
 		int u = nodes.size();
 		nodes.emplace_back(i);
-		makeNode(v, u);
+		makeNode(v, u, true);
 	}
 	
 	void defaultInitializer(){
-		orderId = 3;
-		nodes.emplace_back(order[1]);
-		rootNodeId = 0;
-		rootLeafId = order[0];
-		//cerr << order[0] << order[1] << order[2];
-		trip.addTotal(order[0]);
-		trip.addTotal(order[1]);
-		trip.addTotal(order[2]);
-		addSibling(0, order[2]);
+		if (rootLeafId == -1){
+			rootLeafId = order[orderId];
+			trip.addTotal(order[orderId]);
+			orderId++;
+		}
+		if (rootNodeId == -1){
+			rootNodeId = nodes.size();
+			nodes.emplace_back(order[orderId]);
+			trip.addTotal(order[orderId]);
+			orderId++;
+		}
 	}
 	
 	void switchSubtree(int v, int src, int tgt){
@@ -213,8 +218,8 @@ struct PlacementAlgorithm{
 	}
 	
 	void run(){
-		if (rootNodeId == -1) defaultInitializer();
-		for (; orderId < taxonHash.size(); orderId++){
+		defaultInitializer();
+		for (; orderId < order.size(); orderId++){
 			place(order[orderId]);
 		}
 		tripHashGenerator(rootNodeId);
@@ -247,6 +252,7 @@ struct ConstrainedOptimizationAlgorithm{
 	const vector<string> names;
 	mt19937_64 generator;
 	uniform_int_distribution<hash_t> randomHash;
+	uniform_real_distribution<double> randP;
 	const TripartitionInitializer tripInit;
 	const int ntaxa;
 	int roundId = 0;
@@ -262,13 +268,71 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 	}
 	
-	PlacementAlgorithm createPlacementAlgorithm(){
-		vector<int> order;
-		for (int i = 0; i < ntaxa; i++){
-			order.push_back(i);
+	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, double subsampleRate){
+		if (nodes[v].leafId != -1){
+			if (randP(generator) < subsampleRate){
+				pAlg.trip.addTotal(nodes[v].leafId);
+				if (pAlg.rootLeafId == -1){
+					pAlg.rootLeafId = nodes[v].leafId;
+					return -1;
+				}
+				else {
+					pAlg.nodes.emplace_back(nodes[v].leafId);
+					return pAlg.nodes.size() - 1;
+				}
+			}
+			else {
+				pAlg.order.push_back(nodes[v].leafId);
+				return -1;
+			}
 		}
-		shuffle(order.begin(), order.end(), generator);
-		return PlacementAlgorithm(taxonHash, order, tripInit);
+		else {
+			tuple<int, int, score_t> t = nodes[v].children[nodes[v].bestChild];
+			if (pAlg.rootLeafId != -1){
+				int nodeL = subsampleSubtree(get<0>(t), pAlg, subsampleRate);
+				int nodeR = subsampleSubtree(get<1>(t), pAlg, subsampleRate);
+				if (nodeL != -1){
+					if (nodeR != -1) return pAlg.makeNode(nodeL, nodeR, false);
+					else return nodeL;
+				}
+				else return nodeR;
+			}
+			else {
+				int nodeL = subsampleSubtree(get<0>(t), pAlg, subsampleRate);
+				if (pAlg.rootLeafId == -1) return subsampleSubtree(get<1>(t), pAlg, subsampleRate);
+				else if (nodeL == -1) return pAlg.rootNodeId = subsampleSubtree(get<1>(t), pAlg, subsampleRate);
+				else {
+					int nodeR = subsampleSubtree(get<1>(t), pAlg, subsampleRate);
+					if (nodeR == -1) return nodeL;
+					else {
+						pAlg.makeNode(nodeL, nodeR, true);
+						return nodeR;
+					}
+				}
+			}
+		}
+	}
+	
+	PlacementAlgorithm createPlacementAlgorithm(double subsampleRate){
+		PlacementAlgorithm pAlg(taxonHash, tripInit);
+		if (roundId != 0){
+			if (randP(generator) < subsampleRate){
+				pAlg.rootLeafId = 0;
+				pAlg.trip.addTotal(0);
+				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, subsampleRate);
+			}
+			else {
+				pAlg.order.push_back(0);
+				subsampleSubtree(hash[-taxonHash[0]], pAlg, subsampleRate);
+			}
+		}
+		else{
+			for (int i = 0; i < ntaxa; i++){
+				pAlg.order.push_back(i);
+			}
+		}
+		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+		return pAlg;
 	}
 	
 	int hash2node(hash_t h){
@@ -323,11 +387,11 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 	}
 	
-	pair<double, string> run(int nJobs = 1, int nThrds = 1){
+	pair<double, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0){
 		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
 		for (int i = 0; i < nJobs; i++){
-			jobs.push_back(createPlacementAlgorithm());
+			jobs.push_back(createPlacementAlgorithm(subsampleRate));
 		}
 		for (int i = 1; i < nThrds; i++){
 			thrds.emplace_back(batchWork, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);

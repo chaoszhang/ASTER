@@ -11,6 +11,7 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 		}
 	}
 	/*
+	score_t res = 0;
 	for (int a = 0; a < 4; a++){
 		for (int b = 0; b < 4; b++){
 			if (b == a) continue;
@@ -22,6 +23,7 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
                                                + ((score_t) cnt[2][b]) * (cnt[2][b] - 1) * sum[0] * sum[1] + ((score_t) sum[2]) * (sum[2] - 1) * cnt[0][b] * cnt[1][b] );
 		}
 	}
+	return res;
 	*/
 	score_t spi = 0;
 	score_t p0v0 = 0, p0v1 = 0, p0v2 = 0, p1v0 = 0, p1v1 = 0, p1v2 = 0, p2v0 = 0, p2v1 = 0, p2v2 = 0;

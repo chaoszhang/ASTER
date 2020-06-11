@@ -59,9 +59,11 @@ void readFile(istream &fin){
 	while (pi.size() < npos) pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
 }
 
-string helpText = R"V0G0N(faster [-o oFilePath -r nRound -t nThread] inputList
+string helpText = R"V0G0N(faster [-o oFilePath -r nRound -s nSample -t nThread] inputList
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
+-s  number of total rounds of subsampling (default: 0)
+-p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
 inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
 Gene files must be in FASTA format. The header line should be ">Species_Name".
@@ -70,13 +72,16 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 int main(int argc, char** argv){
 	vector<string> files;
 	
-	int nThreads = 1, nRounds = 5;
+	int nThreads = 1, nRounds = 5, nSample = 0;
+	double p = 0.5;
 	string outputFile;
 	ofstream fileOut;
 	if (argc == 1) {cerr << helpText; return 0;}
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
 		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
+		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
+		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
 		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
 		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
 	}
@@ -112,10 +117,15 @@ int main(int argc, char** argv){
 	tripInit.seq = seq;
 	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Rounds: " << nRounds << endl;
+	cerr << "#Samples: " << nSample << endl;
 	cerr << "#Threads: " << nThreads << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
 	auto res = alg.run(nRounds, nThreads);
+	cerr << "Score: " << res.first << endl;
+	cerr << res.second << endl;
+	
+	res = alg.run(nRounds, nThreads, 1);
 	cerr << "Score: " << res.first << endl;
 	fout << res.second << endl;
 	return 0;
