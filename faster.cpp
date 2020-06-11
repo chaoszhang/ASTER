@@ -59,7 +59,7 @@ void readFile(istream &fin){
 	while (pi.size() < npos) pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
 }
 
-string helpText = R"V0G0N(faster [-o oFilePath -r nRound -s nSample -t nThread] inputList
+string helpText = R"V0G0N(faster [-o oFilePath -r nRound -s nSample -p probability -t nThread] inputList
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
 -s  number of total rounds of subsampling (default: 0)
