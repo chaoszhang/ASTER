@@ -11,6 +11,7 @@ inputList: the path to a file containing a list of paths to input aligned gene f
 Gene files must be in FASTA format. The header line should be ">Species_Name".
 
 Example inputList:
+
 ./gene1.fasta
 
 ./gene2.fasta
