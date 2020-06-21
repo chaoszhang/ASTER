@@ -12,6 +12,7 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 
 Example inputList:
 ./gene1.fasta
+
 ./gene2.fasta
 
 # Assumptions for Statistical Consistency
