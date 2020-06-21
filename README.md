@@ -7,6 +7,13 @@ g++ -std=gnu++11 -pthread faster.cpp -o faster
 # Run
 faster [-o oFilePath -r nRound -s nSample -p probability -t nThread] inputlist
 
+inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
+Gene files must be in FASTA format. The header line should be ">Species_Name".
+
+Example inputList:
+./gene1.fasta
+./gene2.fasta
+
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
 1. The gene trees are generated independently, and as the number of genes goes to infinity, FASTER is statistically consistent.
