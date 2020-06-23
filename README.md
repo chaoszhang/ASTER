@@ -5,16 +5,21 @@ F81-based Accurate Species Tree EstimatoR
 g++ -std=gnu++11 -pthread faster.cpp -o faster
 
 # Run
-faster [-o oFilePath -r nRound -s nSample -p probability -t nThread] inputlist
-
+faster [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+-o  path to output file (default: stdout)
+-r  number of total rounds of placements (default: 5)
+-s  number of total rounds of subsampling (default: 0)
+-p  subsampling probability of keeping each taxon (default: 0.5)
+-t  number of threads (default: 1)
+-y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
 inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
 Gene files must be in FASTA format. The header line should be ">Species_Name".
 
-Example inputList:
+Example run:
 
-./gene1.fasta
+./faster example/list.txt
 
-./gene2.fasta
+./faster -y example/example.phylip
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
