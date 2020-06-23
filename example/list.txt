@@ -1,0 +1,3 @@
+example/genetrees.tre_1.fas
+example/genetrees.tre_2.fas
+example/genetrees.tre_3.fas
