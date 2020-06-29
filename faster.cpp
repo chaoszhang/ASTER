@@ -100,7 +100,7 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 int main(int argc, char** argv){
 	vector<string> files;
 	
-	int nThreads = 1, nRounds = 5, nSample = 0;
+	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
 	double p = 0.5;
 	string outputFile;
@@ -182,11 +182,11 @@ int main(int argc, char** argv){
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
 	auto res = alg.run(nRounds, nThreads);
-	cerr << "Score: " << res.first << endl;
+	cerr << "Score: " << (double) res.first << endl;
 	cerr << res.second << endl;
 	
-	res = alg.run(nRounds, nThreads, 1);
-	cerr << "Score: " << res.first << endl;
+	res = alg.run(nSample, nThreads, p);
+	cerr << "Score: " << (double) res.first << endl;
 	fout << res.second << endl;
 	return 0;
 }

@@ -365,10 +365,10 @@ struct ConstrainedOptimizationAlgorithm{
 		nodes[v].roundId = roundId;
 	}
 	
-	double computeOptimalTree(){
+	score_t computeOptimalTree(){
 		roundId++;
 		optimalTreeDP(hash2node(-taxonHash[0]));
-		return (double) nodes[hash[-taxonHash[0]]].bestScore;
+		return nodes[hash[-taxonHash[0]]].bestScore;
 	}
 	
 	string printOptimalSubtree(int v){
@@ -381,13 +381,23 @@ struct ConstrainedOptimizationAlgorithm{
 		return string("(") + printOptimalSubtree(hash[-taxonHash[0]]) + "," + names[0] + ");";
 	}
 	
+	string printOptimalSubtreeWithScore(int v){
+		if (nodes[v].leafId != -1) return names[nodes[v].leafId];
+		tuple<int, int, score_t> t = nodes[v].children[nodes[v].bestChild];
+		return string("(") + printOptimalSubtreeWithScore(get<0>(t)) + "," + printOptimalSubtreeWithScore(get<1>(t)) + "):" + to_string(get<2>(t));
+	}
+	
+	string printOptimalTreeWithScore(){
+		return string("(") + printOptimalSubtreeWithScore(hash[-taxonHash[0]]) + "," + names[0] + ");";
+	}
+	
 	static void batchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
 		for (int i = start; i < end; i++){
 			jobs[i].run();
 		}
 	}
 	
-	pair<double, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0){
+	pair<score_t, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0){
 		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
 		for (int i = 0; i < nJobs; i++){
