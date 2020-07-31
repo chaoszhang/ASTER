@@ -5,7 +5,7 @@ F81-based Estimation Algorithm of Species Tree
 g++ -std=gnu++11 -pthread faster.cpp -o feast
 
 # Run
-faster [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
 
 -o  path to output file (default: stdout)
 
