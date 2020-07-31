@@ -1,8 +1,8 @@
-# faster
-F81-based Accurate Species Tree EstimatoR
+# FEAST
+F81-based Estimation Algorithm of Species Tree
 
 # Compile for Linux/Unix
-g++ -std=gnu++11 -pthread faster.cpp -o faster
+g++ -std=gnu++11 -pthread faster.cpp -o feast
 
 # Run
 faster [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
@@ -25,13 +25,13 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 
 Example run:
 
-./faster example/list.txt
+./feast example/list.txt
 
-./faster -y example/example.phylip
+./feast -y example/example.phylip
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
-1. The gene trees are generated independently, and as the number of genes goes to infinity, FASTER is statistically consistent.
+1. The gene trees are generated independently, and as the number of genes goes to infinity, FEAST is statistically consistent.
 2. The coalescent units do not need to be the same across branches.
 
 ## Gene tree and sequence model
@@ -44,8 +44,8 @@ Example run:
 3. Different base positions (or genes) are allowed to have different base frequencies and be depedent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
 
 
-# faster-astral
-Optimizing ASTRAL objective function using faster-like method
+# astral-feast
+Optimizing ASTRAL objective function using FEAST-like method
 
 # Compile for Linux/Unix
-g++ -std=gnu++11 -pthread astral.cpp -o faster-astral
+g++ -std=gnu++11 -pthread astral.cpp -o astral-feast
