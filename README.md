@@ -40,8 +40,8 @@ Example run:
 
 ## Felsenstein 1981 model-like
 1. Base frequencies are provided and allowed to vary from 0.25, but the rate matrix must be F81-like.
-2. The sum of top 2 base frequences must be less than 1. In other words, the number of categories must be at least 3, which unfortunately excludes binary inputs (e.g. major or minor alleles) but allowing nucleotides (4) and amino acids (20). (Base positions with the number of effective categories no more than 2 will neither contribute to nor bias the inferred species tree.)
-3. Different base positions (or genes) are allowed to have different base frequencies and be depedent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
+2. The sum of top 2 base frequencies must be less than 1. In other words, the number of categories must be at least 3, which unfortunately excludes binary inputs (e.g. major or minor alleles) but allowing nucleotides (4) and amino acids (20). (Base positions with the number of effective categories no more than 2 will neither contribute to nor bias the inferred species tree.)
+3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
 
 
 # astral-feast
