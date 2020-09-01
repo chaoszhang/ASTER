@@ -2,7 +2,7 @@
 F81-based Estimation Algorithm of Species Tree
 
 # Compile for Linux/Unix
-g++ -std=gnu++11 -pthread feast.cpp -o feast
+`g++ -std=gnu++11 -march=native -Ofast -pthread feast.cpp -o feast`
 
 # Run
 feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
@@ -25,9 +25,9 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 
 Example run:
 
-./feast example/list.txt
+`./feast example/list.txt`
 
-./feast -y example/example.phylip
+`./feast -y example/example.phylip`
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
@@ -44,8 +44,10 @@ Example run:
 3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
 
 
-# astral-feast
-Optimizing ASTRAL objective function using FEAST-like method
+# astral(-pro)-feast
+Optimizing ASTRAL(-pro) objective function using FEAST-like method
 
 # Compile for Linux/Unix
-g++ -std=gnu++11 -pthread astral.cpp -o astral-feast
+`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral-feast`
+
+`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro-feast`
