@@ -137,15 +137,14 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
-string helpText = R"V0G0N(faster_astral [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
+string helpText = R"V0G0N(astral_feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
 -s  number of total rounds of subsampling (default: 0)
 -p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
 -a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
-inputGeneTrees: the path to a file containing a list of paths to input aligned gene files, one file per line
-Gene files must be in FASTA format. The header line should be ">Species_Name".
+inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
@@ -193,6 +192,6 @@ int main(int argc, char** argv){
 	cerr << "Score: " << res.first/2 << endl;
 	fout << res.second << endl;
 	
-	cerr << alg.printOptimalTreeWithScore() << endl;
+	//cerr << alg.printOptimalTreeWithScore() << endl;
 	return 0;
 }

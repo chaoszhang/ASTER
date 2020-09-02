@@ -86,7 +86,7 @@ void readPhilip(istream &fin){
 	}
 }
 
-string helpText = R"V0G0N(faster [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+string helpText = R"V0G0N(feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
 -s  number of total rounds of subsampling (default: 0)
