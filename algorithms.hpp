@@ -253,11 +253,11 @@ struct ConstrainedOptimizationAlgorithm{
 	mt19937_64 generator;
 	uniform_int_distribution<hash_t> randomHash;
 	uniform_real_distribution<double> randP;
-	const TripartitionInitializer tripInit;
+	const TripartitionInitializer &tripInit;
 	const int ntaxa;
 	int roundId = 0;
 	
-	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer tripInit, const vector<string> names, const int seed = 2333): ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
+	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> names, const int seed = 2333): ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
 		taxonHash.push_back(0);
 		for (int i = 1; i < ntaxa; i++){
 			hash_t r = randomHash(generator);
