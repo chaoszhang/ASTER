@@ -154,7 +154,9 @@ private:
 			if (name2id.count(leafname.at(cur)) == 0){
 				name2id[leafname.at(cur)] = id2name.size();
 				id2name.push_back(leafname.at(cur));
-				tripInit.leafParent.emplace_back();
+				for (int p = 0; p < tripInit.nodes.size(); p++){
+					tripInit.leafParent[p].emplace_back();
+				}
 			}
 			node[curId].leafId = name2id[leafname.at(cur)];
 			node[curId].label.set(name2id[leafname.at(cur)]);
@@ -235,12 +237,12 @@ public:
 		return bestroot;
 	}
 	
-	int buildTree(int cur) const{
-		int w = tripInit.nodes.size();
-		tripInit.nodes.emplace_back();
+	int buildTree(int cur, int p) const{
+		int w = tripInit.nodes[p].size();
+		tripInit.nodes[p].emplace_back();
 		
 		if (node[cur].isLeaf){
-			tripInit.leafParent[node[cur].leafId].push_back(w);
+			tripInit.leafParent[p][node[cur].leafId].push_back(w);
 			//cerr << id2name[node[cur].leafId];
 			return w;
 		}
@@ -255,22 +257,22 @@ public:
 			small = left;
 		}
 		//cerr << "(";
-		int u = buildTree(small);
+		int u = buildTree(small, p);
 		//cerr << ",";
-		int v = buildTree(large);
+		int v = buildTree(large, p);
 		//cerr << ")";
-		tripInit.nodes[w].small = u;
-		tripInit.nodes[w].large = v;
-		tripInit.nodes[u].up = w;
-		tripInit.nodes[v].up = w;
+		tripInit.nodes[p][w].small = u;
+		tripInit.nodes[p][w].large = v;
+		tripInit.nodes[p][u].up = w;
+		tripInit.nodes[p][v].up = w;
 		if (node[cur].isDuplication){
-			tripInit.nodes[w].dup = true;
+			tripInit.nodes[p][w].dup = true;
 			for (int i: (node[cur].label - node[large].label).setBits()){
-				tripInit.leafParent[i].push_back(w);
+				tripInit.leafParent[p][i].push_back(w);
 			} //cerr << "+";
 		}
 		else {
-			tripInit.nodes[w].dup = false;
+			tripInit.nodes[p][w].dup = false;
 		}
 		return w;
 	}
@@ -340,7 +342,7 @@ void annotate(string input, string mapping){
 			long long root = parse(leafname, children);
 			GenetreeAnnotator ga;
 			int iroot = ga.annotateTree(leafname, children, root);
-			ga.buildTree(iroot);
+			ga.buildTree(iroot, K % tripInit.nodes.size());
 			K++;
 			if (VERBOSE && (K & 511) == 0) cerr << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
 		}
@@ -376,13 +378,23 @@ int main(int argc, char** argv){
 	}
 	ostream &fout = (outputFile == "") ? cout : fileOut;
 	if (outputFile != "") fileOut.open(outputFile);
+	
+	int nPartitions = 1;
+	if (nRounds < nThreads){
+		nPartitions = nThreads / nRounds;
+		nThreads = nRounds;
+	}
+	for (int i = 0; i < nPartitions; i++){
+		tripInit.nodes.emplace_back();
+		tripInit.leafParent.emplace_back();
+	}
 	annotate(argv[argc - 1], mappingFile);
 	
 	cerr << "#Species: " << id2name.size() << endl;
 	cerr << "#Genetrees: " << K << endl;
 	cerr << "#Rounds: " << nRounds << endl;
 	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << endl;
+	cerr << "#Threads: " << nThreads << "x" << nPartitions << endl;
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(id2name.size(), tripInit, id2name);
