@@ -26,6 +26,8 @@ typedef long long score_t;
 #include "multitree.hpp"
 #include "algorithms.hpp"
 
+const bool VERBOSE = true;
+
 TripartitionInitializer tripInit;
 
 unordered_map<string, string> leafname_mapping;
@@ -329,7 +331,6 @@ void annotate(string input, string mapping){
 	ifstream fin(input);
 	string line;
 	while (getline(fin, line)) TEXT += line;
-	GenetreeAnnotator ga;
 	while (pos < TEXT.size()){
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
 		if (pos < TEXT.size()) {
@@ -337,9 +338,11 @@ void annotate(string input, string mapping){
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, pair<long long, long long> > children;
 			long long root = parse(leafname, children);
+			GenetreeAnnotator ga;
 			int iroot = ga.annotateTree(leafname, children, root);
 			ga.buildTree(iroot);
 			K++;
+			if (VERBOSE && (K & 511) == 0) cerr << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
 		}
 	}
 }
