@@ -1,11 +1,14 @@
-# FEAST
-F81-based Estimation Algorithm of Species Tree
+# Accurate Species Tree EstimatoR
+A family of ASTRAL-like algorithms
+
+# ASTERISK
+Accurate Species Tree Estimation by diRectly Inferring from Site Kernels
 
 # Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread feast.cpp -o feast`
+`g++ -std=gnu++11 -march=native -Ofast -pthread feast.cpp -o asterisk`
 
 # Run
-feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+asterisk [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
 
 -o  path to output file (default: stdout)
 
@@ -25,9 +28,9 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 
 Example run:
 
-`./feast example/list.txt`
+`./asterisk example/list.txt`
 
-`./feast -y example/example.phylip`
+`./asterisk -y example/example.phylip`
 
 # Assumptions for Statistical Consistency
 ## The multi-species coalescent model
@@ -44,10 +47,10 @@ Example run:
 3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
 
 
-# astral(-pro)-feast
-Optimizing ASTRAL(-pro) objective function using FEAST-like method
+# astral(-pro)
+Optimizing ASTRAL(-pro) objective function using ASTER method
 
 # Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral-feast`
+`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral`
 
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro-feast`
+`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro`
