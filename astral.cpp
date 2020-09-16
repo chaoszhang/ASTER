@@ -48,11 +48,15 @@ string MAPPING(int begin, int end){
 
 void parseTaxa(){
 	int i = pos;
-	while (TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
+	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
+	
 	if (TEXT[pos] == '(') {
+		while (TEXT[pos] != ')'){
+			pos++;
+			parseTaxa();
+			while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
+		}
 		pos++;
-		parseTaxa();
-		while (TEXT[pos] != ',') pos++;
 	}
 	else {
 		string name = MAPPING(i, pos);
@@ -61,47 +65,24 @@ void parseTaxa(){
 			names.push_back(name);
 		}
 	}
-	while (TEXT[pos] != ')'){
-		i = ++pos;
-		while (TEXT[pos] != ')' && TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
-		if (TEXT[pos] == '(') {
-			pos++;
-			parseTaxa();
-			while (TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
-		}
-		else {
-			string name = MAPPING(i, pos);
-			if (name2id.count(name) == 0){
-				name2id[name] = names.size();
-				names.push_back(name);
-			}
-		}
-	}
-	pos++;
 }
 
-int parse(vector<pair<int, int> > &parentChild){
-	int i = pos;
-	int cur = nodecnt++;
-	while (TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
+void parse(int parent = -1){
+	int i = pos, cur;
+	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
+	
 	if (TEXT[pos] == '(') {
-		pos++;
-		parentChild.emplace_back(cur, parse(parentChild));
-		while (TEXT[pos] != ',') pos++;
-	}
-	else parentChild.emplace_back(cur, name2id[MAPPING(i, pos)]);
-	while (TEXT[pos] != ')'){
-		i = ++pos;
-		while (TEXT[pos] != ')' && TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
-		if (TEXT[pos] == '(') {
+		cur = nodecnt++;
+		while (TEXT[pos] != ')'){
 			pos++;
-			parentChild.emplace_back(cur, parse(parentChild));
-			while (TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
+			parse(cur);
+			while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
 		}
-		else parentChild.emplace_back(cur, name2id[MAPPING(i, pos)]);
+		pos++;
 	}
-	pos++;
-	return cur;
+	else cur = name2id[MAPPING(i, pos)];
+	if (parent != -1) tripInit.parentChild.back().push_back({parent, cur});
+	else tripInit.roots.push_back(cur);
 }
 
 void readInputTrees(string input, string mapping) {
@@ -118,22 +99,16 @@ void readInputTrees(string input, string mapping) {
 	while (getline(fin, line)) TEXT += line;
 	
 	while (pos < TEXT.size()){
+		parseTaxa();
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
-		if (pos < TEXT.size()) {
-			pos++;
-			parseTaxa();
-		}
 	}
 	tripInit.nTaxa = names.size();
 	pos = 0;
 	while (pos < TEXT.size()){
+		tripInit.parentChild.emplace_back();
+		nodecnt = names.size();
+		parse();
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
-		if (pos < TEXT.size()) {
-			pos++;
-			tripInit.parentChild.emplace_back();
-			nodecnt = names.size();
-			tripInit.roots.push_back(parse(tripInit.parentChild.back()));
-		}
 	}
 }
 

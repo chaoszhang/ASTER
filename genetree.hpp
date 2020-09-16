@@ -207,74 +207,7 @@ struct Tripartition{
 			u.Tzux = w.Tzux + w.Y*u.sX + u.sY2;
 			u.Tzuy = w.Tzuy + w.X*u.sY + u.sX2;
 		}
-		/*
-		void testCalcBackup(Node &w){
-			Node &u = *this;
-		//
-		3*sx2yz + 3*sy2xz + 3*sz2xy - 2*sx*sy2z - 2*sx2z*sy - sx2*syz - sxz*sy2 - 2*sx*sz2y - 2*sx2y*sz - sxy*sz2 - 2*sy*sz2x - 2*sy2x*sz + 2*sx*sy*sz2 + 2*sx*sy2*sz + 2*sx2*sy*sz
-		+ 2*sy*sz2*ux + 2*sy2*sz*ux - 2*sy2z*ux - 2*sz2y*ux 
-		+ 2*sy*sz*ux2 - syz*ux2
-		+ 2*sx*sz2*uy + 2*sx2*sz*uy - 2*sx2z*uy - 2*sz2x*uy
-		+ 2*sx*sz*uy2 - sxz*uy2
-		+ 2*sx*sy2*uz + 2*sx2*sy*uz - 2*sx2y*uz - 2*sy2x*uz
-		+ 2*sx*sy*uz2 - sxy*uz2 
-		+ sx2*uy*uz + sy2*ux*uz + sz2*ux*uy
-		tx = sy*sz2 + sy2*sz - sz2y - sy2z + sy2*uz + sz2*uy + sy*uz2 + sz*uy2 + stx + utx
-		ty = sx*sz2 + sx2*sz - sz2x - sx2z + sx2*uz + sz2*ux + sx*uz2 + sz*ux2 + sty + uty
-		tz = sx*sy2 + sx2*sy - sy2x - sx2y + sx2*uy + sy2*ux + sx*uy2 + sy*ux2 + stz + utz
-		Tx = tx + w.Tx
-		Ty = ty + w.Ty
-		Tz = tz + w.Tz
 		
-		ux -> sx + ux
-		ux2 -> sx_c2 + sx * ux + ux2
-		uxy -> sx * sy + sx * uy + sy * ux + uxy
-		utx -> sy*sz2 + sy2*sz - sz2y - sy2z + sy2*uz + sz2*uy + sy*uz2 + sz*uy2 + stx + utx
-		 //
-			score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-			
-			u.X = u.sX + w.X;
-			u.Y = u.sY + w.Y;
-			u.Z = u.sZ + w.Z;
-			u.Q = u.sQ + w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quxy*u.sX*u.sY + w.Quxz*u.sX*u.sZ + w.Quyz*u.sY*u.sZ + w.Qux2*usX_c2 + w.Quy2*usY_c2 + w.Quz2*usZ_c2
-				+ w.Qutx*(u.sTx + u.sY*u.sZ2 + u.sY2*u.sZ - u.sZ2Y - u.sY2Z) + w.Quty*(u.sTy + u.sX*u.sZ2 + u.sX2*u.sZ - u.sZ2X - u.sX2Z) + w.Qutz*(u.sTz + u.sX*u.sY2 + u.sX2*u.sY - u.sX2Y - u.sY2X)
-				+ 3*u.sX2YZ + 3*u.sY2XZ + 3*u.sZ2XY - 2*u.sX*u.sY2Z - 2*u.sX2Z*u.sY - u.sX2*u.sYZ - u.sXZ*u.sY2 - 2*u.sX*u.sZ2Y - 2*u.sX2Y*u.sZ - u.sXY*u.sZ2 - 2*u.sY*u.sZ2X
-				- 2*u.sY2X*u.sZ + 2*u.sX*u.sY*u.sZ2 + 2*u.sX*u.sY2*u.sZ + 2*u.sX2*u.sY*u.sZ
-				+ 2*u.sTx*u.sX - 2*u.sTxX + 2*u.sTy*u.sY - 2*u.sTyY + 2*u.sTz*u.sZ - 2*u.sTzZ;
-			u.Qux = w.Quty*u.sZ2 + w.Qutz*u.sY2 + w.Qux + w.Qux2*u.sX + w.Quxy*u.sY + w.Quxz*u.sZ + 2*u.sY*u.sZ2 + 2*u.sY2*u.sZ - 2*u.sY2Z - 2*u.sZ2Y + 2*u.sTx;
-			u.Quy = w.Qutx*u.sZ2 + w.Qutz*u.sX2 + w.Quy + w.Quxy*u.sX + w.Quy2*u.sY + w.Quyz*u.sZ + 2*u.sX*u.sZ2 + 2*u.sX2*u.sZ - 2*u.sX2Z - 2*u.sZ2X + 2*u.sTy;
-			u.Quz = w.Qutx*u.sY2 + w.Quty*u.sX2 + w.Quz + w.Quxz*u.sX + w.Quyz*u.sY + w.Quz2*u.sZ + 2*u.sX*u.sY2 + 2*u.sX2*u.sY - 2*u.sX2Y - 2*u.sY2X + 2*u.sTz;
-			u.Quxy = w.Quxy + u.sZ2;
-			u.Quxz = w.Quxz + u.sY2;
-			u.Quyz = w.Quyz + u.sX2;
-			u.Qux2 = w.Quty*u.sZ + w.Qutz*u.sY + w.Qux2 + 2*u.sY*u.sZ - u.sYZ;
-			u.Quy2 = w.Qutx*u.sZ + w.Qutz*u.sX + w.Quy2 + 2*u.sX*u.sZ - u.sXZ;
-			u.Quz2 = w.Qutx*u.sY + w.Quty*u.sX + w.Quz2 + 2*u.sX*u.sY - u.sXY;
-			u.Qutx = w.Qutx + 2*u.sX;
-			u.Quty = w.Quty + 2*u.sY;
-			u.Qutz = w.Qutz + 2*u.sZ;
-			u.Tx = w.Tx + w.Txuy*u.sY + w.Txuy2*usY_c2 + w.Txuz*u.sZ + w.Txuz2*usZ_c2 + u.sTx + u.sY*u.sZ2 + u.sY2*u.sZ - u.sZ2Y - u.sY2Z;
-			u.Txuy = w.Txuy + w.Txuy2*u.sY + u.sZ2;
-			u.Txuy2 = w.Txuy2 + u.sZ;
-			u.Txuz = w.Txuz + w.Txuz2*u.sZ + u.sY2;
-			u.Txuz2 = w.Txuz2 + u.sY;
-			//u.Txutx = 1;
-			u.Ty = w.Ty + w.Tyux*u.sX + w.Tyux2*usX_c2 + w.Tyuz*u.sZ + w.Tyuz2*usZ_c2 + u.sTy + u.sX*u.sZ2 + u.sX2*u.sZ - u.sZ2X - u.sX2Z;
-			u.Tyux = w.Tyux + w.Tyux2*u.sX + u.sZ2;
-			u.Tyux2 = w.Tyux2 + u.sZ;
-			u.Tyuz = w.Tyuz + w.Tyuz2*u.sZ + u.sX2;
-			u.Tyuz2 = w.Tyuz2 + u.sX;
-			//u.Tyuty = 1;
-			u.Tz = w.Tz + w.Tzux*u.sX + w.Tzux2*usX_c2 + w.Tzuy*u.sY + w.Tzuy2*usY_c2 + u.sTz + u.sX*u.sY2 + u.sX2*u.sY - u.sX2Y - u.sY2X;
-			u.Tzux = w.Tzux + w.Tzux2*u.sX + u.sY2;
-			u.Tzux2 = w.Tzux2 + u.sY;
-			u.Tzuy = w.Tzuy + w.Tzuy2*u.sY + u.sX2;
-			u.Tzuy2 = w.Tzuy2 + u.sX;
-			//u.Tzutz = 1;
-			//if (u.X == 2 && u.sX == 2 && u.sX2 == 1 && u.Y == 1 && u.sY == 1 && u.Z == 4 && u.sZ == 2 && u.sZ2 == 0)
-			//	cerr << "u.Q = " << u.Q << "; u.sQ = " << u.sQ << "; u.sTz = " << u.sTz << "; u.sTzZ = " << u.sTzZ << "; w.Qutz = " << w.Qutz << endl;
-		}
-		*/
 		bool verify(Node &w){
 			Node v = *this;
 			testCalc(w);
@@ -867,382 +800,12 @@ struct Tripartition{
 		u.Tyuz += wTyuz; 
 	}
 	
-	inline void doXnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		score_t dusX_c2 = u.sX*v.X+vX2;
-		u.X += v.X;
-		u.Q += v.Q + w.Qux*v.X + w.Quxy*v.X*u.sY + w.Quxz*v.X*u.sZ + w.Qux2*dusX_c2
-			+ 2*w.Y*(v.Ty + v.X*u.sZ2 + vX2*u.sZ - vZ2*v.X - vX2*v.Z) + 2*w.Z*(v.Tz + v.X*u.sY2 + vX2*u.sY - vX2*v.Y - vY2*v.X)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*v.X*u.sY2Z - 2*vX2*v.Z*u.sY - vX2*u.sYZ - v.X*v.Z*u.sY2 - 2*v.X*u.sZ2Y - 2*vX2*v.Y*u.sZ - v.X*v.Y*u.sZ2 - 2*u.sY*vZ2*v.X
-			- 2*vY2*v.X*u.sZ + 2*v.X*u.sY*u.sZ2 + 2*v.X*u.sY2*u.sZ + 2*vX2*u.sY*u.sZ
-			+ 2*u.sTx*v.X - 2*v.Tx*v.X + 2*v.Ty*u.sY - 2*v.Ty*v.Y + 2*v.Tz*u.sZ - 2*v.Tz*v.Z;
-		u.Qux += w.Qux2*v.X;
-		u.Quy += 2*w.Z*vX2 + w.Quxy*v.X + 2*v.X*u.sZ2 + 2*vX2*u.sZ - 2*vX2*v.Z - 2*vZ2*v.X + 2*v.Ty;
-		u.Quz += 2*w.Y*vX2 + w.Quxz*v.X + 2*v.X*u.sY2 + 2*vX2*u.sY - 2*vX2*v.Y - 2*vY2*v.X + 2*v.Tz;
-		u.Quyz += vX2;
-		u.Quy2 += 2*w.Z*v.X + 2*v.X*u.sZ - v.X*v.Z;
-		u.Quz2 += 2*w.Y*v.X + 2*v.X*u.sY - v.X*v.Y;
-		u.Ty += w.Tyux*v.X + w.Z*dusX_c2 + v.Ty + v.X*u.sZ2 + vX2*u.sZ - vZ2*v.X - vX2*v.Z;
-		u.Tyux += w.Z*v.X;
-		u.Tyuz += vX2;
-		u.Tz += w.Tzux*v.X + w.Y*dusX_c2 + v.Tz + v.X*u.sY2 + vX2*u.sY - vX2*v.Y - vY2*v.X;
-		u.Tzux += w.Y*v.X;
-		u.Tzuy += vX2;
-		
-		u.sX += v.X;
-		u.sXY += v.X * v.Y;
-		u.sXZ += v.X * v.Z;
-		u.sX2 += vX2;
-		u.sX2Y += vX2 * v.Y;
-		u.sX2Z += vX2 * v.Z;
-		u.sY2X += vY2 * v.X;
-		u.sZ2X += vZ2 * v.X;
-		u.sX2YZ += vX2 * v.Y * v.Z;
-		u.sY2XZ += vY2 * v.X * v.Z;
-		u.sZ2XY += vZ2 * v.X * v.Y;
-		u.sTxX += v.Tx * v.X;
-		u.sTy += v.Ty;
-		u.sTyY += v.Ty * v.Y;
-		u.sTz += v.Tz;
-		u.sTzZ += v.Tz * v.Z;
-		u.sQ += v.Q;
-	}
-	
-	inline void undoXnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		u.sX -= v.X;
-		u.sXY -= v.X * v.Y;
-		u.sXZ -= v.X * v.Z;
-		u.sX2 -= vX2;
-		u.sX2Y -= vX2 * v.Y;
-		u.sX2Z -= vX2 * v.Z;
-		u.sY2X -= vY2 * v.X;
-		u.sZ2X -= vZ2 * v.X;
-		u.sX2YZ -= vX2 * v.Y * v.Z;
-		u.sY2XZ -= vY2 * v.X * v.Z;
-		u.sZ2XY -= vZ2 * v.X * v.Y;
-		u.sTxX -= v.Tx * v.X;
-		u.sTy -= v.Ty;
-		u.sTyY -= v.Ty * v.Y;
-		u.sTz -= v.Tz;
-		u.sTzZ -= v.Tz * v.Z;
-		u.sQ -= v.Q;
-		
-		score_t dusX_c2 = u.sX*v.X+v.X*(v.X-1)/2;
-		u.X -= v.X;
-		u.Q -= v.Q + w.Qux*v.X + w.Quxy*v.X*u.sY + w.Quxz*v.X*u.sZ + w.Qux2*dusX_c2
-			+ 2*w.Y*(v.Ty + v.X*u.sZ2 + vX2*u.sZ - vZ2*v.X - vX2*v.Z) + 2*w.Z*(v.Tz + v.X*u.sY2 + vX2*u.sY - vX2*v.Y - vY2*v.X)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*v.X*u.sY2Z - 2*vX2*v.Z*u.sY - vX2*u.sYZ - v.X*v.Z*u.sY2 - 2*v.X*u.sZ2Y - 2*vX2*v.Y*u.sZ - v.X*v.Y*u.sZ2 - 2*u.sY*vZ2*v.X
-			- 2*vY2*v.X*u.sZ + 2*v.X*u.sY*u.sZ2 + 2*v.X*u.sY2*u.sZ + 2*vX2*u.sY*u.sZ
-			+ 2*u.sTx*v.X - 2*v.Tx*v.X + 2*v.Ty*u.sY - 2*v.Ty*v.Y + 2*v.Tz*u.sZ - 2*v.Tz*v.Z;
-		u.Qux -= w.Qux2*v.X;
-		u.Quy -= 2*w.Z*vX2 + w.Quxy*v.X + 2*v.X*u.sZ2 + 2*vX2*u.sZ - 2*vX2*v.Z - 2*vZ2*v.X + 2*v.Ty;
-		u.Quz -= 2*w.Y*vX2 + w.Quxz*v.X + 2*v.X*u.sY2 + 2*vX2*u.sY - 2*vX2*v.Y - 2*vY2*v.X + 2*v.Tz;
-		u.Quyz -= vX2;
-		u.Quy2 -= 2*w.Z*v.X + 2*v.X*u.sZ - v.X*v.Z;
-		u.Quz2 -= 2*w.Y*v.X + 2*v.X*u.sY - v.X*v.Y;
-		u.Ty -= w.Tyux*v.X + w.Z*dusX_c2 + v.Ty + v.X*u.sZ2 + vX2*u.sZ - vZ2*v.X - vX2*v.Z;
-		u.Tyux -= w.Z*v.X;
-		u.Tyuz -= vX2;
-		u.Tz -= w.Tzux*v.X + w.Y*dusX_c2 + v.Tz + v.X*u.sY2 + vX2*u.sY - vX2*v.Y - vY2*v.X;
-		u.Tzux -= w.Y*v.X;
-		u.Tzuy -= vX2;
-	}
-	
-	inline void doYnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		score_t dusY_c2 = u.sY*v.Y+vY2;
-		u.Y += v.Y;
-		u.Q += v.Q + w.Quy*v.Y + w.Quxy*u.sX*v.Y + w.Quyz*v.Y*u.sZ + w.Quy2*dusY_c2
-			+ 2*w.X*(v.Tx + v.Y*u.sZ2 + vY2*u.sZ - vZ2*v.Y - vY2*v.Z) + 2*w.Z*(v.Tz + u.sX*vY2 + u.sX2*v.Y - vX2*v.Y - vY2*v.X)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*u.sX*vY2*v.Z - 2*u.sX2Z*v.Y - u.sX2*v.Y*v.Z - u.sXZ*vY2 - 2*u.sX*vZ2*v.Y - 2*vX2*v.Y*u.sZ - v.X*v.Y*u.sZ2 - 2*v.Y*u.sZ2X
-			- 2*vY2*v.X*u.sZ + 2*u.sX*v.Y*u.sZ2 + 2*u.sX*vY2*u.sZ + 2*u.sX2*v.Y*u.sZ
-			+ 2*v.Tx*u.sX - 2*v.Tx*v.X + 2*u.sTy*v.Y - 2*v.Ty*v.Y + 2*v.Tz*u.sZ - 2*v.Tz*v.Z;
-		u.Qux += 2*w.Z*vY2 + w.Quxy*v.Y + 2*v.Y*u.sZ2 + 2*vY2*u.sZ - 2*vY2*v.Z - 2*vZ2*v.Y + 2*v.Tx;
-		u.Quy += w.Quy2*v.Y;
-		u.Quz += 2*w.X*vY2 + w.Quyz*v.Y + 2*u.sX*vY2 + 2*u.sX2*v.Y - 2*vX2*v.Y - 2*vY2*v.X + 2*v.Tz;
-		u.Quxz += vY2;
-		u.Qux2 += 2*w.Z*v.Y + 2*v.Y*u.sZ - v.Y*v.Z;
-		u.Quz2 += 2*w.X*v.Y + 2*u.sX*v.Y - v.X*v.Y;
-		u.Tx += w.Txuy*v.Y + w.Z*dusY_c2 + v.Tx + v.Y*u.sZ2 + vY2*u.sZ - vZ2*v.Y - vY2*v.Z;
-		u.Txuy += w.Z*v.Y;
-		u.Txuz += vY2;
-		u.Tz += w.Tzuy*v.Y + w.X*dusY_c2 + v.Tz + u.sX*vY2 + u.sX2*v.Y - vX2*v.Y - vY2*v.X;
-		u.Tzux += vY2;
-		u.Tzuy += w.X*v.Y;
-		
-		u.sY += v.Y;
-		u.sXY += v.X * v.Y;
-		u.sYZ += v.Y * v.Z;
-		u.sY2 += vY2;
-		u.sX2Y += vX2 * v.Y;
-		u.sY2X += vY2 * v.X;
-		u.sY2Z += vY2 * v.Z;
-		u.sZ2Y += vZ2 * v.Y;
-		u.sX2YZ += vX2 * v.Y * v.Z;
-		u.sY2XZ += vY2 * v.X * v.Z;
-		u.sZ2XY += vZ2 * v.X * v.Y;
-		u.sTx += v.Tx; 
-		u.sTxX += v.Tx * v.X;
-		u.sTyY += v.Ty * v.Y;
-		u.sTz += v.Tz;
-		u.sTzZ += v.Tz * v.Z;
-		u.sQ += v.Q;
-	}
-	
-	inline void undoYnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		u.sY -= v.Y;
-		u.sXY -= v.X * v.Y;
-		u.sYZ -= v.Y * v.Z;
-		u.sY2 -= vY2;
-		u.sX2Y -= vX2 * v.Y;
-		u.sY2X -= vY2 * v.X;
-		u.sY2Z -= vY2 * v.Z;
-		u.sZ2Y -= vZ2 * v.Y;
-		u.sX2YZ -= vX2 * v.Y * v.Z;
-		u.sY2XZ -= vY2 * v.X * v.Z;
-		u.sZ2XY -= vZ2 * v.X * v.Y;
-		u.sTx -= v.Tx; 
-		u.sTxX -= v.Tx * v.X;
-		u.sTyY -= v.Ty * v.Y;
-		u.sTz -= v.Tz;
-		u.sTzZ -= v.Tz * v.Z;
-		u.sQ -= v.Q;
-		
-		score_t dusY_c2 = u.sY*v.Y+vY2;
-		u.Y -= v.Y;
-		u.Q -= v.Q + w.Quy*v.Y + w.Quxy*u.sX*v.Y + w.Quyz*v.Y*u.sZ + w.Quy2*dusY_c2
-			+ 2*w.X*(v.Tx + v.Y*u.sZ2 + vY2*u.sZ - vZ2*v.Y - vY2*v.Z) + 2*w.Z*(v.Tz + u.sX*vY2 + u.sX2*v.Y - vX2*v.Y - vY2*v.X)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*u.sX*vY2*v.Z - 2*u.sX2Z*v.Y - u.sX2*v.Y*v.Z - u.sXZ*vY2 - 2*u.sX*vZ2*v.Y - 2*vX2*v.Y*u.sZ - v.X*v.Y*u.sZ2 - 2*v.Y*u.sZ2X
-			- 2*vY2*v.X*u.sZ + 2*u.sX*v.Y*u.sZ2 + 2*u.sX*vY2*u.sZ + 2*u.sX2*v.Y*u.sZ
-			+ 2*v.Tx*u.sX - 2*v.Tx*v.X + 2*u.sTy*v.Y - 2*v.Ty*v.Y + 2*v.Tz*u.sZ - 2*v.Tz*v.Z;
-		u.Qux -= 2*w.Z*vY2 + w.Quxy*v.Y + 2*v.Y*u.sZ2 + 2*vY2*u.sZ - 2*vY2*v.Z - 2*vZ2*v.Y + 2*v.Tx;
-		u.Quy -= w.Quy2*v.Y;
-		u.Quz -= 2*w.X*vY2 + w.Quyz*v.Y + 2*u.sX*vY2 + 2*u.sX2*v.Y - 2*vX2*v.Y - 2*vY2*v.X + 2*v.Tz;
-		u.Quxz -= vY2;
-		u.Qux2 -= 2*w.Z*v.Y + 2*v.Y*u.sZ - v.Y*v.Z;
-		u.Quz2 -= 2*w.X*v.Y + 2*u.sX*v.Y - v.X*v.Y;
-		u.Tx -= w.Txuy*v.Y + w.Z*dusY_c2 + v.Tx + v.Y*u.sZ2 + vY2*u.sZ - vZ2*v.Y - vY2*v.Z;
-		u.Txuy -= w.Z*v.Y;
-		u.Txuz -= vY2;
-		u.Tz -= w.Tzuy*v.Y + w.X*dusY_c2 + v.Tz + u.sX*vY2 + u.sX2*v.Y - vX2*v.Y - vY2*v.X;
-		u.Tzux -= vY2;
-		u.Tzuy -= w.X*v.Y;
-	}
-	
-	inline void doZnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		score_t dusZ_c2 = u.sZ*v.Z+vZ2;
-		u.Z += v.Z;
-		u.Q += v.Q + w.Quz*v.Z + w.Quxz*u.sX*v.Z + w.Quyz*u.sY*v.Z + w.Quz2*dusZ_c2
-			+ 2*w.X*(v.Tx + u.sY*vZ2 + u.sY2*v.Z - vZ2*v.Y - vY2*v.Z) + 2*w.Y*(v.Ty + u.sX*vZ2 + u.sX2*v.Z - vZ2*v.X - vX2*v.Z)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*u.sX*vY2*v.Z - 2*vX2*v.Z*u.sY - u.sX2*v.Y*v.Z - v.X*v.Z*u.sY2 - 2*u.sX*vZ2*v.Y - 2*u.sX2Y*v.Z - u.sXY*vZ2 - 2*u.sY*vZ2*v.X
-			- 2*u.sY2X*v.Z + 2*u.sX*u.sY*vZ2 + 2*u.sX*u.sY2*v.Z + 2*u.sX2*u.sY*v.Z
-			+ 2*v.Tx*u.sX - 2*v.Tx*v.X + 2*v.Ty*u.sY - 2*v.Ty*v.Y + 2*u.sTz*v.Z - 2*v.Tz*v.Z;
-		u.Qux += 2*w.Y*vZ2 + w.Quxz*v.Z + 2*u.sY*vZ2 + 2*u.sY2*v.Z - 2*vY2*v.Z - 2*vZ2*v.Y + 2*v.Tx;
-		u.Quy += 2*w.X*vZ2 + w.Quyz*v.Z + 2*u.sX*vZ2 + 2*u.sX2*v.Z - 2*vX2*v.Z - 2*vZ2*v.X + 2*v.Ty;
-		u.Quz += w.Quz2*v.Z;
-		u.Quxy += vZ2;
-		u.Qux2 += 2*w.Y*v.Z + 2*u.sY*v.Z - v.Y*v.Z;
-		u.Quy2 += 2*w.X*v.Z + 2*u.sX*v.Z - v.X*v.Z;
-		u.Tx += w.Txuz*v.Z + w.Y*dusZ_c2 + v.Tx + u.sY*vZ2 + u.sY2*v.Z - vZ2*v.Y - vY2*v.Z;
-		u.Txuy += vZ2;
-		u.Txuz += w.Y*v.Z;
-		u.Ty += w.Tyuz*v.Z + w.X*dusZ_c2 + v.Ty + u.sX*vZ2 + u.sX2*v.Z - vZ2*v.X - vX2*v.Z;
-		u.Tyux += vZ2;
-		u.Tyuz += w.X*v.Z;
-		
-		u.sZ += v.Z;
-		u.sXZ += v.X * v.Z;
-		u.sYZ += v.Y * v.Z;
-		u.sZ2 += vZ2;
-		u.sX2Z += vX2 * v.Z;
-		u.sY2Z += vY2 * v.Z;
-		u.sZ2X += vZ2 * v.X;
-		u.sZ2Y += vZ2 * v.Y;
-		u.sX2YZ += vX2 * v.Y * v.Z;
-		u.sY2XZ += vY2 * v.X * v.Z;
-		u.sZ2XY += vZ2 * v.X * v.Y;
-		u.sTx += v.Tx; 
-		u.sTxX += v.Tx * v.X;
-		u.sTy += v.Ty;
-		u.sTyY += v.Ty * v.Y;
-		u.sTzZ += v.Tz * v.Z;
-		u.sQ += v.Q;
-	}
-	
-	inline void undoZnormal(Node& u, Node& v, Node& w){
-		const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
-		
-		u.sZ -= v.Z;
-		u.sXZ -= v.X * v.Z;
-		u.sYZ -= v.Y * v.Z;
-		u.sZ2 -= vZ2;
-		u.sX2Z -= vX2 * v.Z;
-		u.sY2Z -= vY2 * v.Z;
-		u.sZ2X -= vZ2 * v.X;
-		u.sZ2Y -= vZ2 * v.Y;
-		u.sX2YZ -= vX2 * v.Y * v.Z;
-		u.sY2XZ -= vY2 * v.X * v.Z;
-		u.sZ2XY -= vZ2 * v.X * v.Y;
-		u.sTx -= v.Tx; 
-		u.sTxX -= v.Tx * v.X;
-		u.sTy -= v.Ty;
-		u.sTyY -= v.Ty * v.Y;
-		u.sTzZ -= v.Tz * v.Z;
-		u.sQ -= v.Q;
-		
-		score_t dusZ_c2 = u.sZ*v.Z+vZ2;
-		u.Z -= v.Z;
-		u.Q -= v.Q + w.Quz*v.Z + w.Quxz*u.sX*v.Z + w.Quyz*u.sY*v.Z + w.Quz2*dusZ_c2
-			+ 2*w.X*(v.Tx + u.sY*vZ2 + u.sY2*v.Z - vZ2*v.Y - vY2*v.Z) + 2*w.Y*(v.Ty + u.sX*vZ2 + u.sX2*v.Z - vZ2*v.X - vX2*v.Z)
-			+ 3*vX2*v.Y*v.Z + 3*vY2*v.X*v.Z + 3*vZ2*v.X*v.Y - 2*u.sX*vY2*v.Z - 2*vX2*v.Z*u.sY - u.sX2*v.Y*v.Z - v.X*v.Z*u.sY2 - 2*u.sX*vZ2*v.Y - 2*u.sX2Y*v.Z - u.sXY*vZ2 - 2*u.sY*vZ2*v.X
-			- 2*u.sY2X*v.Z + 2*u.sX*u.sY*vZ2 + 2*u.sX*u.sY2*v.Z + 2*u.sX2*u.sY*v.Z
-			+ 2*v.Tx*u.sX - 2*v.Tx*v.X + 2*v.Ty*u.sY - 2*v.Ty*v.Y + 2*u.sTz*v.Z - 2*v.Tz*v.Z;
-		u.Qux -= 2*w.Y*vZ2 + w.Quxz*v.Z + 2*u.sY*vZ2 + 2*u.sY2*v.Z - 2*vY2*v.Z - 2*vZ2*v.Y + 2*v.Tx;
-		u.Quy -= 2*w.X*vZ2 + w.Quyz*v.Z + 2*u.sX*vZ2 + 2*u.sX2*v.Z - 2*vX2*v.Z - 2*vZ2*v.X + 2*v.Ty;
-		u.Quz -= w.Quz2*v.Z;
-		u.Quxy -= vZ2;
-		u.Qux2 -= 2*w.Y*v.Z + 2*u.sY*v.Z - v.Y*v.Z;
-		u.Quy2 -= 2*w.X*v.Z + 2*u.sX*v.Z - v.X*v.Z;
-		u.Tx -= w.Txuz*v.Z + w.Y*dusZ_c2 + v.Tx + u.sY*vZ2 + u.sY2*v.Z - vZ2*v.Y - vY2*v.Z;
-		u.Txuy -= vZ2;
-		u.Txuz -= w.Y*v.Z;
-		u.Ty -= w.Tyuz*v.Z + w.X*dusZ_c2 + v.Ty + u.sX*vZ2 + u.sX2*v.Z - vZ2*v.X - vX2*v.Z;
-		u.Tyux -= vZ2;
-		u.Tyuz -= w.X*v.Z;
-	}
-	
-	inline void doXspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.X += w.X;
-		u.Q += w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quyz*u.sY*u.sZ + w.Quy2*usY_c2 + w.Quz2*usZ_c2
-			+ 2*w.X*(u.sTx + u.sY*u.sZ2 + u.sY2*u.sZ - u.sZ2Y - u.sY2Z);
-		u.Qux += w.Qux;
-		u.Quy += 2*w.X*u.sZ2 + w.Quy + w.Quy2*u.sY + w.Quyz*u.sZ;
-		u.Quz += 2*w.X*u.sY2 + w.Quz + w.Quyz*u.sY + w.Quz2*u.sZ;
-		u.Quyz += w.Quyz;
-		u.Quy2 += 2*w.X*u.sZ + w.Quy2;
-		u.Quz2 += 2*w.X*u.sY + w.Quz2;
-		u.Ty += w.Ty + w.Tyux*u.sX + w.Tyuz*u.sZ + w.X*usZ_c2;
-		u.Tyux += w.Tyux;
-		u.Tyuz += w.Tyuz + w.X*u.sZ;
-		u.Tz += w.Tz + w.Tzux*u.sX + w.Tzuy*u.sY + w.X*usY_c2;
-		u.Tzux += w.Tzux;
-		u.Tzuy += w.Tzuy + w.X*u.sY;
-	}
-	
-	inline void undoXspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.X -= w.X;
-		u.Q -= w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quyz*u.sY*u.sZ + w.Quy2*usY_c2 + w.Quz2*usZ_c2
-			+ 2*w.X*(u.sTx + u.sY*u.sZ2 + u.sY2*u.sZ - u.sZ2Y - u.sY2Z);
-		u.Qux -= w.Qux;
-		u.Quy -= 2*w.X*u.sZ2 + w.Quy + w.Quy2*u.sY + w.Quyz*u.sZ;
-		u.Quz -= 2*w.X*u.sY2 + w.Quz + w.Quyz*u.sY + w.Quz2*u.sZ;
-		u.Quyz -= w.Quyz;
-		u.Quy2 -= 2*w.X*u.sZ + w.Quy2;
-		u.Quz2 -= 2*w.X*u.sY + w.Quz2;
-		u.Ty -= w.Ty + w.Tyux*u.sX + w.Tyuz*u.sZ + w.X*usZ_c2;
-		u.Tyux -= w.Tyux;
-		u.Tyuz -= w.Tyuz + w.X*u.sZ;
-		u.Tz -= w.Tz + w.Tzux*u.sX + w.Tzuy*u.sY + w.X*usY_c2;
-		u.Tzux -= w.Tzux;
-		u.Tzuy -= w.Tzuy + w.X*u.sY;
-	}
-	
-	inline void doYspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.Y += w.Y;
-		u.Q += w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quxz*u.sX*u.sZ + w.Qux2*usX_c2 + w.Quz2*usZ_c2
-			+ 2*w.Y*(u.sTy + u.sX*u.sZ2 + u.sX2*u.sZ - u.sZ2X - u.sX2Z);
-		u.Qux += 2*w.Y*u.sZ2 + w.Qux + w.Qux2*u.sX + w.Quxz*u.sZ;
-		u.Quy += w.Quy;
-		u.Quz += 2*w.Y*u.sX2 + w.Quz + w.Quxz*u.sX + w.Quz2*u.sZ;
-		u.Quxz += w.Quxz;
-		u.Qux2 += 2*w.Y*u.sZ + w.Qux2;
-		u.Quz2 += 2*w.Y*u.sX + w.Quz2;
-		u.Tx += w.Tx + w.Txuy*u.sY + w.Txuz*u.sZ + w.Y*usZ_c2;
-		u.Txuy += w.Txuy;
-		u.Txuz += w.Txuz + w.Y*u.sZ;
-		u.Tz += w.Tz + w.Tzux*u.sX + w.Y*usX_c2 + w.Tzuy*u.sY;
-		u.Tzux += w.Tzux + w.Y*u.sX;
-		u.Tzuy += w.Tzuy;
-	}
-	
-	inline void undoYspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.Y -= w.Y;
-		u.Q -= w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quxz*u.sX*u.sZ + w.Qux2*usX_c2 + w.Quz2*usZ_c2
-			+ 2*w.Y*(u.sTy + u.sX*u.sZ2 + u.sX2*u.sZ - u.sZ2X - u.sX2Z);
-		u.Qux -= 2*w.Y*u.sZ2 + w.Qux + w.Qux2*u.sX + w.Quxz*u.sZ;
-		u.Quy -= w.Quy;
-		u.Quz -= 2*w.Y*u.sX2 + w.Quz + w.Quxz*u.sX + w.Quz2*u.sZ;
-		u.Quxz -= w.Quxz;
-		u.Qux2 -= 2*w.Y*u.sZ + w.Qux2;
-		u.Quz2 -= 2*w.Y*u.sX + w.Quz2;
-		u.Tx -= w.Tx + w.Txuy*u.sY + w.Txuz*u.sZ + w.Y*usZ_c2;
-		u.Txuy -= w.Txuy;
-		u.Txuz -= w.Txuz + w.Y*u.sZ;
-		u.Tz -= w.Tz + w.Tzux*u.sX + w.Y*usX_c2 + w.Tzuy*u.sY;
-		u.Tzux -= w.Tzux + w.Y*u.sX;
-		u.Tzuy -= w.Tzuy;
-	}
-	
-	inline void doZspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.Z += w.Z;
-		u.Q += w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quxy*u.sX*u.sY + w.Qux2*usX_c2 + w.Quy2*usY_c2
-			+ 2*w.Z*(u.sTz + u.sX*u.sY2 + u.sX2*u.sY - u.sX2Y - u.sY2X);
-		u.Qux += 2*w.Z*u.sY2 + w.Qux + w.Qux2*u.sX + w.Quxy*u.sY;
-		u.Quy += 2*w.Z*u.sX2 + w.Quy + w.Quxy*u.sX + w.Quy2*u.sY;
-		u.Quz += w.Quz;
-		u.Quxy += w.Quxy;
-		u.Qux2 += 2*w.Z*u.sY + w.Qux2;
-		u.Quy2 += 2*w.Z*u.sX + w.Quy2;
-		u.Tx += w.Tx + w.Txuy*u.sY + w.Z*usY_c2 + w.Txuz*u.sZ;
-		u.Txuy += w.Txuy + w.Z*u.sY;
-		u.Txuz += w.Txuz;
-		u.Ty += w.Ty + w.Tyux*u.sX + w.Z*usX_c2 + w.Tyuz*u.sZ;
-		u.Tyux += w.Tyux + w.Z*u.sX;
-		u.Tyuz += w.Tyuz; 
-	}
-	
-	inline void undoZspecial(Node& u, Node& w){
-		score_t usX_c2 = u.sX*(u.sX-1)/2, usY_c2 = u.sY*(u.sY-1)/2, usZ_c2 = u.sZ*(u.sZ-1)/2;
-		
-		u.Z -= w.Z;
-		u.Q -= w.Q + w.Qux*u.sX + w.Quy*u.sY + w.Quz*u.sZ + w.Quxy*u.sX*u.sY + w.Qux2*usX_c2 + w.Quy2*usY_c2
-			+ 2*w.Z*(u.sTz + u.sX*u.sY2 + u.sX2*u.sY - u.sX2Y - u.sY2X);
-		u.Qux -= 2*w.Z*u.sY2 + w.Qux + w.Qux2*u.sX + w.Quxy*u.sY;
-		u.Quy -= 2*w.Z*u.sX2 + w.Quy + w.Quxy*u.sX + w.Quy2*u.sY;
-		u.Quz -= w.Quz;
-		u.Quxy -= w.Quxy;
-		u.Qux2 -= 2*w.Z*u.sY + w.Qux2;
-		u.Quy2 -= 2*w.Z*u.sX + w.Quy2;
-		u.Tx -= w.Tx + w.Txuy*u.sY + w.Z*usY_c2 + w.Txuz*u.sZ;
-		u.Txuy -= w.Txuy + w.Z*u.sY;
-		u.Txuz -= w.Txuz;
-		u.Ty -= w.Ty + w.Tyux*u.sX + w.Z*usX_c2 + w.Tyuz*u.sZ;
-		u.Tyux -= w.Tyux + w.Z*u.sX;
-		u.Tyuz -= w.Tyuz;
-	}
 	
 	vector<vector<int> > leafParent;
 	score_t totalScore = 0;
 	Node dummy, nodeX, nodeY, nodeZ;
 	vector<vector<Node> > nodes, nodesTotal;
+	vector<int> roots;
 	int version = 0;
 	
 	int buildTree(int v, vector<TripartitionInitializer::Node> &iNodes, vector<vector<int> > &children){
@@ -1302,7 +865,7 @@ struct Tripartition{
 				}
 			}*/
 			//for (int j = 0; j < init.nTaxa; j++) cerr << j << "->" << leafParent[i][j] << endl;
-			buildTree(init.roots[i] - init.nTaxa, iNodes, children);
+			roots.push_back(buildTree(init.roots[i] - init.nTaxa, iNodes, children));
 			for (int j = 0; j < nInternal; j++){
 				nodes[i].emplace_back();
 				nodes[i][j].up = iNodes[j].up;
@@ -1353,6 +916,10 @@ struct Tripartition{
 			int u = leafParent[k][i], v = -2;
 			Node *pv = (x == 0) ? &nodeZ : (x == 1) ? &nodeX : &nodeY;
 			Node vOld = dummy;
+			if (u == -1){
+				nodes[k][roots[k]].update(version, nodesTotal[k][roots[k]]);
+				totalScore += nodes[k][roots[k]].Q;
+			}
 			while (u != -1){
 				Node *pu = &nodes[k][u];
 				pu->update(version, nodesTotal[k][u]);
@@ -1389,6 +956,10 @@ struct Tripartition{
 			int u = leafParent[k][i], v = -2;
 			Node *pv = &dummy;
 			Node vOld = (x == 0) ? nodeZ : (x == 1) ? nodeX : nodeY;
+			if (u == -1){
+				nodes[k][roots[k]].update(version, nodesTotal[k][roots[k]]);
+				totalScore += nodes[k][roots[k]].Q;
+			}
 			while (u != -1){
 				Node *pu = &nodes[k][u];
 				pu->update(version, nodesTotal[k][u]);
@@ -1397,8 +968,6 @@ struct Tripartition{
 					if (x == 0) undoZspecial(*pu, *pv, vOld);//{undoZspecial(*pu, vOld); doZspecial(*pu, *pv);}
 					else if (x == 1) undoXspecial(*pu, *pv, vOld);//{undoXspecial(*pu, vOld); doXspecial(*pu, *pv);}
 					else undoYspecial(*pu, *pv, vOld);//{undoYspecial(*pu, vOld); doYspecial(*pu, *pv);}
-					
-					//if (pu->verify(*pv)) cerr << "ERROR!";
 				}
 				else {
 					Node &w = (pu->down == -1) ? dummy : nodes[k][pu->down];
@@ -1406,8 +975,6 @@ struct Tripartition{
 					if (x == 0) undoZnormal(*pu, *pv, vOld, w);//{undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);}
 					else if (x == 1) undoXnormal(*pu, *pv, vOld, w);//{undoXnormal(*pu, vOld, w); doXnormal(*pu, *pv, w);}
 					else undoYnormal(*pu, *pv, vOld, w);//{undoYnormal(*pu, vOld, w); doYnormal(*pu, *pv, w);}
-					
-					//if (pu->verify(w)) cerr << "ERROR!";
 				}
 				vOld = uOld;
 				v = u;
