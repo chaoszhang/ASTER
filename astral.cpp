@@ -33,6 +33,8 @@ unordered_map<string, string> leafname_mapping;
 string TEXT;
 int nodecnt = 0;
 int pos = 0;
+int K = 0;
+int part = 0;
 vector<string> names;
 unordered_map<string, int> name2id;
 
@@ -81,8 +83,8 @@ void parse(int parent = -1){
 		pos++;
 	}
 	else cur = name2id[MAPPING(i, pos)];
-	if (parent != -1) tripInit.parentChild.back().push_back({parent, cur});
-	else tripInit.roots.push_back(cur);
+	if (parent != -1) tripInit.parentChild[part].back().push_back({parent, cur});
+	else tripInit.roots[part].push_back(cur);
 }
 
 void readInputTrees(string input, string mapping) {
@@ -105,10 +107,12 @@ void readInputTrees(string input, string mapping) {
 	tripInit.nTaxa = names.size();
 	pos = 0;
 	while (pos < TEXT.size()){
-		tripInit.parentChild.emplace_back();
+		part = K % tripInit.roots.size();
+		tripInit.parentChild[part].emplace_back();
 		nodecnt = names.size();
 		parse();
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
+		K++;
 	}
 }
 
@@ -141,6 +145,16 @@ int main(int argc, char** argv){
 	}
 	ostream &fout = (outputFile == "") ? cout : fileOut;
 	if (outputFile != "") fileOut.open(outputFile);
+	
+	int nPartitions = 1;
+	if (nRounds < nThreads){
+		nPartitions = nThreads / nRounds;
+		nThreads = nRounds;
+	}
+	for (int i = 0; i < nPartitions; i++){
+		tripInit.roots.emplace_back();
+		tripInit.parentChild.emplace_back();
+	}
 	readInputTrees(argv[argc - 1], mappingFile);
 	
 	/*
@@ -152,10 +166,10 @@ int main(int argc, char** argv){
 	
 	
 	cerr << "#Species: " << names.size() << endl;
-	cerr << "#Genetrees: " << tripInit.parentChild.size() << endl;
+	cerr << "#Genetrees: " << K << endl;
 	cerr << "#Rounds: " << nRounds << endl;
 	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << endl;
+	cerr << "#Threads: " << nThreads << "x" << nPartitions << endl;
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
