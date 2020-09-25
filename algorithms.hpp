@@ -4,11 +4,13 @@ typedef unsigned __int128 hash_t;
 #include<array>
 #include<utility> 
 #include<random>
+#include<unordered_set>
 #include<unordered_map>
 #include<algorithm>
 #include<tuple>
 #include<string>
 #include<thread>
+#include<mutex>
 
 using namespace std;
 
@@ -20,7 +22,7 @@ struct Hasher{
 
 struct PlacementAlgorithm{
 	struct Node{
-		Node(int leafId): leafId(leafId){}
+		Node(int leafId = -1): leafId(leafId){}
 		
 		int parent = -1, heavy = -1, light = -1; //parent 0, heavy 1, light 2
 		int leafId = -1, leafCnt = 1;
@@ -28,7 +30,7 @@ struct PlacementAlgorithm{
 		bool placeHeavy = false, placeLight = false; 
 	};
 	
-	const vector<hash_t> taxonHash; // sum of hash = 0
+	vector<hash_t> taxonHash; // sum of hash = 0
 	vector<tuple<hash_t, hash_t, score_t> > tripHash;
 	vector<int> order;
 	vector<Node> nodes;
@@ -36,7 +38,7 @@ struct PlacementAlgorithm{
 	
 	Tripartition trip;
 	
-	PlacementAlgorithm(const vector<hash_t> taxonHash, const TripartitionInitializer tripInit): taxonHash(taxonHash), trip(tripInit){}
+	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit): taxonHash(taxonHash), trip(tripInit){}
 	
 	int& heavy(int v){
 		return nodes[v].heavy;
@@ -184,7 +186,7 @@ struct PlacementAlgorithm{
 		}
 	}
 	
-	void place(int i){
+	int locateBranchAdding(int i){
 		trip.addTotal(i);
 		scoringPlacementDP(rootNodeId, i);
 		int v = rootNodeId;
@@ -192,7 +194,17 @@ struct PlacementAlgorithm{
 			if (placeHeavy(v)) v = heavy(v);
 			else v = light(v);
 		}
-		addSibling(v, i);
+		return v;
+	}
+	
+	void place(int i){
+		addSibling(locateBranchAdding(i), i);
+	}
+	
+	int locateBranch(int i){
+		int v = locateBranchAdding(i);
+		trip.rmvTotal(i);
+		return v;
 	}
 	
 	pair<bool, hash_t> tripHashGenerator(int v){
@@ -256,8 +268,9 @@ struct ConstrainedOptimizationAlgorithm{
 	const TripartitionInitializer &tripInit;
 	const int ntaxa;
 	int roundId = 0;
+	mutex mtx;
 	
-	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> names, const int seed = 2333): ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
+	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, const int seed = 2333): ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
 		taxonHash.push_back(0);
 		for (int i = 1; i < ntaxa; i++){
 			hash_t r = randomHash(generator);
@@ -266,6 +279,73 @@ struct ConstrainedOptimizationAlgorithm{
 			nodes.emplace_back(i, r);
 			taxonHash[0] -= r;
 		}
+	}
+	
+	ConstrainedOptimizationAlgorithm(const ConstrainedOptimizationAlgorithm &alg): ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash){}
+	
+	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
+		if (nodes[v].leafId != -1){
+			if (selected.count(nodes[v].leafId)){
+				pAlg.trip.addTotal(nodes[v].leafId);
+				if (pAlg.rootLeafId == -1){
+					pAlg.rootLeafId = nodes[v].leafId;
+					return -1;
+				}
+				else {
+					pAlg.nodes.emplace_back(nodes[v].leafId);
+					return pAlg.nodes.size() - 1;
+				}
+			}
+			else {
+				pAlg.order.push_back(nodes[v].leafId);
+				return -1;
+			}
+		}
+		else {
+			tuple<int, int, score_t> t = nodes[v].children[nodes[v].bestChild];
+			if (pAlg.rootLeafId != -1){
+				int nodeL = subsampleSubtree(get<0>(t), pAlg, selected);
+				int nodeR = subsampleSubtree(get<1>(t), pAlg, selected);
+				if (nodeL != -1){
+					if (nodeR != -1) return pAlg.makeNode(nodeL, nodeR, false);
+					else return nodeL;
+				}
+				else return nodeR;
+			}
+			else {
+				int nodeL = subsampleSubtree(get<0>(t), pAlg, selected);
+				if (pAlg.rootLeafId == -1) return subsampleSubtree(get<1>(t), pAlg, selected);
+				else if (nodeL == -1) return pAlg.rootNodeId = subsampleSubtree(get<1>(t), pAlg, selected);
+				else {
+					int nodeR = subsampleSubtree(get<1>(t), pAlg, selected);
+					if (nodeR == -1) return nodeL;
+					else {
+						pAlg.makeNode(nodeL, nodeR, true);
+						return nodeR;
+					}
+				}
+			}
+		}
+	}
+	
+	void createPlacementAlgorithm(PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
+		if (roundId != 0){
+			if (selected.count(0)){
+				pAlg.rootLeafId = 0;
+				pAlg.trip.addTotal(0);
+				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, selected);
+			}
+			else {
+				pAlg.order.push_back(0);
+				subsampleSubtree(hash[-taxonHash[0]], pAlg, selected);
+			}
+		}
+		else{
+			for (int i = 0; i < ntaxa; i++){
+				pAlg.order.push_back(i);
+			}
+		}
+		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
 	}
 	
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, double subsampleRate){
@@ -313,8 +393,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 	}
 	
-	PlacementAlgorithm createPlacementAlgorithm(double subsampleRate){
-		PlacementAlgorithm pAlg(taxonHash, tripInit);
+	void createPlacementAlgorithm(PlacementAlgorithm &pAlg, double subsampleRate){
 		if (roundId != 0){
 			if (randP(generator) < subsampleRate){
 				pAlg.rootLeafId = 0;
@@ -332,8 +411,14 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 		}
 		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+	}
+	
+	PlacementAlgorithm createPlacementAlgorithm(double subsampleRate){
+		PlacementAlgorithm pAlg(taxonHash, tripInit);
+		createPlacementAlgorithm(pAlg, subsampleRate);
 		return pAlg;
 	}
+	
 	
 	int hash2node(hash_t h){
 		if (hash.count(h) == 0){
@@ -397,7 +482,8 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 	}
 	
-	pair<score_t, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0){
+	pair<score_t, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0, bool allowTwoStepRun = true){
+		if (allowTwoStepRun && ntaxa > 400) return twoStepRun(nJobs, nThrds);
 		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
 		for (int i = 0; i < nJobs; i++){
@@ -407,6 +493,155 @@ struct ConstrainedOptimizationAlgorithm{
 			thrds.emplace_back(batchWork, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
 		}
 		batchWork(jobs, 0, nJobs / nThrds);
+		for (int i = 1; i < nThrds; i++){
+			thrds[i - 1].join();
+		}
+		for (int i = 0; i < nJobs; i++){
+			addTripartitions(jobs[i].tripHash);
+		}
+		
+		return {computeOptimalTree(), printOptimalTree()};
+	}
+	
+	static bool placeNode(PlacementAlgorithm &pAlg, vector<PlacementAlgorithm::Node> &pNodes, int &rootNodeId, int i, unordered_map<int, int> &nodeRemap){
+		int v = pAlg.locateBranchAdding(i);
+		if (nodeRemap.count(v)){
+			pAlg.addSibling(v, i);
+			int w = pAlg.parent(v), u = (pAlg.light(w) == v) ? pAlg.heavy(w) : pAlg.light(w);
+			int mV = nodeRemap[v], mW = pNodes.size(), mU = pNodes.size() + 1;
+			pNodes.emplace_back(-1);
+			pNodes.emplace_back(i);
+			nodeRemap[w] = mW;
+			nodeRemap[u] = mU;
+			if (pAlg.rootNodeId == w) rootNodeId = mW;
+			else {
+				if (pNodes[pNodes[mV].parent].heavy == mV) pNodes[pNodes[mV].parent].heavy = mW;
+				else pNodes[pNodes[mV].parent].light = mW;
+			}
+			pNodes[mW].parent = pNodes[mV].parent;
+			pNodes[mV].parent = mW;
+			pNodes[mU].parent = mW;
+			pNodes[mW].heavy = mV;
+			pNodes[mW].light = mU;
+			return true;
+		}
+		else {
+			pAlg.trip.rmvTotal(i);
+			return false;
+		}
+	}
+	
+	void twoStepWorkflow(PlacementAlgorithm &pAlg){
+		int N, rId;
+		{ const lock_guard<mutex> lock(mtx); N = ntaxa; rId = roundId; }
+		int n = sqrt(N);
+		vector<int> order;
+		if (rId == 0){
+			mtx.lock();
+			ConstrainedOptimizationAlgorithm alg(*this);
+			for (int i = 1; i < N; i++) order.push_back(i);
+			shuffle(order.begin(), order.end(), generator);
+			order.push_back(order[0]);
+			order[0] = 0;
+			hash_t hashsum = 0;
+			for (int i = 1; i < n; i++) hashsum += taxonHash[order[i]];
+			mtx.unlock();
+			
+			pAlg.taxonHash[0] = -hashsum;
+			alg.taxonHash[0] = -hashsum;
+			for (int r = 0; r < n / 2; r++){
+				cerr << "Guide Tree " << r << "/" << n / 2 << endl;
+				for (int i = 0; i < n; i++) pAlg.order.push_back(order[i]);
+				{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
+				pAlg.run();
+				alg.addTripartitions(pAlg.tripHash);
+				for (int i = 0; i < n; i++) pAlg.trip.rmvTotal(order[i]);
+				pAlg.tripHash.clear();
+				pAlg.order.clear();
+				pAlg.nodes.clear();
+				pAlg.rootNodeId = -1;
+				pAlg.rootLeafId = -1;
+				pAlg.orderId = 0;
+			}
+			alg.computeOptimalTree();
+			//cerr << alg.printOptimalTree() << endl;
+			alg.createPlacementAlgorithm(pAlg, 1);
+			{ const lock_guard<mutex> lock(mtx); pAlg.taxonHash[0] = taxonHash[0]; }
+		}
+		else{
+			for (int i = 0; i < N; i++) order.push_back(i);
+			{ const lock_guard<mutex> lock(mtx); shuffle(order.begin(), order.end(), generator); }
+			unordered_set<int> selected;
+			for (int i = 0; i < n; i++) selected.insert(order[i]);
+			{ const lock_guard<mutex> lock(mtx); createPlacementAlgorithm(pAlg, selected); }
+			cerr << "subsampled nodes: " << pAlg.nodes.size() << endl;
+		}
+		{
+			vector<int> abnormalOrder;
+			vector<PlacementAlgorithm::Node> pNodes(pAlg.nodes);
+			int rootNodeId = pAlg.rootNodeId;//, rootLeafId = pAlg.rootLeafId;
+			{
+				vector<PlacementAlgorithm::Node> originalNodes(pAlg.nodes);
+				int originalRootNodeId = pAlg.rootNodeId;//, originalRootLeafId = pAlg.rootLeafId;
+				
+				vector<vector<int> > nodeBranch(pNodes.size());
+				cerr << "pNodes: " << pNodes.size() << endl;
+				for (int i = n; i < N; i++) {
+					cerr << "Binning " << i - n << "/" << N - n << endl; 
+					nodeBranch[pAlg.locateBranch(order[i])].push_back(order[i]);
+				}
+				int cnt = 0;
+				for (int b = 0; b < nodeBranch.size(); b++){
+					pAlg.nodes = originalNodes;
+					pAlg.rootNodeId = originalRootNodeId;
+					//pAlg.rootLeafId = originalRootLeafId;
+					vector<int> added;
+					unordered_map<int, int> nodeRemap;
+					nodeRemap[b] = b;
+					for (int i: nodeBranch[b]) {
+						cerr << "Placement " << cnt++ << "/" << N - n << endl;
+						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
+						else abnormalOrder.push_back(i);
+					}
+					for (int i: added) pAlg.trip.rmvTotal(i);
+				}
+				cerr << "HERE0!!!" << endl;
+			}
+			cerr << "HERE1!!!" << endl;
+			for (int i = n; i < N; i++) pAlg.trip.addTotal(order[i]);
+			for (int i: abnormalOrder) pAlg.trip.rmvTotal(i);
+			cerr << "HERE2!!!" << endl;
+			pAlg.order = abnormalOrder;
+			pAlg.nodes = pNodes;
+			pAlg.rootNodeId = rootNodeId;
+			//pAlg.rootLeafId = rootLeafId;
+			pAlg.orderId = 0;
+			cerr << "HERE3!!!" << endl;
+		}
+		//cerr << pAlg.printTree() << endl;
+		pAlg.run();
+		cerr << "DONE!!!" << endl;
+	}
+	
+	void twoStepBatchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
+		for (int i = start; i < end; i++){
+			twoStepWorkflow(jobs[i]);
+		}
+		cerr << "EXIT!!!" << endl;
+	}
+	
+	pair<score_t, string> twoStepRun(int nJobs, int nThrds){
+		cerr << "Use two-step algorithm!\n";
+		//if (roundId != 0) return {computeOptimalTree(), printOptimalTree()};
+		vector<PlacementAlgorithm> jobs;
+		vector<thread> thrds;
+		for (int i = 0; i < nJobs; i++){
+			jobs.emplace_back(taxonHash, tripInit);
+		}
+		for (int i = 1; i < nThrds; i++){
+			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::twoStepBatchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
+		}
+		twoStepBatchWork(jobs, 0, nJobs / nThrds);
 		for (int i = 1; i < nThrds; i++){
 			thrds[i - 1].join();
 		}

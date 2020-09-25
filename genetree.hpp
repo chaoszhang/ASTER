@@ -911,6 +911,31 @@ struct Tripartition{
 			//cerr << "-addTotal\n";
 		}
 		
+		void rmvTotal(int i){
+			//cerr << "+addTotal\n";
+			for (int k = 0; k < leafParent.size(); k++){
+				int u = leafParent[k][i], v = -2;
+				Node *pv = &dummy;
+				Node vOld = nodeZ;
+				while (u != -1){
+					Node *pu = &nodesTotal[k][u];
+					Node uOld = *pu;
+					if (pu->down == v){
+						undoZspecial(*pu, *pv, vOld);//undoZspecial(*pu, vOld); doZspecial(*pu, *pv);
+					}
+					else {
+						Node &w = (pu->down == -1) ? dummy : nodesTotal[k][pu->down];
+						undoZnormal(*pu, *pv, vOld, w);//undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);
+					}
+					vOld = uOld;
+					v = u;
+					pv = pu;
+					u = pu->up;
+				}
+			}
+			//cerr << "-addTotal\n";
+		}
+		
 		void add(int x, int i){
 			//cerr << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
 			totalScore = 0;
@@ -1006,6 +1031,13 @@ struct Tripartition{
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
 		parts[0].addTotal(i);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void rmvTotal(int i){
+		vector<thread> thrds;
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
+		parts[0].rmvTotal(i);
 		for (thread &t: thrds) t.join();
 	}
 	

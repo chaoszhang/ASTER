@@ -94,6 +94,18 @@ struct Tripartition{
 			}
 		}
 		
+		void rmvTotal(int i){
+			for (int u: leafParent[i]){
+				totalZ[u]--;
+				int w = nodes[u].up;
+				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
+					totalZ[w]--;
+					u = w;
+					w = nodes[u].up;
+				}
+			}
+		}
+		
 		void add(int x, int i){
 			for (int u: leafParent[i]){
 				nodes[u].update(version, totalZ[u]);
@@ -151,6 +163,13 @@ struct Tripartition{
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
 		parts[0].addTotal(i);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void rmvTotal(int i){
+		vector<thread> thrds;
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
+		parts[0].rmvTotal(i);
 		for (thread &t: thrds) t.join();
 	}
 	
