@@ -1,5 +1,6 @@
 #include<vector>
 #include<array>
+#include<thread>
 
 using namespace std;
 
@@ -45,23 +46,26 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 }
 
 struct TripartitionInitializer{
-	int npos;
+	int npos, nThreads = 1;
 	vector<array<score_t, 4> > pi;
 	vector<vector<int> > seq;
+	vector<bool> weight;
 };
 
 struct Tripartition{
+	int nThreads;
 	const int npos;
 	vector<array<array<int, 4>, 3> > cnt; // pos * part * letter
 	vector<array<int, 4> > total; // pos * letter
 	const vector<array<score_t, 4> > pi; // pos * letter
 	const vector<vector<int> > seq; // taxon * pos -> letter
+	const vector<bool> weight;
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Tripartition(TripartitionInitializer init): npos(init.npos), seq(init.seq), pi(init.pi), cnt(init.npos), total(init.npos){}
+	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos){}
 	
-	void reset(){
-		for (int p = 0; p < npos; p++){
+	void resetWork(int start, int end){
+		for (int p = start; p < end; p++){
 			for (int a = 0; a < 4; a++){
 				cnt[p][0][a] = total[p][a];
 				cnt[p][1][a] = 0;
@@ -70,32 +74,84 @@ struct Tripartition{
 		}
 	}
 	
-	void addTotal(int i){
-		for (int p = 0; p < npos; p++){
+	void addTotalWork(int i, int start, int end){
+		for (int p = start; p < end; p++){
 			int a = seq[i][p];
 			if (a != -1) total[p][a]++;
 		}
 	}
 	
-	void add(int x, int i){
-		for (int p = 0; p < npos; p++){
+	void rmvTotalWork(int i, int start, int end){
+		for (int p = start; p < end; p++){
+			int a = seq[i][p];
+			if (a != -1) total[p][a]--;
+		}
+	}
+	
+	void addWork(int x, int i, int start, int end){
+		for (int p = start; p < end; p++){
 			int a = seq[i][p];
 			if (a != -1) cnt[p][x][a]++;
 		}
 	}
 	
-	void rmv(int x, int i){
-		for (int p = 0; p < npos; p++){
+	void rmvWork(int x, int i, int start, int end){
+		for (int p = start; p < end; p++){
 			int a = seq[i][p];
 			if (a != -1) cnt[p][x][a]--;
 		}
 	}
 	
-	score_t score(){
-		score_t res = 0;
+	void scoreWork(score_t &res, int start, int end){
+		score_t temp = 0;
 		for (int p = 0; p < npos; p++){
-			res += scorePos(cnt[p], pi[p]);
+			if (weight[p]) temp += scorePos(cnt[p], pi[p]);
 		}
-		return res;
+		res = temp;
+	}
+	
+	void reset(){
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::resetWork, this, npos * t / nThreads, npos * (t + 1) / nThreads);
+		resetWork(0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void addTotal(int i){
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::addTotalWork, this, i, npos * t / nThreads, npos * (t + 1) / nThreads);
+		addTotalWork(i, 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void rmvTotal(int i){
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::rmvTotalWork, this, i, npos * t / nThreads, npos * (t + 1) / nThreads);
+		rmvTotalWork(i, 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void add(int x, int i){
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::addWork, this, x, i, npos * t / nThreads, npos * (t + 1) / nThreads);
+		addWork(x, i, 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void rmv(int x, int i){
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::rmvWork, this, x, i, npos * t / nThreads, npos * (t + 1) / nThreads);
+		rmvWork(x, i, 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	score_t score(){
+		vector<score_t> res(nThreads);
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::scoreWork, this, ref(res[t]), npos * t / nThreads, npos * (t + 1) / nThreads);
+		scoreWork(res[0], 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+		for (int t = 1; t < nThreads; t++) res[0] += res[t];
+		return res[0];
 	}
 };

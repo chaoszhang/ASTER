@@ -19,9 +19,9 @@ typedef int count_t;
 
 using namespace std;
 
+TripartitionInitializer tripInit;
+
 int npos = 0;
-vector<array<score_t, 4> > pi;
-vector<vector<int> > seq;
 vector<string> names;
 unordered_map<string, int> name2id;
 
@@ -34,33 +34,40 @@ string formatName(const string name){
 }
 
 void readFile(istream &fin){
-	int cnt[4] = {}, id = -1;
+	int cnt[4] = {}, id = -1, oldNpos = npos;
 	string line;
 	while (getline(fin, line)){
 		if (line[0] == '>') {
-			if (id != -1 && npos < seq[id].size()) npos = seq[id].size();
+			if (id != -1 && npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
 			id = name2id[formatName(line)];
 		}
 		else{
 			for (char c: line){
-				if (c == 'A' || c == 'a') { seq[id].push_back(0); cnt[0]++; }
-				if (c == 'C' || c == 'c') { seq[id].push_back(1); cnt[1]++; }
-				if (c == 'G' || c == 'g') { seq[id].push_back(2); cnt[2]++; }
-				if (c == 'T' || c == 't') { seq[id].push_back(3); cnt[3]++; }
-				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { seq[id].push_back(-1); }
+				if (c == 'A' || c == 'a') { tripInit.seq[id].push_back(0); cnt[0]++; }
+				if (c == 'C' || c == 'c') { tripInit.seq[id].push_back(1); cnt[1]++; }
+				if (c == 'G' || c == 'g') { tripInit.seq[id].push_back(2); cnt[2]++; }
+				if (c == 'T' || c == 't') { tripInit.seq[id].push_back(3); cnt[3]++; }
+				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
 			}
 		}
 	}
-	if (npos < seq[id].size()) npos = seq[id].size();
-	for (id = 0; id < seq.size(); id++){
-		while (seq[id].size() < npos) seq[id].push_back(-1);
+	if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
+	for (id = 0; id < tripInit.seq.size(); id++){
+		while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
 	}
 	score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-	while (pi.size() < npos) pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+	while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+	for (int p = oldNpos; p < npos; p++){
+		int pcnt[4] = {};
+		for (id = 0; id < tripInit.seq.size(); id++){
+			if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
+		}
+		tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
+	}
 }
 
 void readPhilip(istream &fin){
-	int cnt[4] = {}, id = -1;
+	int cnt[4] = {}, id = -1, oldNpos = npos;
 	string line;
 	int nTaxa, L;
 	while (fin >> nTaxa){
@@ -71,18 +78,25 @@ void readPhilip(istream &fin){
 			int id = name2id[line];
 			getline(fin, line);
 			for (char c: line){
-				if (c == 'A' || c == 'a') { seq[id].push_back(0); cnt[0]++; }
-				if (c == 'C' || c == 'c') { seq[id].push_back(1); cnt[1]++; }
-				if (c == 'G' || c == 'g') { seq[id].push_back(2); cnt[2]++; }
-				if (c == 'T' || c == 't') { seq[id].push_back(3); cnt[3]++; }
-				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { seq[id].push_back(-1); }
+				if (c == 'A' || c == 'a') { tripInit.seq[id].push_back(0); cnt[0]++; }
+				if (c == 'C' || c == 'c') { tripInit.seq[id].push_back(1); cnt[1]++; }
+				if (c == 'G' || c == 'g') { tripInit.seq[id].push_back(2); cnt[2]++; }
+				if (c == 'T' || c == 't') { tripInit.seq[id].push_back(3); cnt[3]++; }
+				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
 			}
-			for (id = 0; id < seq.size(); id++){
-				while (seq[id].size() < npos) seq[id].push_back(-1);
+			for (id = 0; id < tripInit.seq.size(); id++){
+				while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
 			}
 			score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-			while (pi.size() < npos) pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+			while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
 		}
+	}
+	for (int p = oldNpos; p < npos; p++){
+		int pcnt[4] = {};
+		for (id = 0; id < tripInit.seq.size(); id++){
+			if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
+		}
+		tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
 	}
 }
 
@@ -119,6 +133,11 @@ int main(int argc, char** argv){
 	ostream &fout = (outputFile == "") ? cout : fileOut;
 	if (outputFile != "") fileOut.open(outputFile);
 	
+	if (nRounds < nThreads){
+		tripInit.nThreads = nThreads / nRounds;
+		nThreads = nRounds;
+	}
+	
 	if (phylip) {
 		{
 			ifstream fin(argv[argc - 1]);
@@ -133,7 +152,7 @@ int main(int argc, char** argv){
 					if(name2id.count(s) == 0) {
 						name2id[s] = names.size();
 						names.push_back(s);
-						seq.push_back({});
+						tripInit.seq.push_back({});
 					}
 				}
 			}
@@ -158,7 +177,7 @@ int main(int argc, char** argv){
 				if(name2id.count(s) == 0) {
 					name2id[s] = names.size();
 					names.push_back(s);
-					seq.push_back({});
+					tripInit.seq.push_back({});
 				}
 			}
 		}
@@ -171,13 +190,11 @@ int main(int argc, char** argv){
 	
 	TripartitionInitializer tripInit;
 	tripInit.npos = npos;
-	tripInit.pi = pi;
-	tripInit.seq = seq;
 	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Bases: " << npos << endl;
 	cerr << "#Rounds: " << nRounds << endl;
 	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << endl;
+	cerr << "#Threads: " << nThreads << "x" << tripInit.nThreads << endl;
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
