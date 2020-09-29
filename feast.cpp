@@ -187,8 +187,6 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	
-	TripartitionInitializer tripInit;
 	tripInit.npos = npos;
 	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Bases: " << npos << endl;
