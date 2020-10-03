@@ -13,7 +13,7 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 	const score_t A = pi[0], C = pi[1], G = pi[2], T = pi[3], R = A + G, Y = C + T;
 	const long long a0 = cnt[0][0], c0 = cnt[0][1], g0 = cnt[0][2], t0 = cnt[0][3], r0 = a0 + g0, y0 = c0 + t0;
 	const long long a1 = cnt[1][0], c1 = cnt[1][1], g1 = cnt[1][2], t1 = cnt[1][3], r1 = a1 + g1, y1 = c1 + t1;
-	const long long a2 = cnt[2][0], c2 = cnt[2][1], g2 = cnt[2][2], t2 = cnt[0][3], r2 = a2 + g2, y2 = c2 + t2;
+	const long long a2 = cnt[2][0], c2 = cnt[2][1], g2 = cnt[2][2], t2 = cnt[2][3], r2 = a2 + g2, y2 = c2 + t2;
 	
 	const score_t aagg = (g0 * (g0 - 1) * a1 * a2 + g1 * (g1 - 1) * a2 * a0 + g2 * (g2 - 1) * a0 * a1) * 2 * Y * Y;
 	const score_t aayy = (y0 * (y0 - 1) * a1 * a2 + y1 * (y1 - 1) * a2 * a0 + y2 * (y2 - 1) * a0 * a1) * G * R;
