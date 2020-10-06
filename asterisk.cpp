@@ -188,9 +188,9 @@ int main(int argc, char** argv){
 	}
 	
 	score_t w = 1;
-	for (int i = 0; i < names.size(); i++){
+	for (int i = 0; i <= names.size(); i++){
 		w *= 0.99;
-		tripInit.weightHelper.push_back(w * (names.size() - i - 1) / names.size());
+		tripInit.weightHelper.push_back(w * (names.size() - i) / names.size());
 	}
 	
 	tripInit.npos = npos;
