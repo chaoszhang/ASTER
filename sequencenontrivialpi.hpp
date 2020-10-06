@@ -76,7 +76,6 @@ struct Tripartition{
 	}
 	
 	void addTotalWork(int i, int start, int end){
-		n++;
 		for (int p = start; p < end; p++){
 			int a = seq[i][p];
 			if (a != -1) total[p][a]++;
@@ -84,7 +83,6 @@ struct Tripartition{
 	}
 	
 	void rmvTotalWork(int i, int start, int end){
-		n--;
 		for (int p = start; p < end; p++){
 			int a = seq[i][p];
 			if (a != -1) total[p][a]--;
@@ -124,6 +122,7 @@ struct Tripartition{
 	}
 	
 	void addTotal(int i){
+		n++;
 		vector<thread> thrds;
 		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::addTotalWork, this, i, npos * t / nThreads, npos * (t + 1) / nThreads);
 		addTotalWork(i, 0, npos / nThreads);
@@ -131,6 +130,7 @@ struct Tripartition{
 	}
 	
 	void rmvTotal(int i){
+		n--;
 		vector<thread> thrds;
 		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::rmvTotalWork, this, i, npos * t / nThreads, npos * (t + 1) / nThreads);
 		rmvTotalWork(i, 0, npos / nThreads);
