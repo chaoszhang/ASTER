@@ -187,11 +187,10 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	score_t w = 1;
-	for (int i = 0; i <= names.size(); i++){
-		w *= 0.99;
-		tripInit.weightHelper.push_back(w * (names.size() - i) / names.size());
+	for (int i = 0; i < names.size(); i++){
+		tripInit.weightHelper.push_back(1);
 	}
+	tripInit.weightHelper.push_back(0);
 	
 	tripInit.npos = npos;
 	cerr << "#Species: " << names.size() << endl;
