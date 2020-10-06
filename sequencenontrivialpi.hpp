@@ -10,10 +10,11 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 	const long long a1 = cnt[1][0], c1 = cnt[1][1], g1 = cnt[1][2], t1 = cnt[1][3];
 	const long long a2 = cnt[2][0], c2 = cnt[2][1], g2 = cnt[2][2], t2 = cnt[2][3];
 	
-	const score_t aacc = (a0 * (a0 - 1) * c1 * c2 + a1 * (a1 - 1) * c2 * c0 + a2 * (a2 - 1) * c0 * c1);
-	const score_t aatt = (a0 * (a0 - 1) * t1 * t2 + a1 * (a1 - 1) * t2 * t0 + a2 * (a2 - 1) * t0 * t1);
-	const score_t ggcc = (g0 * (g0 - 1) * c1 * c2 + g1 * (g1 - 1) * c2 * c0 + g2 * (g2 - 1) * c0 * c1);
-	const score_t ggtt = (g0 * (g0 - 1) * t1 * t2 + g1 * (g1 - 1) * t2 * t0 + g2 * (g2 - 1) * t0 * t1);
+	const score_t aacc = a0 * (a0 - 1) * c1 * c2 + a1 * (a1 - 1) * c2 * c0 + a2 * (a2 - 1) * c0 * c1;
+	const score_t aatt = a0 * (a0 - 1) * t1 * t2 + a1 * (a1 - 1) * t2 * t0 + a2 * (a2 - 1) * t0 * t1;
+	const score_t ggcc = g0 * (g0 - 1) * c1 * c2 + g1 * (g1 - 1) * c2 * c0 + g2 * (g2 - 1) * c0 * c1;
+	const score_t ggtt = g0 * (g0 - 1) * t1 * t2 + g1 * (g1 - 1) * t2 * t0 + g2 * (g2 - 1) * t0 * t1;
+	
 	
 	return (aacc * G*G * T*T - aatt * G*G * C*C - ggcc * A*A * T*T + ggtt * A*A * C*C) * (A - G) * (C - T);
 }
@@ -77,7 +78,7 @@ struct Tripartition{
 	
 	void scoreWork(score_t &res, int start, int end){
 		score_t temp = 0;
-		for (int p = 0; p < npos; p++){
+		for (int p = start; p < end; p++){
 			if (weight[p]) temp += scorePos(cnt[p], pi[p]);
 		}
 		res = temp;

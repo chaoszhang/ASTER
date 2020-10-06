@@ -89,7 +89,7 @@ struct Tripartition{
 	
 	void scoreWork(score_t &res, int start, int end){
 		score_t temp = 0;
-		for (int p = 0; p < npos; p++){
+		for (int p = start; p < end; p++){
 			if (weight[p]) temp += scorePos(cnt[p], pi[p]);
 		}
 		res = temp;
