@@ -187,6 +187,10 @@ int main(int argc, char** argv){
 		}
 	}
 	
+	for (int i = 0; i < names.size(); i++){
+		tripInit.weightHelper.push_back(0.01 * (names.size() - i - 1));
+	}
+	
 	tripInit.npos = npos;
 	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Bases: " << npos << endl;
