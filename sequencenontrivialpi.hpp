@@ -15,8 +15,8 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 	const score_t ggcc = g0 * (g0 - 1) * c1 * c2 + g1 * (g1 - 1) * c2 * c0 + g2 * (g2 - 1) * c0 * c1;
 	const score_t ggtt = g0 * (g0 - 1) * t1 * t2 + g1 * (g1 - 1) * t2 * t0 + g2 * (g2 - 1) * t0 * t1;
 	
-	
-	return (aacc * G*G * T*T - aatt * G*G * C*C - ggcc * A*A * T*T + ggtt * A*A * C*C) * (A - G) * (C - T);
+	if ((A > G && C > T) || (A <= G && C <= T)) return aacc * G*G * T*T - aatt * G*G * C*C - ggcc * A*A * T*T + ggtt * A*A * C*C;
+	else return -(aacc * G*G * T*T - aatt * G*G * C*C - ggcc * A*A * T*T + ggtt * A*A * C*C);
 }
 
 struct TripartitionInitializer{
