@@ -187,8 +187,10 @@ int main(int argc, char** argv){
 		}
 	}
 	
+	score_t w = 1;
 	for (int i = 0; i < names.size(); i++){
-		tripInit.weightHelper.push_back(0.01 * (names.size() - i - 1));
+		w *= 0.99;
+		tripInit.weightHelper.push_back(w * (names.size() - i - 1) / names.size());
 	}
 	
 	tripInit.npos = npos;
