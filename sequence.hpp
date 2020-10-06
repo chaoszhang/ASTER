@@ -15,24 +15,19 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 	const long long a1 = cnt[1][0], c1 = cnt[1][1], g1 = cnt[1][2], t1 = cnt[1][3], r1 = a1 + g1, y1 = c1 + t1;
 	const long long a2 = cnt[2][0], c2 = cnt[2][1], g2 = cnt[2][2], t2 = cnt[2][3], r2 = a2 + g2, y2 = c2 + t2;
 	
-	if (R > Y){
-		const score_t aagg = (g0 * (g0 - 1) * a1 * a2 + g1 * (g1 - 1) * a2 * a0 + g2 * (g2 - 1) * a0 * a1) * 2 * Y * Y;
-		const score_t aayy = (y0 * (y0 - 1) * a1 * a2 + y1 * (y1 - 1) * a2 * a0 + y2 * (y2 - 1) * a0 * a1) * G * R;
-		const score_t ggyy = (y0 * (y0 - 1) * g1 * g2 + y1 * (y1 - 1) * g2 * g0 + y2 * (y2 - 1) * g0 * g1) * A * R;
-		const score_t yyag = (a0 * g0 * y1 * y2 + a1 * g1 * y2 * y0 + a2 * g2 * y0 * y1) * R * R;
-		const score_t aagy = (g0 * y0 * a1 * a2 + g1 * y1 * a2 * a0 + g2 * y2 * a0 * a1) * 2 * R * Y;
-		const score_t ggay = (a0 * y0 * g1 * g2 + a1 * y1 * g2 * g0 + a2 * y2 * g0 * g1) * 2 * R * Y;
-		return (R - Y) * (R - Y) * R / Y * (aagg + aayy + ggyy - yyag - aagy - ggay);
-	}
-	else{
-		const score_t cctt = (t0 * (t0 - 1) * c1 * c2 + t1 * (t1 - 1) * c2 * c0 + t2 * (t2 - 1) * c0 * c1) * 2 * R * R;
-		const score_t ccrr = (r0 * (r0 - 1) * c1 * c2 + r1 * (r1 - 1) * c2 * c0 + r2 * (r2 - 1) * c0 * c1) * T * Y;
-		const score_t ttrr = (r0 * (r0 - 1) * t1 * t2 + r1 * (r1 - 1) * t2 * t0 + r2 * (r2 - 1) * t0 * t1) * C * Y;
-		const score_t rrct = (c0 * t0 * r1 * r2 + c1 * t1 * r2 * r0 + c2 * t2 * r0 * r1) * Y * Y;
-		const score_t cctr = (t0 * r0 * c1 * c2 + t1 * r1 * c2 * c0 + t2 * r2 * c0 * c1) * 2 * R * Y;
-		const score_t ttcr = (c0 * r0 * t1 * t2 + c1 * r1 * t2 * t0 + c2 * r2 * t0 * t1) * 2 * R * Y;
-		return (Y - R) * (Y - R) * Y / R * (cctt + ccrr + ttrr - rrct - cctr - ttcr); 
-	}
+	const score_t aagg = (g0 * (g0 - 1) * a1 * a2 + g1 * (g1 - 1) * a2 * a0 + g2 * (g2 - 1) * a0 * a1) * 2 * Y * Y;
+	const score_t aayy = (y0 * (y0 - 1) * a1 * a2 + y1 * (y1 - 1) * a2 * a0 + y2 * (y2 - 1) * a0 * a1) * G * R;
+	const score_t ggyy = (y0 * (y0 - 1) * g1 * g2 + y1 * (y1 - 1) * g2 * g0 + y2 * (y2 - 1) * g0 * g1) * A * R;
+	const score_t yyag = (a0 * g0 * y1 * y2 + a1 * g1 * y2 * y0 + a2 * g2 * y0 * y1) * R * R;
+	const score_t aagy = (g0 * y0 * a1 * a2 + g1 * y1 * a2 * a0 + g2 * y2 * a0 * a1) * 2 * R * Y;
+	const score_t ggay = (a0 * y0 * g1 * g2 + a1 * y1 * g2 * g0 + a2 * y2 * g0 * g1) * 2 * R * Y;
+	const score_t cctt = (t0 * (t0 - 1) * c1 * c2 + t1 * (t1 - 1) * c2 * c0 + t2 * (t2 - 1) * c0 * c1) * 2 * R * R;
+	const score_t ccrr = (r0 * (r0 - 1) * c1 * c2 + r1 * (r1 - 1) * c2 * c0 + r2 * (r2 - 1) * c0 * c1) * T * Y;
+	const score_t ttrr = (r0 * (r0 - 1) * t1 * t2 + r1 * (r1 - 1) * t2 * t0 + r2 * (r2 - 1) * t0 * t1) * C * Y;
+	const score_t rrct = (c0 * t0 * r1 * r2 + c1 * t1 * r2 * r0 + c2 * t2 * r0 * r1) * Y * Y;
+	const score_t cctr = (t0 * r0 * c1 * c2 + t1 * r1 * c2 * c0 + t2 * r2 * c0 * c1) * 2 * R * Y;
+	const score_t ttcr = (c0 * r0 * t1 * t2 + c1 * r1 * t2 * t0 + c2 * r2 * t0 * t1) * 2 * R * Y;
+	return (aagg + aayy + ggyy - yyag - aagy - ggay) + (cctt + ccrr + ttrr - rrct - cctr - ttcr); 
 }
 
 struct TripartitionInitializer{
