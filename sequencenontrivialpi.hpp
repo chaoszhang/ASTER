@@ -108,7 +108,7 @@ struct Tripartition{
 		for (int p = start; p < end; p++){
 			if (weight[p]) {
 				temp += scorePos(cnt[p], pi[p]);
-				tempH += scorePosHelper(cnt[p], pi[p]);
+				//tempH += scorePosHelper(cnt[p], pi[p]);
 			}
 		}
 		res = temp + tempH * weightHelper[n];
