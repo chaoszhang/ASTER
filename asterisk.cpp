@@ -83,7 +83,7 @@ void readPhilip(istream &fin){
 			fin >> line;
 			int id = name2id[line];
 			getline(fin, line);
-			for (int i = 0; i + 1 < line.size(); i += 2){
+			for (int i = 0; i + 1 < line.size(); i++){
 				const char c1 = line[i], c2 = line[i + 1];
 				const bool R1 = (c1 == 'A' || c1 == 'a' || c1 == 'G' || c1 == 'g');
 				const bool R2 = (c2 == 'A' || c2 == 'a' || c2 == 'G' || c2 == 'g');
