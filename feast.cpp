@@ -50,8 +50,8 @@ void readFile(istream &fin){
 				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
 			}
 		}
+		if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
 	}
-	if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
 	for (id = 0; id < tripInit.seq.size(); id++){
 		while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
 	}
@@ -67,12 +67,11 @@ void readFile(istream &fin){
 }
 
 void readPhilip(istream &fin){
-	int cnt[4] = {}, id = -1, oldNpos = npos;
 	string line;
 	int nTaxa, L;
 	while (fin >> nTaxa){
+		int cnt[4] = {}, oldNpos = npos;
 		fin >> L;
-		npos += L;
 		for (int i = 0; i < nTaxa; i++){
 			fin >> line;
 			int id = name2id[line];
@@ -84,19 +83,20 @@ void readPhilip(istream &fin){
 				if (c == 'T' || c == 't') { tripInit.seq[id].push_back(3); cnt[3]++; }
 				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
 			}
-			for (id = 0; id < tripInit.seq.size(); id++){
-				while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
+			if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
+		}
+		for (int id = 0; id < tripInit.seq.size(); id++){
+			while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
+		}
+		score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
+		while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+		for (int p = oldNpos; p < npos; p++){
+			int pcnt[4] = {};
+			for (int id = 0; id < tripInit.seq.size(); id++){
+				if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
 			}
-			score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-			while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+			tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
 		}
-	}
-	for (int p = oldNpos; p < npos; p++){
-		int pcnt[4] = {};
-		for (id = 0; id < tripInit.seq.size(); id++){
-			if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
-		}
-		tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
 	}
 }
 
