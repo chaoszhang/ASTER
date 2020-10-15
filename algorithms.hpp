@@ -605,29 +605,24 @@ struct ConstrainedOptimizationAlgorithm{
 					}
 					for (int i: added) pAlg.trip.rmvTotal(i);
 				}
-				cerr << "HERE0!!!" << endl;
 			}
-			cerr << "HERE1!!!" << endl;
 			for (int i = n; i < N; i++) pAlg.trip.addTotal(order[i]);
 			for (int i: abnormalOrder) pAlg.trip.rmvTotal(i);
-			cerr << "HERE2!!!" << endl;
 			pAlg.order = abnormalOrder;
 			pAlg.nodes = pNodes;
 			pAlg.rootNodeId = rootNodeId;
 			//pAlg.rootLeafId = rootLeafId;
 			pAlg.orderId = 0;
-			cerr << "HERE3!!!" << endl;
 		}
 		//cerr << pAlg.printTree() << endl;
 		pAlg.run();
-		cerr << "DONE!!!" << endl;
 	}
 	
 	void twoStepBatchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
 		for (int i = start; i < end; i++){
 			twoStepWorkflow(jobs[i]);
 		}
-		cerr << "EXIT!!!" << endl;
+		cerr << "DONE!!!" << endl;
 	}
 	
 	pair<score_t, string> twoStepRun(int nJobs, int nThrds){

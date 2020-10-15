@@ -42,12 +42,19 @@ void readFile(istream &fin){
 			id = name2id[formatName(line)];
 		}
 		else{
-			for (char c: line){
-				if (c == 'A' || c == 'a') { tripInit.seq[id].push_back(0); cnt[0]++; }
-				if (c == 'C' || c == 'c') { tripInit.seq[id].push_back(1); cnt[1]++; }
-				if (c == 'G' || c == 'g') { tripInit.seq[id].push_back(2); cnt[2]++; }
-				if (c == 'T' || c == 't') { tripInit.seq[id].push_back(3); cnt[3]++; }
-				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
+			for (int i = 0; i + 1 < line.size(); i += 2){
+				const char c1 = line[i], c2 = line[i + 1];
+				const bool R1 = (c1 == 'A' || c1 == 'a' || c1 == 'G' || c1 == 'g');
+				const bool R2 = (c2 == 'A' || c2 == 'a' || c2 == 'G' || c2 == 'g');
+				const bool Y1 = (c1 == 'C' || c1 == 'c' || c1 == 'T' || c1 == 't');
+				const bool Y2 = (c2 == 'C' || c2 == 'c' || c2 == 'T' || c2 == 't');
+				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
+				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
+				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
+				else if (R1 && Y2){ tripInit.seq[id].push_back(1); cnt[1]++; }
+				else if (Y1 && R2){ tripInit.seq[id].push_back(2); cnt[2]++; }
+				else if (Y1 && Y2){ tripInit.seq[id].push_back(3); cnt[3]++; }
+				else if (N1 && N2){ tripInit.seq[id].push_back(-1); }
 			}
 		}
 	}
@@ -56,7 +63,7 @@ void readFile(istream &fin){
 		while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
 	}
 	score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-	while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+	while (tripInit.pi.size() < npos) tripInit.pi.push_back((cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum));
 	for (int p = oldNpos; p < npos; p++){
 		int pcnt[4] = {};
 		for (id = 0; id < tripInit.seq.size(); id++){
@@ -77,18 +84,25 @@ void readPhilip(istream &fin){
 			fin >> line;
 			int id = name2id[line];
 			getline(fin, line);
-			for (char c: line){
-				if (c == 'A' || c == 'a') { tripInit.seq[id].push_back(0); cnt[0]++; }
-				if (c == 'C' || c == 'c') { tripInit.seq[id].push_back(1); cnt[1]++; }
-				if (c == 'G' || c == 'g') { tripInit.seq[id].push_back(2); cnt[2]++; }
-				if (c == 'T' || c == 't') { tripInit.seq[id].push_back(3); cnt[3]++; }
-				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { tripInit.seq[id].push_back(-1); }
+			for (int i = 0; i + 1 < line.size(); i += 2){
+				const char c1 = line[i], c2 = line[i + 1];
+				const bool R1 = (c1 == 'A' || c1 == 'a' || c1 == 'G' || c1 == 'g');
+				const bool R2 = (c2 == 'A' || c2 == 'a' || c2 == 'G' || c2 == 'g');
+				const bool Y1 = (c1 == 'C' || c1 == 'c' || c1 == 'T' || c1 == 't');
+				const bool Y2 = (c2 == 'C' || c2 == 'c' || c2 == 'T' || c2 == 't');
+				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
+				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
+				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
+				else if (R1 && Y2){ tripInit.seq[id].push_back(1); cnt[1]++; }
+				else if (Y1 && R2){ tripInit.seq[id].push_back(2); cnt[2]++; }
+				else if (Y1 && Y2){ tripInit.seq[id].push_back(3); cnt[3]++; }
+				else if (N1 && N2){ tripInit.seq[id].push_back(-1); }
 			}
 			for (id = 0; id < tripInit.seq.size(); id++){
 				while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
 			}
 			score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-			while (tripInit.pi.size() < npos) tripInit.pi.push_back({cnt[0] / cntsum, cnt[1] / cntsum, cnt[2] / cntsum, cnt[3] / cntsum});
+			while (tripInit.pi.size() < npos) tripInit.pi.push_back((cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum));
 		}
 	}
 	for (int p = oldNpos; p < npos; p++){
@@ -188,7 +202,7 @@ int main(int argc, char** argv){
 	}
 	
 	for (int i = 0; i < names.size(); i++){
-		tripInit.weightHelper.push_back(1);
+		tripInit.weightHelper.push_back(0);
 	}
 	tripInit.weightHelper.push_back(0);
 	
