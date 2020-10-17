@@ -13,9 +13,9 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const score_t R){
 	const long long rn1 = rr1 + ry1, nr1 = rr1 + yr1, yn1 = yr1 + yy1, ny1 = ry1 + yy1;
 	const long long rn2 = rr2 + ry2, nr2 = rr2 + yr2, yn2 = yr2 + yy2, ny2 = ry2 + yy2;
 	
-	return rn0 * (rn0 - 1) * yn1 * yn2 + nr0 * (nr0 - 1) * ny1 * ny2 - M * (rn0 * (rn0 - 1) * ny1 * ny2 + nr0 * (nr0 - 1) * yn1 * yn2)
-	     + rn1 * (rn1 - 1) * yn2 * yn0 + nr1 * (nr1 - 1) * ny2 * ny0 - M * (rn1 * (rn1 - 1) * ny2 * ny0 + nr1 * (nr1 - 1) * yn2 * yn0)
-	     + rn2 * (rn2 - 1) * yn0 * yn1 + nr2 * (nr2 - 1) * ny0 * ny1 - M * (rn2 * (rn2 - 1) * ny0 * ny1 + nr2 * (nr2 - 1) * yn0 * yn1);
+	return (rn0 * (rn0 - 1) * ny1 * ny2 + nr0 * (nr0 - 1) * yn1 * yn2) - M * (rn0 * (rn0 - 1) * yn1 * yn2 + nr0 * (nr0 - 1) * ny1 * ny2) 
+	     + (rn1 * (rn1 - 1) * ny2 * ny0 + nr1 * (nr1 - 1) * yn2 * yn0) - M * (rn1 * (rn1 - 1) * yn2 * yn0 + nr1 * (nr1 - 1) * ny2 * ny0)
+	     + (rn2 * (rn2 - 1) * ny0 * ny1 + nr2 * (nr2 - 1) * yn0 * yn1) - M * (rn2 * (rn2 - 1) * yn0 * yn1 + nr2 * (nr2 - 1) * ny0 * ny1);
 }
 
 struct TripartitionInitializer{
