@@ -87,8 +87,8 @@ void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, co
 				const char c1 = line[i], c2 = line[i + 1];
 				const bool R1 = (c1 == CR1 || c1 == cr1 || c1 == CR2 || c1 == cr2);
 				const bool R2 = (c2 == CR1 || c2 == cr1 || c2 == CR2 || c2 == cr2);
-				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2);
-				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2);
+				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2 || c1 == CY3 || c1 == cy3);
+				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2 || c2 == CY3 || c2 == cy3);
 				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
 				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
 				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
