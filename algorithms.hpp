@@ -232,6 +232,7 @@ struct PlacementAlgorithm{
 	void run(){
 		defaultInitializer();
 		for (; orderId < order.size(); orderId++){
+			cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
 		tripHashGenerator(rootNodeId);
@@ -614,7 +615,7 @@ struct ConstrainedOptimizationAlgorithm{
 			//pAlg.rootLeafId = rootLeafId;
 			pAlg.orderId = 0;
 		}
-		//cerr << pAlg.printTree() << endl;
+		cerr << "Remaining: " << pAlg.order.size() << endl;
 		pAlg.run();
 	}
 	
