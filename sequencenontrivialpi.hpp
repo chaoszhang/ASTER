@@ -4,21 +4,18 @@
 
 using namespace std;
 
-inline score_t scorePos(const array<array<int, 4>, 3> cnt, const score_t pi){
-	const score_t R = pi, Y = 1 - R;
-	const long long r0 = cnt[0][0], p0 = cnt[0][1], q0 = cnt[0][2], y0 = cnt[0][3], n0 = r0 + p0 + q0 + y0;
-	const long long r1 = cnt[1][0], p1 = cnt[1][1], q1 = cnt[1][2], y1 = cnt[1][3], n1 = r1 + p1 + q1 + y1;
-	const long long r2 = cnt[2][0], p2 = cnt[2][1], q2 = cnt[2][2], y2 = cnt[2][3], n2 = r2 + p2 + q2 + y2;
+inline score_t scorePos(const array<array<int, 4>, 3> cnt, const score_t R){
+	const score_t M = 1 - 2 * R + 2 * R * R;
+	const long long rr0 = cnt[0][0], ry0 = cnt[0][1], yr0 = cnt[0][2], yy0 = cnt[0][3];
+	const long long rr1 = cnt[1][0], ry1 = cnt[1][1], yr1 = cnt[1][2], yy1 = cnt[1][3];
+	const long long rr2 = cnt[2][0], ry2 = cnt[2][1], yr2 = cnt[2][2], yy2 = cnt[2][3];
+	const long long rn0 = rr0 + ry0, nr0 = rr0 + yr0, yn0 = yr0 + yy0, ny0 = ry0 + yy0;
+	const long long rn1 = rr1 + ry1, nr1 = rr1 + yr1, yn1 = yr1 + yy1, ny1 = ry1 + yy1;
+	const long long rn2 = rr2 + ry2, nr2 = rr2 + yr2, yn2 = yr2 + yy2, ny2 = ry2 + yy2;
 	
-	const score_t rrnn = r0 * (r0 - 1) * n1 * n2 + r1 * (r1 - 1) * n2 * n0 + r2 * (r2 - 1) * n0 * n1;
-	const score_t yynn = y0 * (y0 - 1) * n1 * n2 + y1 * (y1 - 1) * n2 * n0 + y2 * (y2 - 1) * n0 * n1;
-	const score_t rryy = r0 * (r0 - 1) * y1 * y2 + r1 * (r1 - 1) * y2 * y0 + r2 * (r2 - 1) * y0 * y1;
-	const score_t ppqq = p0 * (p0 - 1) * q1 * q2 + p1 * (p1 - 1) * q2 * q0 + p2 * (p2 - 1) * q0 * q1;
-	
-	const score_t rrpq = p0 * q0 * r1 * r2 + p1 * q1 * r2 * r0 + p2 * q2 * r0 * r1;
-	const score_t yypq = p0 * q0 * y1 * y2 + p1 * q1 * y2 * y0 + p2 * q2 * y0 * y1;
-	
-	return ((R > Y) ? 1 : -1) * (R*R * yynn - Y*Y * rrnn + ((R - Y)*(2*rryy - ppqq) + (Y*Y - R*R)*(rryy + 2*rrpq + 2*yypq)));
+	return rn0 * (rn0 - 1) * yn1 * yn2 + nr0 * (nr0 - 1) * ny1 * ny2 - M * (rn0 * (rn0 - 1) * ny1 * ny2 + nr0 * (nr0 - 1) * yn1 * yn2)
+	     + rn1 * (rn1 - 1) * yn2 * yn0 + nr1 * (nr1 - 1) * ny2 * ny0 - M * (rn1 * (rn1 - 1) * ny2 * ny0 + nr1 * (nr1 - 1) * yn2 * yn0)
+	     + rn2 * (rn2 - 1) * yn0 * yn1 + nr2 * (nr2 - 1) * ny0 * ny1 - M * (rn2 * (rn2 - 1) * ny0 * ny1 + nr2 * (nr2 - 1) * yn0 * yn1);
 }
 
 struct TripartitionInitializer{
