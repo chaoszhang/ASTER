@@ -16,10 +16,9 @@ score_t scoreGene(const vector<array<array<int, 2>, 3> > &cnt, const score_t R){
 		rryy1 += r1 * (r1 - 1) * y2 * y0; rrnn1 += r1 * (r1 - 1) * n2 * n0; nnyy1 += n1 * (n1 - 1) * y2 * y0; nnnn1 += n1 * (n1 - 1) * n2 * n0;
 		rryy2 += r2 * (r2 - 1) * y0 * y1; rrnn2 += r2 * (r2 - 1) * n0 * n1; nnyy2 += n2 * (n2 - 1) * y0 * y1; nnnn2 += n2 * (n2 - 1) * n0 * n1;
 	}
-	return (rryy0 + rryy1 + rryy2) - (1 - 2 * R + 2 * R * R) * (
-			  ((nnnn0 != 0) ? ((score_t) rrnn0) * ((score_t) nnyy0) / ((score_t) nnnn0) : 0)
-			+ ((nnnn1 != 0) ? ((score_t) rrnn1) * ((score_t) nnyy1) / ((score_t) nnnn1) : 0)
-			+ ((nnnn2 != 0) ? ((score_t) rrnn2) * ((score_t) nnyy2) / ((score_t) nnnn2) : 0));
+	return  (((nnnn0 != 0) ? ((score_t) rrnn0) * ((score_t) nnyy0) / ((score_t) nnnn0) : 0)
+		   + ((nnnn1 != 0) ? ((score_t) rrnn1) * ((score_t) nnyy1) / ((score_t) nnnn1) : 0)
+		   + ((nnnn2 != 0) ? ((score_t) rrnn2) * ((score_t) nnyy2) / ((score_t) nnnn2) : 0)) - (rryy0 + rryy1 + rryy2) * (1 - 2 * R + 2 * R * R);
 }
 
 struct TripartitionInitializer{

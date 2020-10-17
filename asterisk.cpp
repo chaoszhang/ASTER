@@ -171,9 +171,9 @@ int main(int argc, char** argv){
 				}
 			}
 		}
-		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
+		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
 		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'G', 'C', 'T', 'a', 'g', 'c', 't'); }
-		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
+		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
 	}
 	else {
 		ifstream listIn(argv[argc - 1]);
@@ -195,9 +195,9 @@ int main(int argc, char** argv){
 			}
 		}
 		for (string file: files){
-			{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
+			//{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
 			{ ifstream fin(file); readFile(fin, 'A', 'G', 'C', 'T', 'a', 'g', 'c', 't'); }
-			{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
+			//{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
 		}
 	}
 	
