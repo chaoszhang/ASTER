@@ -5,7 +5,7 @@
 #include<cstdlib>
 #include<cstring>
 
-//#define LARGE_DATA
+#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef long double score_t;
 typedef long long count_t;
@@ -33,7 +33,7 @@ string formatName(const string name){
 	return res;
 }
 
-void readFile(istream &fin){
+void readFile(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char cr1, const char cr2, const char cy1, const char cy2){
 	int cnt[4] = {}, id = -1, oldNpos = npos;
 	string line;
 	while (getline(fin, line)){
@@ -44,10 +44,10 @@ void readFile(istream &fin){
 		else{
 			for (int i = 0; i + 1 < line.size(); i += 2){
 				const char c1 = line[i], c2 = line[i + 1];
-				const bool R1 = (c1 == 'A' || c1 == 'a' || c1 == 'G' || c1 == 'g');
-				const bool R2 = (c2 == 'A' || c2 == 'a' || c2 == 'G' || c2 == 'g');
-				const bool Y1 = (c1 == 'C' || c1 == 'c' || c1 == 'T' || c1 == 't');
-				const bool Y2 = (c2 == 'C' || c2 == 'c' || c2 == 'T' || c2 == 't');
+				const bool R1 = (c1 == CR1 || c1 == cr1 || c1 == CR2 || c1 == cr2);
+				const bool R2 = (c2 == CR1 || c2 == cr1 || c2 == CR2 || c2 == cr2);
+				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2);
+				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2);
 				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
 				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
 				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
@@ -73,7 +73,7 @@ void readFile(istream &fin){
 	}
 }
 
-void readPhilip(istream &fin){
+void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char cr1, const char cr2, const char cy1, const char cy2){
 	string line;
 	int nTaxa, L;
 	while (fin >> nTaxa){
@@ -83,12 +83,12 @@ void readPhilip(istream &fin){
 			fin >> line;
 			int id = name2id[line];
 			getline(fin, line);
-			for (int i = 0; i + 1 < line.size(); i++){
+			for (int i = 0; i + 1 < line.size(); i += 2){
 				const char c1 = line[i], c2 = line[i + 1];
-				const bool R1 = (c1 == 'A' || c1 == 'a' || c1 == 'G' || c1 == 'g');
-				const bool R2 = (c2 == 'A' || c2 == 'a' || c2 == 'G' || c2 == 'g');
-				const bool Y1 = (c1 == 'C' || c1 == 'c' || c1 == 'T' || c1 == 't');
-				const bool Y2 = (c2 == 'C' || c2 == 'c' || c2 == 'T' || c2 == 't');
+				const bool R1 = (c1 == CR1 || c1 == cr1 || c1 == CR2 || c1 == cr2);
+				const bool R2 = (c2 == CR1 || c2 == cr1 || c2 == CR2 || c2 == cr2);
+				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2);
+				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2);
 				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
 				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
 				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
@@ -171,10 +171,9 @@ int main(int argc, char** argv){
 				}
 			}
 		}
-		{
-			ifstream fin(argv[argc - 1]);
-			readPhilip(fin);
-		}
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'G', 'C', 'T', 'a', 'g', 'c', 't'); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
 	}
 	else {
 		ifstream listIn(argv[argc - 1]);
@@ -196,8 +195,9 @@ int main(int argc, char** argv){
 			}
 		}
 		for (string file: files){
-			ifstream fin(file);
-			readFile(fin);
+			{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 'a', 'c', 'g', 't'); }
+			{ ifstream fin(file); readFile(fin, 'A', 'G', 'C', 'T', 'a', 'g', 'c', 't'); }
+			{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 'a', 't', 'c', 'g'); }
 		}
 	}
 	

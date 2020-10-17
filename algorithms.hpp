@@ -549,8 +549,8 @@ struct ConstrainedOptimizationAlgorithm{
 			
 			pAlg.taxonHash[0] = -hashsum;
 			alg.taxonHash[0] = -hashsum;
-			for (int r = 0; r < n / 2; r++){
-				cerr << "Guide Tree " << r << "/" << n / 2 << endl;
+			for (int r = 0; r < n; r++){
+				cerr << "Guide Tree " << r << "/" << n << endl;
 				for (int i = 0; i < n; i++) pAlg.order.push_back(order[i]);
 				{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
 				pAlg.run();
