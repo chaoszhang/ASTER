@@ -18,7 +18,7 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const score_t pi){
 	const score_t rrpq = p0 * q0 * r1 * r2 + p1 * q1 * r2 * r0 + p2 * q2 * r0 * r1;
 	const score_t yypq = p0 * q0 * y1 * y2 + p1 * q1 * y2 * y0 + p2 * q2 * y0 * y1;
 	
-	return ((R > Y) ? 1 : -1) * (R*R * yynn - Y*Y * rrnn + 2*((R - Y)*(2*rryy - ppqq) + (Y*Y - R*R)*(rryy + rrpq + yypq)));
+	return ((R > Y) ? 1 : -1) * (R*R * yynn - Y*Y * rrnn + ((R - Y)*(2*rryy - ppqq) + (Y*Y - R*R)*(rryy + 2*rrpq + 2*yypq)));
 }
 
 struct TripartitionInitializer{
