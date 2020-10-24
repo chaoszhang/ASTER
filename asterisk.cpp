@@ -221,6 +221,14 @@ int main(int argc, char** argv){
 				}
 			}
 		}
+		N = names.size();
+		n = sqrt(N);
+		for (int i = 0; i < N; i++){
+			sparse.emplace_back();
+			for (int j = 0; j < 5 * n; j++){
+				sparse[i].push_back(rand() % N);
+			}
+		}
 		{
 			ifstream fin(argv[argc - 1]);
 			readPhilip(fin);
