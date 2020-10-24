@@ -15,7 +15,7 @@ typedef double score_t;
 typedef int count_t;
 #endif
 
-#include "sequencenontrivialpi.hpp"
+#include "sequence-pair.hpp"
 #include "algorithms.hpp"
 
 using namespace std;
