@@ -36,7 +36,7 @@ string formatName(const string name){
 	return res;
 }
 
-void readFile(istream &fin){
+void readFile(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char CY3, const char cr1, const char cr2, const char cy1, const char cy2, const char cy3){
 	vector<vector<int> > dist(N, vector<int>(n)), total(N, vector<int>(n));
 	vector<vector<bool> > R(N), Y(N);
 	vector<pair<score_t, int> > D;
@@ -48,8 +48,8 @@ void readFile(istream &fin){
 		}
 		else {
 			for (char c: line){
-				if (c == 'A' || c == 'a' || c == 'G' || c == 'g') { R[id].push_back(1); Y[id].push_back(0); cntR++; }
-				if (c == 'C' || c == 'c' || c == 'T' || c == 't') { R[id].push_back(0); Y[id].push_back(1); cntY++; }
+				if (c == CR1 || c == cr1 || c == CR2 || c == cr2) { R[id].push_back(1); Y[id].push_back(0); cntR++; }
+				if (c == CY1 || c == cy1 || c == CY2 || c == cy2 || c == CY3 || c == cy3) { R[id].push_back(0); Y[id].push_back(1); cntY++; }
 				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { R[id].push_back(0); Y[id].push_back(0); }
 			}
 			if (R[id].size() > np) np = R[id].size();
@@ -99,7 +99,7 @@ void readFile(istream &fin){
 	}
 }
 
-void readPhilip(istream &fin){
+void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char CY3, const char cr1, const char cr2, const char cy1, const char cy2, const char cy3){
 	string line;
 	int nTaxa, L;
 	while (fin >> nTaxa){
@@ -113,8 +113,8 @@ void readPhilip(istream &fin){
 			int id = name2id[line];
 			getline(fin, line);
 			for (char c: line){
-				if (c == 'A' || c == 'a' || c == 'G' || c == 'g') { R[id].push_back(1); Y[id].push_back(0); cntR++; }
-				if (c == 'C' || c == 'c' || c == 'T' || c == 't') { R[id].push_back(0); Y[id].push_back(1); cntY++; }
+				if (c == CR1 || c == cr1 || c == CR2 || c == cr2) { R[id].push_back(1); Y[id].push_back(0); cntR++; }
+				if (c == CY1 || c == cy1 || c == CY2 || c == cy2 || c == CY3 || c == cy3) { R[id].push_back(0); Y[id].push_back(1); cntY++; }
 				if (c == 'X' || c == 'x' || c == 'N' || c == 'n' || c == '-') { R[id].push_back(0); Y[id].push_back(0); }
 			}
 			if (R[id].size() > np) np = R[id].size();
@@ -229,10 +229,9 @@ int main(int argc, char** argv){
 				sparse[i].push_back(rand() % N);
 			}
 		}
-		{
-			ifstream fin(argv[argc - 1]);
-			readPhilip(fin);
-		}
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
 	}
 	else {
 		ifstream listIn(argv[argc - 1]);
@@ -254,16 +253,17 @@ int main(int argc, char** argv){
 			}
 		}
 		N = names.size();
-		n = sqrt(N);
+		n = log(N) * sqrt(N);
 		for (int i = 0; i < N; i++){
 			sparse.emplace_back();
-			for (int j = 0; j < 5 * n; j++){
+			for (int j = 0; j < n; j++){
 				sparse[i].push_back(rand() % N);
 			}
 		}
 		for (string file: files){
-			ifstream fin(file);
-			readFile(fin);
+			{ ifstream fin(file); readFile(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
+			{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
+			{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
 		}
 	}
 	
