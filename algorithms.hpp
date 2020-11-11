@@ -420,6 +420,61 @@ struct ConstrainedOptimizationAlgorithm{
 		return pAlg;
 	}
 	
+	int guildSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i){
+		int ret;
+		if (tree[i] != '('){
+			string s;
+			for (; tree[i] != ':' && tree[i] != ')' && tree[i] != ',' && tree[i] != ';'; i++){
+				if (tree[i] != '\"' && tree[i] != '\'') s += tree[i];
+			}
+			int id = name2id.at(s);
+			pAlg.trip.addTotal(id);
+			if (pAlg.rootLeafId == -1){
+				pAlg.rootLeafId = id;
+				ret = -1;
+			}
+			else {
+				pAlg.nodes.emplace_back(id);
+				ret = pAlg.nodes.size() - 1;
+			}
+		}
+		else {
+			i++;
+			if (pAlg.rootLeafId != -1){
+				int nodeL = guildSubtree(pAlg, tree, name2id, i);
+				int nodeR = guildSubtree(pAlg, tree, name2id, i);
+				if (nodeL != -1){
+					if (nodeR != -1) ret = pAlg.makeNode(nodeL, nodeR, false);
+					else ret = nodeL;
+				}
+				else ret = nodeR;
+			}
+			else {
+				int nodeL = guildSubtree(pAlg, tree, name2id, i);
+				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i);
+				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i);
+				else {
+					int nodeR = guildSubtree(pAlg, tree, name2id, i);
+					if (nodeR == -1) ret = nodeL;
+					else {
+						pAlg.makeNode(nodeL, nodeR, true);
+						ret = nodeR;
+					}
+				}
+			}
+		}
+		while (tree[i] != ')' && tree[i] != ',' && tree[i] != ';') i++;
+		i++;
+		return ret;
+	}
+	
+	void addGuideTree(const string tree, const unordered_map<string, int> &name2id){
+		PlacementAlgorithm pAlg(taxonHash, tripInit);
+		int i = 0;
+		guildSubtree(pAlg, tree, name2id, i);
+		pAlg.run();
+		addTripartitions(pAlg.tripHash);
+	}
 	
 	int hash2node(hash_t h){
 		if (hash.count(h) == 0){

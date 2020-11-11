@@ -4,6 +4,8 @@
 
 using namespace std;
 
+score_t NUM_EQ_CLASSES = 0;
+
 struct TripartitionInitializer{
 	struct Node{
 		int up = -1, small = -1, large = -1;
@@ -151,7 +153,43 @@ struct Tripartition{
 	
 	vector<Partition> parts;
 	
+	struct Node{
+		score_t x = 0, t = 0, q = 0;
+		int version = 0, up = -1, small = -1, large = -1; // -1 for dummy!
+		bool dup = false;
+	};
+	
 	Tripartition(const TripartitionInitializer &init){
+		score_t s = 0;
+		
+		for (int p = 0; p < init.nodes.size(); p++){
+			const vector<TripartitionInitializer::Node> &nodes = init.nodes[p];
+			const vector<vector<int> > &leafParent = init.leafParent[p];
+			vector<int> x(nodes.size()), t(nodes.size()), q(nodes.size());
+			for (int i = 0; i < leafParent.size(); i++){
+				for (int u: leafParent[i]){
+					x[u]++;
+					int w = nodes[u].up;
+					while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
+						x[w]++;
+						if (nodes[w].dup) t[w] = t[nodes[w].small] + t[nodes[w].large];
+						else {
+							int v = (nodes[w].small == u) ? nodes[w].large : nodes[w].small;
+							t[w] = t[u] + t[v] + x[u] * x[v] * (x[u] + x[v] - 2) / 2;
+							s -= q[w];
+							q[w] = x[u] * t[v] + x[v] * t[u] + (x[u] - 1) * x[u] * (x[v] - 1) * x[v] / 4;
+							s += q[w];
+						}
+						u = w;
+						w = nodes[u].up;
+					}
+					if (w != -1) t[w] = t[nodes[w].small] + t[nodes[w].large];
+				}
+			}
+		}
+		
+		NUM_EQ_CLASSES = s;
+		
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
 	
@@ -192,4 +230,14 @@ struct Tripartition{
 		for (int p = 0; p < parts.size(); p++) res += parts[p].score();
 		return res;
 	}
+};
+
+struct BranchSupport{
+	struct Node{
+		score_t x[4] = {}, t[3][4] = {}, q[3] = {};
+		int up = -1, small = -1, large = -1;
+		bool dup = false;
+	};
+	
+	
 };

@@ -164,7 +164,8 @@ void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, co
 	}
 }
 
-string helpText = R"V0G0N(feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+string helpText = R"V0G0N(feast [-g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+-g  path to guide tree file
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
 -s  number of total rounds of subsampling (default: 0)
@@ -181,12 +182,13 @@ int main(int argc, char** argv){
 	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
 	double p = 0.5;
-	string outputFile;
+	string outputFile, guideFile;
 	ofstream fileOut;
 	if (argc == 1) {cerr << helpText; return 0;}
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
 		
+		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
 		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
 		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
 		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
@@ -194,6 +196,7 @@ int main(int argc, char** argv){
 		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
 		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
 	}
+	
 	ostream &fout = (outputFile == "") ? cout : fileOut;
 	if (outputFile != "") fileOut.open(outputFile);
 	
@@ -281,6 +284,15 @@ int main(int argc, char** argv){
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
+	
+	if (guideFile != ""){
+		ifstream fin(guideFile);
+		string tree;
+		while (getline(fin, tree)){
+			alg.addGuideTree(tree, name2id);
+		}
+	}
+	
 	auto res = alg.run(nRounds, nThreads);
 	cerr << "Score: " << (double) res.first << endl;
 	cerr << res.second << endl;

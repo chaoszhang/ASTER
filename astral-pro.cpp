@@ -363,12 +363,13 @@ int main(int argc, char** argv){
 	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
 	double p = 0.5;
-	string outputFile, mappingFile;
+	string outputFile, mappingFile, guideFile;
 	ofstream fileOut;
 	if (argc == 1) {cerr << helpText; return 0;}
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 		
+		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
 		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
 		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
 		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
@@ -398,6 +399,15 @@ int main(int argc, char** argv){
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(id2name.size(), tripInit, id2name);
+	
+	if (guideFile != ""){
+		ifstream fin(guideFile);
+		string tree;
+		while (getline(fin, tree)){
+			alg.addGuideTree(tree, name2id);
+		}
+	}
+	
 	auto res = alg.run(nRounds, nThreads);
 	cerr << "Score: " << res.first << endl;
 	cerr << res.second << endl;
@@ -406,6 +416,7 @@ int main(int argc, char** argv){
 	cerr << "Score: " << res.first << endl;
 	fout << res.second << endl;
 	
+	cerr << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
 	//cerr << alg.printOptimalTreeWithScore() << endl;
 	return 0;
 }
