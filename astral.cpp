@@ -117,6 +117,8 @@ void readInputTrees(string input, string mapping) {
 }
 
 string helpText = R"V0G0N(astral_feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
+-c  path to constraint subtree file
+-g  path to guide tree file
 -o  path to output file (default: stdout)
 -r  number of total rounds of placements (default: 5)
 -s  number of total rounds of subsampling (default: 0)
@@ -130,12 +132,14 @@ int main(int argc, char** argv){
 	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
 	double p = 0.5;
-	string outputFile, mappingFile;
+	string outputFile, mappingFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	if (argc == 1) {cerr << helpText; return 0;}
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 		
+		if (strcmp(argv[i], "-c") == 0) constraintFile = argv[i + 1];
+		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
 		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
 		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
 		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
@@ -148,7 +152,7 @@ int main(int argc, char** argv){
 	
 	int nPartitions = 1;
 	if (nRounds < nThreads){
-		nPartitions = nThreads / nRounds;
+		nPartitions = (nRounds == 0) ? 1 : nThreads / nRounds;
 		nThreads = nRounds;
 	}
 	for (int i = 0; i < nPartitions; i++){
@@ -173,7 +177,22 @@ int main(int argc, char** argv){
 	cerr << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
-	auto res = alg.run(nRounds, nThreads);
+	
+	if (guideFile != ""){
+		ifstream fin(guideFile);
+		string tree;
+		while (getline(fin, tree)){
+			alg.addGuideTree(tree, name2id);
+		}
+	}
+	
+	if (constraintFile != ""){
+		ifstream fin(constraintFile);
+		getline(fin, constraintTree);
+	}
+	
+	auto res = (constraintTree == "") ? alg.run(nRounds, nThreads) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
+	
 	cerr << "Score: " << res.first/2 << endl;
 	cerr << res.second << endl;
 	

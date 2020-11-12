@@ -201,7 +201,7 @@ int main(int argc, char** argv){
 	if (outputFile != "") fileOut.open(outputFile);
 	
 	if (nRounds < nThreads){
-		tripInit.nThreads = nThreads / nRounds;
+		tripInit.nThreads = (nRounds == 0) ? 1 : nThreads / nRounds;
 		nThreads = nRounds;
 	}
 	

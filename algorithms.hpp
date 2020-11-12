@@ -247,6 +247,15 @@ struct PlacementAlgorithm{
 	string printTree(){
 		return string("(") + printSubtree(rootNodeId) + "," + to_string(rootLeafId) + ");";
 	}
+	
+	string printSubtree(int v, const vector<string> &names){
+		if (leafId(v) != -1) return names[leafId(v)];
+		return string("(") + printSubtree(heavy(v), names) + "," + printSubtree(light(v), names) + ")";
+	}
+	
+	string printTree(const vector<string> &names){
+		return string("(") + printSubtree(rootNodeId, names) + "," + names[rootLeafId] + ");";
+	}
 };
 
 struct ConstrainedOptimizationAlgorithm{
@@ -420,7 +429,7 @@ struct ConstrainedOptimizationAlgorithm{
 		return pAlg;
 	}
 	
-	int guildSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i){
+	int guildSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i, unordered_set<int> &added){
 		int ret;
 		if (tree[i] != '('){
 			string s;
@@ -429,6 +438,7 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 			int id = name2id.at(s);
 			pAlg.trip.addTotal(id);
+			added.insert(id);
 			if (pAlg.rootLeafId == -1){
 				pAlg.rootLeafId = id;
 				ret = -1;
@@ -441,8 +451,8 @@ struct ConstrainedOptimizationAlgorithm{
 		else {
 			i++;
 			if (pAlg.rootLeafId != -1){
-				int nodeL = guildSubtree(pAlg, tree, name2id, i);
-				int nodeR = guildSubtree(pAlg, tree, name2id, i);
+				int nodeL = guildSubtree(pAlg, tree, name2id, i, added);
+				int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
 				if (nodeL != -1){
 					if (nodeR != -1) ret = pAlg.makeNode(nodeL, nodeR, false);
 					else ret = nodeL;
@@ -450,11 +460,11 @@ struct ConstrainedOptimizationAlgorithm{
 				else ret = nodeR;
 			}
 			else {
-				int nodeL = guildSubtree(pAlg, tree, name2id, i);
-				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i);
-				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i);
+				int nodeL = guildSubtree(pAlg, tree, name2id, i, added);
+				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i, added);
+				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i, added);
 				else {
-					int nodeR = guildSubtree(pAlg, tree, name2id, i);
+					int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
 					if (nodeR == -1) ret = nodeL;
 					else {
 						pAlg.makeNode(nodeL, nodeR, true);
@@ -469,11 +479,17 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	void addGuideTree(const string tree, const unordered_map<string, int> &name2id){
+		unordered_set<int> added;
 		PlacementAlgorithm pAlg(taxonHash, tripInit);
 		int i = 0;
-		guildSubtree(pAlg, tree, name2id, i);
+		guildSubtree(pAlg, tree, name2id, i, added);
+		for (int i = 0; i < ntaxa; i++){
+			if (added.count(i) == 0) pAlg.order.push_back(i);
+		}
+		{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
 		pAlg.run();
-		addTripartitions(pAlg.tripHash);
+		cerr << pAlg.printTree(names) << endl;
+		{ const lock_guard<mutex> lock(mtx); addTripartitions(pAlg.tripHash); }
 	}
 	
 	int hash2node(hash_t h){
@@ -532,9 +548,10 @@ struct ConstrainedOptimizationAlgorithm{
 		return string("(") + printOptimalSubtreeWithScore(hash[-taxonHash[0]]) + "," + names[0] + ");";
 	}
 	
-	static void batchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
+	void batchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
 		for (int i = start; i < end; i++){
 			jobs[i].run();
+			cerr << jobs[i].printTree(names) << endl;
 		}
 	}
 	
@@ -546,7 +563,7 @@ struct ConstrainedOptimizationAlgorithm{
 			jobs.push_back(createPlacementAlgorithm(subsampleRate));
 		}
 		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(batchWork, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
+			thrds.emplace_back(batchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
 		}
 		batchWork(jobs, 0, nJobs / nThrds);
 		for (int i = 1; i < nThrds; i++){
@@ -554,6 +571,25 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		for (int i = 0; i < nJobs; i++){
 			addTripartitions(jobs[i].tripHash);
+		}
+		
+		return {computeOptimalTree(), printOptimalTree()};
+	}
+	
+	void batchConstrainedWork(int start, int end, const string tree, const unordered_map<string, int> &name2id){
+		for (int i = start; i < end; i++){
+			addGuideTree(tree, name2id);
+		}
+	}
+	
+	pair<score_t, string> constrainedRun(int nJobs, int nThrds, const string tree, const unordered_map<string, int> &name2id){
+		vector<thread> thrds;
+		for (int i = 1; i < nThrds; i++){
+			thrds.emplace_back(batchConstrainedWork, this, i * nJobs / nThrds, (i + 1) * nJobs / nThrds, tree, ref(name2id));
+		}
+		batchConstrainedWork(0, nJobs / nThrds, tree, name2id);
+		for (int i = 1; i < nThrds; i++){
+			thrds[i - 1].join();
 		}
 		
 		return {computeOptimalTree(), printOptimalTree()};
@@ -677,8 +713,8 @@ struct ConstrainedOptimizationAlgorithm{
 	void twoStepBatchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
 		for (int i = start; i < end; i++){
 			twoStepWorkflow(jobs[i]);
+			cerr << jobs[i].printTree(names) << endl;
 		}
-		cerr << "DONE!!!" << endl;
 	}
 	
 	pair<score_t, string> twoStepRun(int nJobs, int nThrds){
