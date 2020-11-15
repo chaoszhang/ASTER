@@ -585,7 +585,7 @@ struct ConstrainedOptimizationAlgorithm{
 	pair<score_t, string> constrainedRun(int nJobs, int nThrds, const string tree, const unordered_map<string, int> &name2id){
 		vector<thread> thrds;
 		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(batchConstrainedWork, this, i * nJobs / nThrds, (i + 1) * nJobs / nThrds, tree, ref(name2id));
+			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::batchConstrainedWork, this, i * nJobs / nThrds, (i + 1) * nJobs / nThrds, tree, ref(name2id));
 		}
 		batchConstrainedWork(0, nJobs / nThrds, tree, name2id);
 		for (int i = 1; i < nThrds; i++){
