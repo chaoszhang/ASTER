@@ -563,7 +563,7 @@ struct ConstrainedOptimizationAlgorithm{
 			jobs.push_back(createPlacementAlgorithm(subsampleRate));
 		}
 		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(batchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
+			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::batchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
 		}
 		batchWork(jobs, 0, nJobs / nThrds);
 		for (int i = 1; i < nThrds; i++){
