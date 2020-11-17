@@ -556,6 +556,7 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	pair<score_t, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0, bool allowTwoStepRun = true){
+		if (nJobs == 0) return {computeOptimalTree(), printOptimalTree()};
 		if (allowTwoStepRun && ntaxa >= 100) return twoStepRun(nJobs, nThrds);
 		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
