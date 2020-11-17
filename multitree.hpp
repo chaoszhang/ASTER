@@ -165,7 +165,7 @@ struct Tripartition{
 		for (int p = 0; p < init.nodes.size(); p++){
 			const vector<TripartitionInitializer::Node> &nodes = init.nodes[p];
 			const vector<vector<int> > &leafParent = init.leafParent[p];
-			vector<int> x(nodes.size()), t(nodes.size()), q(nodes.size());
+			vector<score_t> x(nodes.size()), t(nodes.size()), q(nodes.size());
 			for (int i = 0; i < leafParent.size(); i++){
 				for (int u: leafParent[i]){
 					x[u]++;
