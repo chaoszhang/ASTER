@@ -32,6 +32,7 @@ TripartitionInitializer tripInit;
 
 unordered_map<string, string> leafname_mapping;
 string TEXT;
+int duploss = 0;
 int nodecnt = 0;
 int pos = 0;
 int K = 0;
@@ -234,6 +235,7 @@ public:
 				bestroot = root;
 			}
 		}
+		duploss += bestscore;
 		return bestroot;
 	}
 	
@@ -400,6 +402,8 @@ int main(int argc, char** argv){
 	cerr << "#Samples: " << nSample << endl;
 	cerr << "#Threads: " << nThreads << "x" << nPartitions << endl;
 	cerr << "p = " << p << endl;
+	
+	cerr << "#Duploss: " << duploss << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(id2name.size(), tripInit, id2name);
 	
