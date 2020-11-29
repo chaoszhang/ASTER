@@ -235,6 +235,10 @@ int main(int argc, char** argv){
 		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
 		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
 		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 0, 'T', 'C', 'G', 'a', 0, 't', 'c', 'g'); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'T', 0, 'A', 'C', 'G', 't', 0, 'a', 'c', 'g'); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'C', 0, 'A', 'T', 'G', 'c', 0, 'a', 't', 'g'); }
+		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'G', 0, 'A', 'T', 'C', 'g', 0, 'a', 't', 'c'); }
 	}
 	else {
 		ifstream listIn(argv[argc - 1]);
@@ -267,6 +271,10 @@ int main(int argc, char** argv){
 			{ ifstream fin(file); readFile(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
 			{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
 			{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
+			{ ifstream fin(file); readFile(fin, 'A', 0, 'T', 'C', 'G', 'a', 0, 't', 'c', 'g'); }
+			{ ifstream fin(file); readFile(fin, 'T', 0, 'A', 'C', 'G', 't', 0, 'a', 'c', 'g'); }
+			{ ifstream fin(file); readFile(fin, 'C', 0, 'A', 'T', 'G', 'c', 0, 'a', 't', 'g'); }
+			{ ifstream fin(file); readFile(fin, 'G', 0, 'A', 'T', 'C', 'g', 0, 'a', 't', 'c'); }
 		}
 	}
 	
