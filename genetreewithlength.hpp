@@ -101,6 +101,21 @@ struct Tripartition{
 		}
 	}
 	
+	void rmvTotal(int i){
+		for (int w: leafParent[i]){
+			totalZ[w].z -= totalZ[w].weight;
+			w = totalZ[w].up;
+			while (w != -1){
+				Node& u = totalZ[totalZ[w].small];
+				Node& v = totalZ[totalZ[w].large];
+				totalZ[w].z = (u.z + v.z) * totalZ[w].weight;
+				totalZ[w].z2a = u.z2a + v.z2a + u.z * v.z;
+				totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * totalZ[w].weight;
+				w = totalZ[w].up;
+			}
+		}
+	}
+	
 	void add(int x, int i){
 		for (int u: leafParent[i]){
 			nodes[u].update(version, totalZ[u]);
