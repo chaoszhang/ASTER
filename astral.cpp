@@ -26,17 +26,18 @@ typedef long long score_t;
 #include "genetree.hpp"
 #include "algorithms.hpp"
 
-
-TripartitionInitializer tripInit;
+MetaAlgorithm meta;
+TripartitionInitializer &tripInit = meta.tripInit;
+vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
 unordered_map<string, string> leafname_mapping;
 string TEXT;
 int nodecnt = 0;
 int pos = 0;
 int K = 0;
-int part = 0;
-vector<string> names;
-unordered_map<string, int> name2id;
+int part = 0, iBatch = 0;
+vector<string> &names = meta.names;
+unordered_map<string, int> &name2id = meta.name2id;
 
 
 string MAPPING(int begin, int end){
@@ -85,6 +86,8 @@ void parse(int parent = -1){
 	else cur = name2id[MAPPING(i, pos)];
 	if (parent != -1) tripInit.parentChild[part].back().push_back({parent, cur});
 	else tripInit.roots[part].push_back(cur);
+	if (parent != -1) batchInit[iBatch].parentChild[0].back().push_back({parent, cur});
+	else batchInit[iBatch].roots[0].push_back(cur);
 }
 
 void readInputTrees(string input, string mapping) {
@@ -105,10 +108,15 @@ void readInputTrees(string input, string mapping) {
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
 	}
 	tripInit.nTaxa = names.size();
+	for (int i = 0; i < meta.nBatch; i++){
+		batchInit[i].nTaxa = names.size();
+	}
 	pos = 0;
 	while (pos < TEXT.size()){
 		part = K % tripInit.roots.size();
 		tripInit.parentChild[part].emplace_back();
+		iBatch = K % meta.nBatch;
+		batchInit[iBatch].parentChild[0].emplace_back();
 		nodecnt = names.size();
 		parse();
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
@@ -116,90 +124,33 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
-string helpText = R"V0G0N(astral_feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
--c  path to constraint subtree file
--g  path to guide tree file
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
--a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
-	double p = 0.5;
-	string outputFile, mappingFile, guideFile, constraintFile, constraintTree;
-	ofstream fileOut;
-	if (argc == 1) {cerr << helpText; return 0;}
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-		
-		if (strcmp(argv[i], "-c") == 0) constraintFile = argv[i + 1];
-		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
-		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
-		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
-		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
-		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
-		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
-	}
-	ostream &fout = (outputFile == "") ? cout : fileOut;
-	if (outputFile != "") fileOut.open(outputFile);
+	string mappingFile;
+	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
 	
-	int nPartitions = 1;
-	if (nRounds < nThreads){
-		nPartitions = (nRounds == 0) ? 1 : nThreads / nRounds;
-		nThreads = nRounds;
+	for (int i = 1; i < argc; i += 2){
+		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
+			
+		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 	}
-	for (int i = 0; i < nPartitions; i++){
+	
+	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.roots.emplace_back();
 		tripInit.parentChild.emplace_back();
 	}
+	for (int i = 0; i < meta.nBatch; i++){
+		batchInit[i].roots.emplace_back();
+		batchInit[i].parentChild.emplace_back();
+	}
 	readInputTrees(argv[argc - 1], mappingFile);
 	
-	/*
-	for (auto e: tripInit.parentChild[0]){
-		cerr << e.first << " ";
-		if (e.second < tripInit.nTaxa) cerr << names[e.second] << endl; else cerr << e.second << endl;
-	}
-	*/
-	
-	
-	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Genetrees: " << K << endl;
-	cerr << "#Rounds: " << nRounds << endl;
-	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << "x" << nPartitions << endl;
-	cerr << "p = " << p << endl;
 	
-	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
-	
-	if (guideFile != ""){
-		ifstream fin(guideFile);
-		string tree;
-		while (getline(fin, tree)){
-			alg.addGuideTree(tree, name2id);
-		}
-	}
-	
-	if (constraintFile != ""){
-		ifstream fin(constraintFile);
-		getline(fin, constraintTree);
-	}
-	
-	auto res = (constraintTree == "") ? alg.run(nRounds, nThreads) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
-	
-	cerr << "Score: " << res.first/2 << endl;
-	cerr << res.second << endl;
-	
-	res = alg.run(nSample, nThreads, p);
-	cerr << "Score: " << res.first/2 << endl;
-	fout << res.second << endl;
-	
-	//cerr << alg.printOptimalTreeWithScore() << endl;
+	cerr << "Score: " << meta.run().first / 2 << endl;
 	return 0;
 }

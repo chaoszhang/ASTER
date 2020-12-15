@@ -740,3 +740,120 @@ struct ConstrainedOptimizationAlgorithm{
 		return {computeOptimalTree(), printOptimalTree()};
 	}
 };
+
+const string HELP_TEXT_1 = "feast [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread";
+const string HELP_TEXT_2 = R"V0G0N(] inputList
+-c  path to constraint subtree file
+-g  path to guide tree file
+-o  path to output file (default: stdout)
+-r  number of total rounds of placements (default: 5)
+-s  number of total rounds of subsampling (default: 0)
+-p  subsampling probability of keeping each taxon (default: 0.5)
+-t  number of threads (default: 1)
+)V0G0N";
+
+struct MetaAlgorithm{
+	vector<string> files, names;
+	int nThreads = 1, nRounds = 4, nSample = 0, nBatch = 16, fold = 8, nThread1, nThread2 = 1;
+	double p = 0.5;
+	string outputFile, guideFile, constraintFile, constraintTree;
+	ofstream fileOut;
+	unordered_map<string, int> name2id;
+	
+	TripartitionInitializer tripInit;
+	vector<TripartitionInitializer> batchInit;
+	
+	MetaAlgorithm(){}
+	
+	MetaAlgorithm(int argc, char** argv, string helpTextS1, string helpTextS2){
+		initialize(argc, argv, helpTextS1, helpTextS2);
+	}
+	
+	void initialize(int argc, char** argv, string helpTextS1, string helpTextS2){
+		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
+		for (int i = 1; i < argc; i += 2){
+			if (strcmp(argv[i], "-y") == 0) {i--; continue;}
+			
+			if (strcmp(argv[i], "-c") == 0) constraintFile = argv[i + 1];
+			if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
+			if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
+			if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
+			if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
+			if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
+			if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
+			if (strcmp(argv[i], "-h") == 0) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
+		}
+		
+		if (nRounds < nThreads && nRounds > 0){
+			nThread2 = nThreads / nRounds;
+			nThread1 = nRounds;
+		}
+		else {
+			nThread2 = 1;
+			nThread1 = nThreads;
+		}
+		
+		batchInit.resize(nBatch);
+	}
+	
+	void searchSpace(ConstrainedOptimizationAlgorithm &alg, int nRnds, double p, const vector<int> &batchId, const vector<int> &seeds){
+		for (int i = 0; i < batchId.size(); i++){
+			ConstrainedOptimizationAlgorithm batchAlg(names.size(), batchInit[batchId[i]], names, seeds[i]);
+			string tree = batchAlg.run(1, 1, p).second;
+			alg.addGuideTree(tree, name2id);
+		}
+	}
+	
+	pair<score_t, string> generateSearchSpace(ConstrainedOptimizationAlgorithm &alg, int nRnds, double p = 0){
+		if (nRnds > 0){
+			vector<vector<int> > batchId(nThreads), seeds(nThreads);
+			vector<thread> thrds;
+			
+			for (int i = 0; i < nRnds * fold; i++){
+				batchId[i % nThreads].push_back(i % nBatch);
+				seeds[i % nThreads].push_back(rand());
+			}
+			
+			for (int i = 0; i < nThreads; i++){
+				thrds.emplace_back(&MetaAlgorithm::searchSpace, this, ref(alg), nRnds, p, ref(batchId[i]), ref(seeds[i]));
+			}
+			
+			for (int i = 0; i < nThreads; i++){
+				thrds[i].join();
+			}
+		}
+		return alg.run(nRnds, nThreads, p);
+	}
+	
+	pair<score_t, string> run(){
+		ostream &fout = (outputFile == "") ? cout : fileOut;
+		if (outputFile != "") fileOut.open(outputFile);
+		
+		cerr << "#Species: " << names.size() << endl;
+		cerr << "#Rounds: " << nRounds << endl;
+		cerr << "#Samples: " << nSample << endl;
+		cerr << "#Threads: " << nThread1 << "x" << nThread2 << endl;
+		cerr << "p = " << p << endl;
+		
+		ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
+		
+		if (guideFile != ""){
+			ifstream fin(guideFile);
+			string tree;
+			while (getline(fin, tree)){
+				alg.addGuideTree(tree, name2id);
+			}
+		}
+		
+		if (constraintFile != ""){
+			ifstream fin(constraintFile);
+			getline(fin, constraintTree);
+		}
+		
+		auto res = (constraintTree == "") ? generateSearchSpace(alg, nRounds) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
+		if (constraintTree == "") res = generateSearchSpace(alg, nSample, p);
+		fout << res.second << endl;
+		
+		return res;
+	}
+};
