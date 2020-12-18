@@ -823,6 +823,7 @@ struct MetaAlgorithm{
 			for (int i = 0; i < nThreads - 1; i++){
 				thrds[i].join();
 			}
+			cerr << "***End of Batching***" << endl;
 		}
 		return alg.run(nRounds, nThread1);
 	}
@@ -853,7 +854,15 @@ struct MetaAlgorithm{
 		}
 		
 		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
-		if (constraintTree == "") res = alg.run(nSample, nThread1, p);
+		if (constraintTree == "") {
+			cerr << "***Subsample Process***" << endl;
+			score_t prevS;
+			do {
+				score_t prevS = res.first;
+				res = alg.run(nSample, nThread1, p);
+			}
+			while (prevS < res.first);
+		}
 		fout << res.second << endl;
 		
 		return res;
