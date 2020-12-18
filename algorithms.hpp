@@ -232,7 +232,7 @@ struct PlacementAlgorithm{
 	void run(){
 		defaultInitializer();
 		for (; orderId < order.size(); orderId++){
-			cerr << "Placing " << orderId << "/" << order.size() << endl;
+			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
 		tripHashGenerator(rootNodeId);
@@ -680,7 +680,7 @@ struct ConstrainedOptimizationAlgorithm{
 				vector<vector<int> > nodeBranch(pNodes.size());
 				cerr << "pNodes: " << pNodes.size() << endl;
 				for (int i = n; i < N; i++) {
-					cerr << "Binning " << i - n << "/" << N - n << endl; 
+					if ((i - n) & 127 == 0) cerr << "Binning " << i - n << "/" << N - n << endl; 
 					nodeBranch[pAlg.locateBranch(order[i])].push_back(order[i]);
 				}
 				int cnt = 0;
@@ -692,7 +692,7 @@ struct ConstrainedOptimizationAlgorithm{
 					unordered_map<int, int> nodeRemap;
 					nodeRemap[b] = b;
 					for (int i: nodeBranch[b]) {
-						cerr << "Placement " << cnt++ << "/" << N - n << endl;
+						if (cnt & 127 == 0) cerr << "Placement " << cnt++ << "/" << N - n << endl;
 						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
 						else abnormalOrder.push_back(i);
 					}
@@ -754,7 +754,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 
 struct MetaAlgorithm{
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 0, nBatch = 16, fold = 8, nThread1, nThread2 = 1;
+	int nThreads = 1, nRounds = 4, nSample = 0, nBatch = 8, fold = 4, nThread1, nThread2 = 1;
 	double p = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
@@ -796,33 +796,35 @@ struct MetaAlgorithm{
 		batchInit.resize(nBatch);
 	}
 	
-	void searchSpace(ConstrainedOptimizationAlgorithm &alg, int nRnds, double p, const vector<int> &batchId, const vector<int> &seeds){
+	void searchSpace(ConstrainedOptimizationAlgorithm &alg, const vector<int> &batchId, const vector<int> &seeds){
 		for (int i = 0; i < batchId.size(); i++){
 			ConstrainedOptimizationAlgorithm batchAlg(names.size(), batchInit[batchId[i]], names, seeds[i]);
-			string tree = batchAlg.run(1, 1, p).second;
+			string tree = batchAlg.run(1, 1).second;
 			alg.addGuideTree(tree, name2id);
 		}
 	}
 	
-	pair<score_t, string> generateSearchSpace(ConstrainedOptimizationAlgorithm &alg, int nRnds, double p = 0){
-		if (nRnds > 0){
+	pair<score_t, string> generateSearchSpace(ConstrainedOptimizationAlgorithm &alg){
+		if (nRounds > 0){
 			vector<vector<int> > batchId(nThreads), seeds(nThreads);
 			vector<thread> thrds;
 			
-			for (int i = 0; i < nRnds * fold; i++){
+			for (int i = 0; i < nRounds * fold; i++){
 				batchId[i % nThreads].push_back(i % nBatch);
 				seeds[i % nThreads].push_back(rand());
 			}
 			
-			for (int i = 0; i < nThreads; i++){
-				thrds.emplace_back(&MetaAlgorithm::searchSpace, this, ref(alg), nRnds, p, ref(batchId[i]), ref(seeds[i]));
+			for (int i = 1; i < nThreads; i++){
+				thrds.emplace_back(&MetaAlgorithm::searchSpace, this, ref(alg), ref(batchId[i]), ref(seeds[i]));
 			}
 			
-			for (int i = 0; i < nThreads; i++){
+			searchSpace(alg, batchId[0], seeds[0]);
+			
+			for (int i = 0; i < nThreads - 1; i++){
 				thrds[i].join();
 			}
 		}
-		return alg.run(nRnds, nThreads, p);
+		return alg.run(nRounds, nThread1);
 	}
 	
 	pair<score_t, string> run(){
@@ -850,8 +852,8 @@ struct MetaAlgorithm{
 			getline(fin, constraintTree);
 		}
 		
-		auto res = (constraintTree == "") ? generateSearchSpace(alg, nRounds) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
-		if (constraintTree == "") res = generateSearchSpace(alg, nSample, p);
+		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
+		if (constraintTree == "") res = alg.run(nSample, nThread1, p);
 		fout << res.second << endl;
 		
 		return res;
