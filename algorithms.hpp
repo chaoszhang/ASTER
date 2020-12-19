@@ -667,7 +667,7 @@ struct ConstrainedOptimizationAlgorithm{
 			unordered_set<int> selected;
 			for (int i = 0; i < n; i++) selected.insert(order[i]);
 			{ const lock_guard<mutex> lock(mtx); createPlacementAlgorithm(pAlg, selected); }
-			cerr << "subsampled nodes: " << pAlg.nodes.size() << endl;
+			cerr << "Subsampled nodes: " << pAlg.nodes.size() << endl;
 		}
 		{
 			vector<int> abnormalOrder;
@@ -858,7 +858,7 @@ struct MetaAlgorithm{
 			cerr << "***Subsample Process***" << endl;
 			score_t prevS;
 			do {
-				score_t prevS = res.first;
+				prevS = res.first;
 				res = alg.run(nSample, nThread1, p);
 			}
 			while (prevS < res.first);
