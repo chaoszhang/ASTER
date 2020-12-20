@@ -20,7 +20,10 @@ struct Hasher{
 	}
 };
 
+const int ROUND_NN = 20;
+
 struct PlacementAlgorithm{
+	
 	struct Node{
 		Node(int leafId = -1): leafId(leafId){}
 		
@@ -35,10 +38,11 @@ struct PlacementAlgorithm{
 	vector<int> order;
 	vector<Node> nodes;
 	int rootNodeId = -1, rootLeafId = -1, orderId = 0;
+	int rNN;
 	
 	Tripartition trip;
 	
-	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit): taxonHash(taxonHash), trip(tripInit){}
+	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit, int rNN = ROUND_NN): taxonHash(taxonHash), trip(tripInit), rNN(rNN){}
 	
 	int& heavy(int v){
 		return nodes[v].heavy;
@@ -104,6 +108,18 @@ struct PlacementAlgorithm{
 		makeNode(v, u, true);
 	}
 	
+	void forceLeftHeavy(int v){
+		if (leafId(v) != -1) leafCnt(v) = 1;
+		else {
+			if (leafCnt(heavy(v)) < leafCnt(light(v))){
+				int t = heavy(v);
+				heavy(v) = light(v);
+				light(v) = t;
+			}
+			leafCnt(v) = leafCnt(heavy(v)) + leafCnt(light(v));
+		}
+	}
+	
 	void defaultInitializer(){
 		if (rootLeafId == -1){
 			rootLeafId = order[orderId];
@@ -116,6 +132,7 @@ struct PlacementAlgorithm{
 			trip.addTotal(order[orderId]);
 			orderId++;
 		}
+		forceLeftHeavy(rootNodeId);
 	}
 	
 	void switchSubtree(int v, int src, int tgt){
@@ -207,6 +224,232 @@ struct PlacementAlgorithm{
 		return v;
 	}
 	
+	inline score_t nnPerform(int v, int best_case, score_t top_score){
+		if (best_case == 1){
+			int u = light(v), c = heavy(u), d = light(u), ab = heavy(v);
+			parent(ab) = u; heavy(u) = ab;
+			parent(c) = u; light(u) = c;
+			parent(u) = v; heavy(v) = u;
+			parent(d) = v; light(v) = d;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 2){
+			int u = light(v), c = heavy(u), d = light(u), ab = heavy(v);
+			parent(ab) = u; heavy(u) = ab;
+			parent(d) = u; light(u) = d;
+			parent(u) = v; heavy(v) = u;
+			parent(c) = v; light(v) = c;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 3){
+			int u = heavy(v), a = heavy(u), b = light(u), cd = light(v);
+			parent(b) = u; heavy(u) = b;
+			parent(cd) = u; light(u) = cd;
+			parent(a) = v; heavy(v) = a;
+			parent(u) = v; light(v) = u;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 4){
+			int u = heavy(v), a = heavy(u), b = light(u), cd = light(v);
+			parent(a) = u; heavy(u) = a;
+			parent(cd) = u; light(u) = cd;
+			parent(u) = v; heavy(v) = u;
+			parent(b) = v; light(v) = b;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		return top_score;
+	}
+	
+	score_t nnLocal(int v, bool recurse, score_t e_ab_cd){
+		//E|ABCD|-
+		if (recurse) {
+			if (rNN <= 0) return e_ab_cd;
+			rNN--;
+		}
+		
+		//E|AB|CD
+		switchSubtree(light(v), 1, 2);
+		score_t abe_c_d = 0, cde_a_b = 0;
+		if (leafId(light(v)) == -1){
+			//ABE|C|D
+			switchSubtree(heavy(v), 1, 0);
+			switchSubtree(heavy(light(v)), 2, 1);
+			abe_c_d = trip.score();
+			//ABE|CD|-
+			switchSubtree(light(light(v)), 2, 1);
+			if (recurse) abe_c_d = nnLocal(light(v), false, abe_c_d);
+			//E|AB|CD
+			switchSubtree(heavy(v), 0, 1);
+			switchSubtree(light(v), 1, 2);
+		}
+		if (leafId(heavy(v)) == -1){
+			//CDE|A|B
+			switchSubtree(light(v), 2, 0);
+			switchSubtree(light(heavy(v)), 1, 2);
+			cde_a_b = trip.score();
+			//CDE|AB|-
+			switchSubtree(light(heavy(v)), 2, 1);
+			if (recurse) cde_a_b = nnLocal(heavy(v), false, cde_a_b);
+			//E|AB|CD
+			switchSubtree(light(v), 0, 2);
+		}
+		int best_case = 0;
+		score_t best_score = abe_c_d + cde_a_b + e_ab_cd, top_score = e_ab_cd;
+		if (leafId(light(v)) == -1){
+			int c = heavy(light(v)), d = light(light(v));
+			//DE|AB|C
+			switchSubtree(d, 2, 0);
+			score_t de_ab_c = trip.score();
+			//E|ABD|C
+			switchSubtree(d, 0, 1);
+			score_t e_abd_c = trip.score();
+			//E|ABC|D
+			switchSubtree(d, 1, 2);
+			switchSubtree(c, 2, 1);
+			score_t e_abc_d = trip.score();
+			//CE|AB|D
+			switchSubtree(c, 1, 0);
+			score_t ce_ab_d = trip.score();
+			
+			if (best_score < cde_a_b + de_ab_c + e_abc_d) {
+				best_score = cde_a_b + de_ab_c + e_abc_d;
+				best_case = 1;
+				top_score = e_abc_d;
+			}
+			if (best_score < cde_a_b + ce_ab_d + e_abd_c) {
+				best_score = cde_a_b + ce_ab_d + e_abd_c;
+				best_case = 2;
+				top_score = e_abd_c;
+			}
+			//E|AB|CD
+			switchSubtree(c, 0, 2);
+		}
+		if (leafId(heavy(v)) == -1){
+			int a = heavy(heavy(v)), b = light(heavy(v));
+			//BE|A|CD
+			switchSubtree(b, 1, 0);
+			score_t be_a_cd = trip.score();
+			//E|A|BCD
+			switchSubtree(b, 0, 2);
+			score_t e_a_bcd = trip.score();
+			//E|ACD|B
+			switchSubtree(light(v), 2, 1);
+			score_t e_acd_b = trip.score();
+			//AE|B|CD
+			switchSubtree(light(v), 1, 2);
+			switchSubtree(a, 1, 0);
+			switchSubtree(b, 2, 1);
+			score_t ae_b_cd = trip.score();
+			
+			if (best_score < abe_c_d + ae_b_cd + e_a_bcd) {
+				best_score = abe_c_d + ae_b_cd + e_a_bcd;
+				best_case = 3;
+				top_score = e_a_bcd;
+			}
+			if (best_score < abe_c_d + be_a_cd + e_acd_b) {
+				best_score = abe_c_d + be_a_cd + e_acd_b;
+				best_case = 4;
+				top_score = e_acd_b;
+			}
+			//E|AB|CD
+			switchSubtree(a, 0, 1);
+		}
+		//E|ABCD|-
+		switchSubtree(light(v), 2, 1);
+		return nnPerform(v, best_case, top_score);
+	}
+	
+	score_t nnMove(int v){
+		if (leafId(v) != -1){
+			trip.reset();
+			trip.rmv(0, leafId(v));
+			trip.add(1, leafId(v));
+			return 0;
+		}
+		else{
+			//ABE|CD|-
+			score_t abe_c_d = nnMove(light(v));
+			score_t ae_b_cd = 0;
+			if (leafId(heavy(v)) == -1){
+				//AE|B|CD
+				switchSubtree(light(heavy(v)), 0, 1);
+				switchSubtree(light(v), 1, 2);
+				ae_b_cd = trip.score();
+			}
+			//CDE|AB|-
+			score_t cde_a_b = nnMove(heavy(v));
+			//E|AB|CD
+			switchSubtree(light(v), 0, 2);
+			score_t e_ab_cd = trip.score();
+			int best_case = 0;
+			score_t best_score = abe_c_d + cde_a_b + e_ab_cd, top_score = e_ab_cd;
+			
+			if (leafId(light(v)) == -1){
+				int c = heavy(light(v)), d = light(light(v));
+				//DE|AB|C
+				switchSubtree(d, 2, 0);
+				score_t de_ab_c = trip.score();
+				//E|ABD|C
+				switchSubtree(d, 0, 1);
+				score_t e_abd_c = trip.score();
+				//E|ABC|D
+				switchSubtree(d, 1, 2);
+				switchSubtree(c, 2, 1);
+				score_t e_abc_d = trip.score();
+				//CE|AB|D
+				switchSubtree(c, 1, 0);
+				score_t ce_ab_d = trip.score();
+				
+				if (best_score < cde_a_b + de_ab_c + e_abc_d) {
+					best_score = cde_a_b + de_ab_c + e_abc_d;
+					best_case = 1;
+					top_score = e_abc_d;
+				}
+				if (best_score < cde_a_b + ce_ab_d + e_abd_c) {
+					best_score = cde_a_b + ce_ab_d + e_abd_c;
+					best_case = 2;
+					top_score = e_abd_c;
+				}
+				//E|AB|CD
+				switchSubtree(c, 0, 2);
+			}
+			if (leafId(heavy(v)) == -1){
+				int b = light(heavy(v));
+				//E|A|BCD
+				switchSubtree(b, 1, 2);
+				score_t e_a_bcd = trip.score();
+				//BE|A|CD
+				switchSubtree(b, 2, 0);
+				score_t be_a_cd = trip.score();
+				//E|ACD|B
+				switchSubtree(b, 0, 2);
+				switchSubtree(light(v), 2, 1);
+				score_t e_acd_b = trip.score();
+				
+				if (best_score < abe_c_d + ae_b_cd + e_a_bcd) {
+					best_score = abe_c_d + ae_b_cd + e_a_bcd;
+					best_case = 3;
+					top_score = e_a_bcd;
+				}
+				if (best_score < abe_c_d + be_a_cd + e_acd_b) {
+					best_score = abe_c_d + be_a_cd + e_acd_b;
+					best_case = 4;
+					top_score = e_acd_b;
+				}
+				//E|AB|CD
+				switchSubtree(b, 2, 1);
+				switchSubtree(light(v), 1, 2);
+			}
+			//E|ABCD|-
+			switchSubtree(light(v), 2, 1);
+			return nnPerform(v, best_case, top_score);
+		}
+	}
+	
 	pair<bool, hash_t> tripHashGenerator(int v){
 		if (leafId(v) != -1){
 			trip.reset();
@@ -235,6 +478,7 @@ struct PlacementAlgorithm{
 			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
+		if (rNN >= 0) nnMove(rootNodeId);
 		tripHashGenerator(rootNodeId);
 	}
 	
@@ -478,9 +722,9 @@ struct ConstrainedOptimizationAlgorithm{
 		return ret;
 	}
 	
-	void addGuideTree(const string tree, const unordered_map<string, int> &name2id){
+	void addGuideTree(const string tree, const unordered_map<string, int> &name2id, int rnn = ROUND_NN){
 		unordered_set<int> added;
-		PlacementAlgorithm pAlg(taxonHash, tripInit);
+		PlacementAlgorithm pAlg(taxonHash, tripInit, rnn);
 		int i = 0;
 		guildSubtree(pAlg, tree, name2id, i, added);
 		for (int i = 0; i < ntaxa; i++){
@@ -579,7 +823,7 @@ struct ConstrainedOptimizationAlgorithm{
 	
 	void batchConstrainedWork(int start, int end, const string tree, const unordered_map<string, int> &name2id){
 		for (int i = start; i < end; i++){
-			addGuideTree(tree, name2id);
+			addGuideTree(tree, name2id, -1);
 		}
 	}
 	
@@ -754,7 +998,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 
 struct MetaAlgorithm{
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 0, nBatch = 8, fold = 4, nThread1, nThread2 = 1;
+	int nThreads = 1, nRounds = 4, nSample = 0, nBatch = 8, fold = 0, nThread1, nThread2 = 1;
 	double p = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
@@ -823,7 +1067,7 @@ struct MetaAlgorithm{
 			for (int i = 0; i < nThreads - 1; i++){
 				thrds[i].join();
 			}
-			cerr << "***End of Batching***" << endl;
+			cerr << "*** End of Batching ***" << endl;
 		}
 		return alg.run(nRounds, nThread1);
 	}
@@ -855,7 +1099,7 @@ struct MetaAlgorithm{
 		
 		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
 		if (constraintTree == "") {
-			cerr << "***Subsample Process***" << endl;
+			cerr << "*** Subsample Process ***" << endl;
 			score_t prevS;
 			do {
 				prevS = res.first;
