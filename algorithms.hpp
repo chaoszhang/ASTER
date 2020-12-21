@@ -20,7 +20,7 @@ struct Hasher{
 	}
 };
 
-const int ROUND_NN = 20;
+const int ROUND_NN = 50;
 
 struct PlacementAlgorithm{
 	
