@@ -39,7 +39,6 @@ struct TripartitionInitializer{
 	int npos, nThreads = 1;
 	vector<array<score_t, 4> > pi;
 	vector<vector<int> > seq;
-	vector<bool> weight;
 };
 
 struct Tripartition{
@@ -49,10 +48,9 @@ struct Tripartition{
 	vector<array<int, 4> > total; // pos * letter
 	const vector<array<score_t, 4> > pi; // pos * letter
 	const vector<vector<int> > seq; // taxon * pos -> letter
-	const vector<bool> weight;
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos){}
+	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), cnt(init.npos), total(init.npos){}
 	
 	void resetWork(int start, int end){
 		for (int p = start; p < end; p++){
@@ -95,7 +93,7 @@ struct Tripartition{
 	void scoreWork(score_t &res, int start, int end){
 		score_t temp = 0;
 		for (int p = start; p < end; p++){
-			if (weight[p]) temp += scorePos(cnt[p], pi[p]);
+			temp += scorePos(cnt[p], pi[p]);
 		}
 		res = temp;
 	}

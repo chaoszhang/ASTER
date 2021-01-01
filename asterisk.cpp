@@ -20,11 +20,12 @@ typedef int count_t;
 
 using namespace std;
 
-TripartitionInitializer tripInit;
+MetaAlgorithm meta;
+TripartitionInitializer &tripInit = meta.tripInit;
 
-int npos = 0;
-vector<string> names;
-unordered_map<string, int> name2id;
+int &npos = meta.tripInit.npos;
+vector<string> &names = meta.names;
+unordered_map<string, int> &name2id = meta.name2id;
 vector<vector<int> > sparse;
 int N, n;
 
@@ -164,55 +165,29 @@ void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, co
 	}
 }
 
-string helpText = R"V0G0N(feast [-g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
--g  path to guide tree file
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
--y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
+string HELP_TEXT = R"V0G0N(-y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
 inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
 Gene files must be in FASTA format. The header line should be ">Species_Name".
 )V0G0N";
 
 int main(int argc, char** argv){
 	vector<string> files;
-	
-	int nThreads = 1, nRounds = 4, nSample = 0;
 	bool phylip = false;
-	double p = 0.5;
-	string outputFile, guideFile;
-	ofstream fileOut;
-	if (argc == 1) {cerr << helpText; return 0;}
+	string mappingFile;
+	meta.initialize(argc, argv, " -y", HELP_TEXT);
+	
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
-		
-		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
-		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
-		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
-		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
-		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
-		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
-	}
-	
-	ostream &fout = (outputFile == "") ? cout : fileOut;
-	if (outputFile != "") fileOut.open(outputFile);
-	
-	if (nRounds < nThreads){
-		tripInit.nThreads = (nRounds == 0) ? 1 : nThreads / nRounds;
-		nThreads = nRounds;
 	}
 	
 	if (phylip) {
 		{
 			ifstream fin(argv[argc - 1]);
-			int n, L;
+			int M, L;
 			string line;
-			while (fin >> n){
+			while (fin >> M){
 				fin >> L;
-				for (int i = 0; i < n; i++){
+				for (int i = 0; i < M; i++){
 					string s;
 					fin >> s;
 					getline(fin, line);
@@ -225,10 +200,10 @@ int main(int argc, char** argv){
 			}
 		}
 		N = names.size();
-		n = sqrt(N);
+		n = 2 * log(N) * sqrt(N);
 		for (int i = 0; i < N; i++){
 			sparse.emplace_back();
-			for (int j = 0; j < 5 * n; j++){
+			for (int j = 0; j < n; j++){
 				sparse[i].push_back(rand() % N);
 			}
 		}
@@ -260,7 +235,7 @@ int main(int argc, char** argv){
 			}
 		}
 		N = names.size();
-		n = log(N) * sqrt(N);
+		n = 2 * log(N) * sqrt(N);
 		for (int i = 0; i < N; i++){
 			sparse.emplace_back();
 			for (int j = 0; j < n; j++){
@@ -278,35 +253,9 @@ int main(int argc, char** argv){
 		}
 	}
 	
-	for (int i = 0; i < names.size(); i++){
-		tripInit.weightHelper.push_back(0);
-	}
-	tripInit.weightHelper.push_back(0);
-	
-	tripInit.npos = npos;
-	cerr << "#Species: " << names.size() << endl;
 	cerr << "#Bases: " << npos << endl;
-	cerr << "#Rounds: " << nRounds << endl;
-	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << "x" << tripInit.nThreads << endl;
-	cerr << "p = " << p << endl;
 	
-	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
-	
-	if (guideFile != ""){
-		ifstream fin(guideFile);
-		string tree;
-		while (getline(fin, tree)){
-			alg.addGuideTree(tree, name2id);
-		}
-	}
-	
-	auto res = alg.run(nRounds, nThreads);
-	cerr << "Score: " << (double) res.first << endl;
-	cerr << res.second << endl;
-	
-	res = alg.run(nSample, nThreads, p);
-	cerr << "Score: " << (double) res.first << endl;
-	fout << res.second << endl;
+	score_t score = meta.run().first;
+	cerr << "Score: " << (double) score << endl;
 	return 0;
 }
