@@ -28,7 +28,9 @@ typedef long long score_t;
 
 const bool VERBOSE = true;
 
-TripartitionInitializer tripInit;
+MetaAlgorithm meta;
+TripartitionInitializer &tripInit = meta.tripInit;
+vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
 unordered_map<string, string> leafname_mapping;
 string TEXT;
@@ -36,8 +38,8 @@ int duploss = 0;
 int nodecnt = 0;
 int pos = 0;
 int K = 0;
-vector<string> id2name;
-unordered_map<string, int> name2id;
+vector<string> &id2name = meta.names;
+unordered_map<string, int> &name2id = meta.name2id;
 	
 class DynamicBitset{
 	int size = 0;
@@ -351,84 +353,31 @@ void annotate(string input, string mapping){
 	}
 }
 
-string helpText = R"V0G0N(astral-pro_feast [-c ConstraintPath -g GuidePath -o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
--c  path to constraint subtree file
--g  path to guide tree file
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
--a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	int nThreads = 1, nRounds = 4, nSample = 0;
-	bool phylip = false;
-	double p = 0.5;
-	string outputFile, mappingFile, guideFile, constraintFile, constraintTree;
-	ofstream fileOut;
-	if (argc == 1) {cerr << helpText; return 0;}
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-		
-		if (strcmp(argv[i], "-c") == 0) constraintFile = argv[i + 1];
-		if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
-		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
-		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
-		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
-		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
-		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
-	}
-	ostream &fout = (outputFile == "") ? cout : fileOut;
-	if (outputFile != "") fileOut.open(outputFile);
+	string mappingFile;
+	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
 	
-	int nPartitions = 1;
-	if (nRounds < nThreads){
-		nPartitions = (nRounds == 0) ? 1 : nThreads / nRounds;
-		nThreads = nRounds;
+	for (int i = 1; i < argc; i += 2){
+		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
+			
+		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 	}
-	for (int i = 0; i < nPartitions; i++){
+	
+	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}
 	annotate(argv[argc - 1], mappingFile);
 	
-	cerr << "#Species: " << id2name.size() << endl;
 	cerr << "#Genetrees: " << K << endl;
-	cerr << "#Rounds: " << nRounds << endl;
-	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << "x" << nPartitions << endl;
-	cerr << "p = " << p << endl;
-	
 	cerr << "#Duploss: " << duploss << endl;
 	
-	ConstrainedOptimizationAlgorithm alg(id2name.size(), tripInit, id2name);
-	
-	if (guideFile != ""){
-		ifstream fin(guideFile);
-		string tree;
-		while (getline(fin, tree)){
-			alg.addGuideTree(tree, name2id);
-		}
-	}
-	
-	if (constraintFile != ""){
-		ifstream fin(constraintFile);
-		getline(fin, constraintTree);
-	}
-	
-	auto res = (constraintTree == "") ? alg.run(nRounds, nThreads) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
-	cerr << "Score: " << res.first << endl;
-	cerr << res.second << endl;
-	
-	res = alg.run(nSample, nThreads, p);
-	cerr << "Score: " << res.first << endl;
-	fout << res.second << endl;
-	
+	score_t score = meta.run().first;
 	cerr << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
-	//cerr << alg.printOptimalTreeWithScore() << endl;
+	cerr << "Score: " << score << endl;
 	return 0;
 }
