@@ -15,7 +15,11 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const score_t R){
 	
 	return (rn0 * (rn0 - 1) * ny1 * ny2 + nr0 * (nr0 - 1) * yn1 * yn2) - M * (rn0 * (rn0 - 1) * yn1 * yn2 + nr0 * (nr0 - 1) * ny1 * ny2) 
 	     + (rn1 * (rn1 - 1) * ny2 * ny0 + nr1 * (nr1 - 1) * yn2 * yn0) - M * (rn1 * (rn1 - 1) * yn2 * yn0 + nr1 * (nr1 - 1) * ny2 * ny0)
-	     + (rn2 * (rn2 - 1) * ny0 * ny1 + nr2 * (nr2 - 1) * yn0 * yn1) - M * (rn2 * (rn2 - 1) * yn0 * yn1 + nr2 * (nr2 - 1) * ny0 * ny1);
+	     + (rn2 * (rn2 - 1) * ny0 * ny1 + nr2 * (nr2 - 1) * yn0 * yn1) - M * (rn2 * (rn2 - 1) * yn0 * yn1 + nr2 * (nr2 - 1) * ny0 * ny1)
+		 //+ (yn0 * (yn0 - 1) * nr1 * nr2 + ny0 * (ny0 - 1) * rn1 * rn2) - M * (yn0 * (yn0 - 1) * rn1 * rn2 + ny0 * (ny0 - 1) * nr1 * nr2) 
+	     //+ (yn1 * (yn1 - 1) * nr2 * nr0 + ny1 * (ny1 - 1) * rn2 * rn0) - M * (yn1 * (yn1 - 1) * rn2 * rn0 + ny1 * (ny1 - 1) * nr2 * nr0)
+	     //+ (yn2 * (yn2 - 1) * nr0 * nr1 + ny2 * (ny2 - 1) * rn0 * rn1) - M * (yn2 * (yn2 - 1) * rn0 * rn1 + ny2 * (ny2 - 1) * nr0 * nr1)
+		 ;
 }
 
 struct TripartitionInitializer{
@@ -23,7 +27,6 @@ struct TripartitionInitializer{
 	vector<score_t> pi;
 	vector<vector<int> > seq;
 	vector<bool> weight;
-	vector<score_t> weightHelper;
 };
 
 struct Tripartition{
@@ -34,10 +37,9 @@ struct Tripartition{
 	const vector<score_t> pi; // pos * letter
 	const vector<vector<int> > seq; // taxon * pos -> letter
 	const vector<bool> weight;
-	const vector<score_t> weightHelper;
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos), weightHelper(init.weightHelper){}
+	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos){}
 	
 	void resetWork(int start, int end){
 		for (int p = start; p < end; p++){

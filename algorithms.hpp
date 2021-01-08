@@ -955,30 +955,25 @@ struct ConstrainedOptimizationAlgorithm{
 		pAlg.run();
 	}
 	
-	void twoStepBatchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
-		for (int i = start; i < end; i++){
-			twoStepWorkflow(jobs[i]);
-			cerr << jobs[i].printTree(names) << endl;
+	void twoStepBatchWork(int nJobs){
+		for (int i = 0; i < nJobs; i++){
+			PlacementAlgorithm job(taxonHash, tripInit);
+			twoStepWorkflow(job);
+			cerr << job.printTree(names) << endl;
+			{ const lock_guard<mutex> lock(mtx); addTripartitions(job.tripHash); }
 		}
 	}
 	
 	pair<score_t, string> twoStepRun(int nJobs, int nThrds){
 		cerr << "Use two-step algorithm!\n";
-		//if (roundId != 0) return {computeOptimalTree(), printOptimalTree()};
-		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
-		for (int i = 0; i < nJobs; i++){
-			jobs.emplace_back(taxonHash, tripInit);
-		}
+		
 		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::twoStepBatchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
+			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::twoStepBatchWork, this, (i + 1) * nJobs / nThrds - i * nJobs / nThrds);
 		}
-		twoStepBatchWork(jobs, 0, nJobs / nThrds);
+		twoStepBatchWork(nJobs / nThrds);
 		for (int i = 1; i < nThrds; i++){
 			thrds[i - 1].join();
-		}
-		for (int i = 0; i < nJobs; i++){
-			addTripartitions(jobs[i].tripHash);
 		}
 		
 		return {computeOptimalTree(), printOptimalTree()};
@@ -1107,6 +1102,7 @@ struct MetaAlgorithm{
 			}
 			while (prevS < res.first);
 		}
+		cerr << "Final Tree: " << res.second << endl;
 		fout << res.second << endl;
 		
 		return res;

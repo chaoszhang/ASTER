@@ -129,7 +129,6 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	bool phylip = false;
 	string mappingFile;
 	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
 	
@@ -151,6 +150,7 @@ int main(int argc, char** argv){
 	
 	cerr << "#Genetrees: " << K << endl;
 	
-	cerr << "Score: " << meta.run().first / 2 << endl;
+	score_t score = meta.run().first / 2;
+	cerr << "Score: " << score << endl;
 	return 0;
 }
