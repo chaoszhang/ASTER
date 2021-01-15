@@ -57,7 +57,9 @@ int MAPPING(int begin, int end){
 	if (name2id.count(s) == 0){
 		name2id[s] = names.size();
 		names.push_back(s);
-		tripInit.leafParent[part].emplace_back();
+		for (int i = 0; i < meta.nThread2; i++){
+			tripInit.leafParent[i].emplace_back();
+		}
 	}
 	return name2id[s];
 }
