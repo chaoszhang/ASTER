@@ -55,9 +55,9 @@ struct Tripartition{
 			w.yzb = (u.yzb + v.yzb + u.y * v.z + u.z * v.y) * (1 - w.weight);
 			
 			
-			w.tx = (u.tx + v.tx + u.y * (v.z2a - v.z2b) + (u.z2a - u.z2b) * v.y + u.z * (v.y2a - v.y2b) + (u.y2a - u.y2b) * v.z) * (1 - w.weight);
-			w.ty = (u.ty + v.ty + u.x * (v.z2a - v.z2b) + (u.z2a - u.z2b) * v.x + u.z * (v.x2a - v.x2b) + (u.x2a - u.x2b) * v.z) * (1 - w.weight);
-			w.tz = (u.tz + v.tz + u.x * (v.y2a - v.y2b) + (u.y2a - u.y2b) * v.x + u.y * (v.x2a - v.x2b) + (u.x2a - u.x2b) * v.y) * (1 - w.weight);
+			w.tx = u.tx + v.tx + u.y * (v.z2a - v.z2b) + (u.z2a - u.z2b) * v.y + u.z * (v.y2a - v.y2b) + (u.y2a - u.y2b) * v.z;
+			w.ty = u.ty + v.ty + u.x * (v.z2a - v.z2b) + (u.z2a - u.z2b) * v.x + u.z * (v.x2a - v.x2b) + (u.x2a - u.x2b) * v.z;
+			w.tz = u.tz + v.tz + u.x * (v.y2a - v.y2b) + (u.y2a - u.y2b) * v.x + u.y * (v.x2a - v.x2b) + (u.x2a - u.x2b) * v.y;
 			score_t oldQ = w.q;
 			w.q = u.x * v.tx + u.y * v.ty + u.z * v.tz + v.x * u.tx + v.y * u.ty + v.z * u.tz
 				+ u.x2a * v.yza - u.x2b * v.yzb
@@ -93,9 +93,9 @@ struct Tripartition{
 				while (w != -1){
 					Node& u = totalZ[totalZ[w].small];
 					Node& v = totalZ[totalZ[w].large];
-					totalZ[w].z = (u.z + v.z) * totalZ[w].weight;
+					totalZ[w].z = u.z + v.z;
 					totalZ[w].z2a = u.z2a + v.z2a + u.z * v.z;
-					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * totalZ[w].weight;
+					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * (1 - totalZ[w].weight);
 					w = totalZ[w].up;
 				}
 			}
@@ -108,9 +108,9 @@ struct Tripartition{
 				while (w != -1){
 					Node& u = totalZ[totalZ[w].small];
 					Node& v = totalZ[totalZ[w].large];
-					totalZ[w].z = (u.z + v.z) * totalZ[w].weight;
+					totalZ[w].z = u.z + v.z;
 					totalZ[w].z2a = u.z2a + v.z2a + u.z * v.z;
-					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * totalZ[w].weight;
+					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * (1 - totalZ[w].weight);
 					w = totalZ[w].up;
 				}
 			}
