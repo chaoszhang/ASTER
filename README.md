@@ -12,9 +12,9 @@ asterisk [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputL
 
 -o  path to output file (default: stdout)
 
--r  number of total rounds of placements (default: 5)
+-r  number of total rounds of placements (default: 4)
 
--s  number of total rounds of subsampling (default: 0)
+-s  number of total rounds of subsampling (default: 4)
 
 -p  subsampling probability of keeping each taxon (default: 0.5)
 
@@ -60,9 +60,9 @@ astral(-pro) [-o oFilePath -r nRound -s nSample -p probability -t nThread -a tax
 
 -o  path to output file (default: stdout)
 
--r  number of total rounds of placements (default: 5)
+-r  number of total rounds of placements (default: 4)
 
--s  number of total rounds of subsampling (default: 0)
+-s  number of total rounds of subsampling (default: 4)
 
 -p  subsampling probability of keeping each taxon (default: 0.5)
 
