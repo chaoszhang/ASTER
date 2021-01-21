@@ -304,9 +304,12 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 		cur = nodecnt++;
 		leafname[cur] = MAPPING(i, pos);
 	}
+	vector<long long> lst;
+	lst.push_back(cur);
 	while (TEXT[pos] != ')'){
 		i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
+		/*
 		if (TEXT[pos] == '(') {
 			pos++;
 			long long left = cur, right = parse(leafname, children);
@@ -319,6 +322,33 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 			leafname[right] = MAPPING(i, pos);
 			cur = nodecnt++;
 			children[cur] = {left, right};
+		}
+		*/
+		long long temp = lst[rand() % lst.size()];
+		if (TEXT[pos] == '(') {
+			pos++;
+			long long left = nodecnt++, right = parse(leafname, children);
+			while (TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
+			if (leafname.count(temp)) {
+				leafname[left] = leafname[temp];
+				leafname.erase(temp);
+			}
+			else children[left] = children[temp];
+			children[temp] = {left, right};
+			lst.push_back(left);
+			lst.push_back(right);
+		}
+		else {
+			long long left = nodecnt++, right = nodecnt++;
+			leafname[right] = MAPPING(i, pos);
+			if (leafname.count(temp)) {
+				leafname[left] = leafname[temp];
+				leafname.erase(temp);
+			}
+			else children[left] = children[temp];
+			children[temp] = {left, right};
+			lst.push_back(left);
+			lst.push_back(right);
 		}
 	}
 	pos++;
