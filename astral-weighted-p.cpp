@@ -68,7 +68,7 @@ score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == begin || i == end) return 1;
-	else return from_string(TEXT.substr(begin, i - begin));
+	else return max(0, 1.5 * from_string(TEXT.substr(begin, i - begin)) - 0.5);
 }
 
 void parse(int parent = -1, bool isLeft = true){
