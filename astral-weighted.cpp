@@ -46,7 +46,7 @@ int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
-
+score_t maxv = 100, minv = 0;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -68,7 +68,7 @@ score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == begin || i == end) return 1;
-	else return from_string(TEXT.substr(begin, i - begin)) * 0.01;
+	else return (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv);
 }
 
 void parse(int parent = -1, bool isLeft = true){
@@ -129,16 +129,20 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
-string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab
+-x max possible weight in weight scale (default: 100)
+-n min possible weight in weight scale (default: 0)
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
 	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
+	meta.initialize(argc, argv, " -a taxonNameMaps -x maxWeight -n minWeight", HELP_TEXT);
 	
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
+		if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
+		if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
 	}
 	
 	for (int i = 0; i < meta.nThread2; i++){
