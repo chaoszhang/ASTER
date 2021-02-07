@@ -67,7 +67,7 @@ int MAPPING(int begin, int end){
 score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
-	if (i == begin || i == end) return 1;
+	if (i == begin || i == end) return 0;
 	else return max(0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
 }
 
@@ -129,6 +129,7 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
+string HELP = " -a taxonNameMaps -x maxWeight -n minWeight";
 string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab
 -x max possible weight in weight scale (default: 100)
 -n min possible weight in weight scale (default: 0)
@@ -137,7 +138,7 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 
 int main(int argc, char** argv){
 	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps -x maxWeight -n minWeight", HELP_TEXT);
+	meta.initialize(argc, argv, HELP, HELP_TEXT);
 	
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];

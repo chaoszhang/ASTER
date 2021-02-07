@@ -12,6 +12,11 @@ typedef unsigned __int128 hash_t;
 #include<thread>
 #include<mutex>
 
+#ifdef SUPPORT
+#include "incbeta.c"
+#include <cmath>
+#endif
+
 using namespace std;
 
 struct Hasher{
@@ -978,8 +983,84 @@ struct ConstrainedOptimizationAlgorithm{
 		
 		return {computeOptimalTree(), printOptimalTree()};
 	}
+
+#ifdef SUPPORT
+	void switchSubtree(Quadrupartition &quad, int v, int s, int t){
+		if (nodes[v].leafId != -1) {
+			quad.rmv(s, nodes[v].leafId);
+			quad.add(t, nodes[v].leafId);
+		}
+		else {
+			tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+			switchSubtree(quad, get<0>(c), s, t);
+			switchSubtree(quad, get<1>(c), s, t);
+		}	
+	}
+
+	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support){
+		if (nodes[v].leafId != -1) return names[nodes[v].leafId];
+		//r|u|c0c1|-
+		string res = "(";
+		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+		//ru|c1|c0|-
+		switchSubtree(quad, u, 1, 0);
+		switchSubtree(quad, get<1>(c), 2, 1);
+		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support) + ",";
+		//ru|c0|c1|-
+		switchSubtree(quad, get<0>(c), 2, 1);
+		switchSubtree(quad, get<1>(c), 1, 2);
+		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support) + ")";
+		//r|u|c1|c0
+		switchSubtree(quad, u, 0, 1);
+		switchSubtree(quad, get<0>(c), 1, 3);
+		array<score_t, 3> score = quad.score();
+		//r|u|c0c1|-
+		switchSubtree(quad, get<0>(c), 3, 2);
+		if (score[0] + score[1] + score[2] < 0.5) return res + to_string(100.0 / 3.0);
+		//else return res + to_string(100.0 * score[0] / (score[0] + score[1] + score[2]));
+		score_t tscore = score[0] + score[1] + score[2];
+		score_t i0 = 1.0 - incbeta(score[0] + 1.0, tscore + 1.0 - score[0], 1.0 / 3.0);
+		score_t i1 = 1.0 - incbeta(score[1] + 1.0, tscore + 1.0 - score[1], 1.0 / 3.0);
+		score_t i2 = 1.0 - incbeta(score[2] + 1.0, tscore + 1.0 - score[2], 1.0 / 3.0);
+		score_t lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + 1.0) - lgamma(tscore + 2.0);
+		score_t lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + 1.0) - lgamma(tscore + 2.0);
+		score_t lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + 1.0) - lgamma(tscore + 2.0);
+		res += to_string(100.0 * i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0)));
+		return res;
+	}
+	
+	string printOptimalTreeWithSupport(int support){
+		string res;
+		Quadrupartition quad(tripInit);
+		quad.add(0, 0);
+		for (int i = 1; i < names.size(); i++) quad.add(2, i);
+		int v = hash[-taxonHash[0]];
+		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+		//0|c1|c0|-
+		switchSubtree(quad, get<1>(c), 2, 1);
+		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support);
+		//0|c0|c1|-
+		switchSubtree(quad, get<1>(c), 1, 2);
+		switchSubtree(quad, get<0>(c), 2, 1);
+		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support);
+		return res + ")," + names[0] + ");";
+	}
+#endif
 };
 
+#ifdef SUPPORT
+const string HELP_TEXT_1 = "feast [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -u supportLevel";
+const string HELP_TEXT_2 = R"V0G0N(] inputList
+-c  path to constraint subtree file
+-g  path to guide tree file
+-o  path to output file (default: stdout)
+-r  number of total rounds of placements (default: 5)
+-s  number of total rounds of subsampling (default: 0)
+-p  subsampling probability of keeping each taxon (default: 0.5)
+-t  number of threads (default: 1)
+-u  output support level (0, default: no output support value, 1: branch local posterior probability, 2: detailed)
+)V0G0N";
+#else
 const string HELP_TEXT_1 = "feast [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread";
 const string HELP_TEXT_2 = R"V0G0N(] inputList
 -c  path to constraint subtree file
@@ -990,10 +1071,11 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 -p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
 )V0G0N";
+#endif
 
 struct MetaAlgorithm{
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1;
+	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 0;
 	double p = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
@@ -1020,6 +1102,7 @@ struct MetaAlgorithm{
 			if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
 			if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
 			if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
+			if (strcmp(argv[i], "-u") == 0) sscanf(argv[i + 1], "%d", &support);
 			if (strcmp(argv[i], "-h") == 0) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
 		
@@ -1102,8 +1185,11 @@ struct MetaAlgorithm{
 			}
 			while (prevS < res.first);
 		}
-		cerr << "Final Tree: " << res.second << endl;
-		fout << res.second << endl;
+		
+		string output = res.second;
+		cerr << "Final Tree: " << output << endl;
+		if (support) output = alg.printOptimalTreeWithSupport(support);
+		fout << output << endl;
 		
 		return res;
 	}
