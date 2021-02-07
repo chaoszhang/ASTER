@@ -121,7 +121,7 @@ struct Tripartition{
 		void add(int x, int i){
 			for (int u: leafParent[i]){
 				nodes[u].update(version, totalZ[u]);
-				((x == 0) ? nodes[u].x : (x == 1) ? nodes[u].y : nodes[u].z)++;
+				((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y)++;
 				int w = nodes[u].up;
 				while (w != -1){
 					nodes[w].update(version, totalZ[w]);
@@ -135,7 +135,7 @@ struct Tripartition{
 		void rmv(int x, int i){
 			for (int u: leafParent[i]){
 				nodes[u].update(version, totalZ[u]);
-				((x == 0) ? nodes[u].x : (x == 1) ? nodes[u].y : nodes[u].z)--;
+				((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y)--;
 				int w = nodes[u].up;
 				while (w != -1){
 					nodes[w].update(version, totalZ[w]);
