@@ -67,7 +67,7 @@ int MAPPING(int begin, int end){
 score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
-	if (i == begin || i == end) return (defaultv - minv) / (maxv - minv);
+	if (i == begin || i == end) return max(0.0, (defaultv - minv) / (maxv - minv));
 	else return max(0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
 }
 
@@ -84,7 +84,7 @@ void parse(int parent = -1, bool isLeft = true){
 		pos++;
 		parse(cur, false); 
 		while (TEXT[pos] != ')'){
-			tripInit.nodes[part][cur].weight = (defaultv - minv) / (maxv - minv);
+			tripInit.nodes[part][cur].weight = max(0.0, (defaultv - minv) / (maxv - minv));
 			int next = tripInit.nodes[part].size();
 			tripInit.nodes[part].emplace_back();
 			tripInit.nodes[part][cur].up = next;
