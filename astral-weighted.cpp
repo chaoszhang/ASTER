@@ -145,7 +145,8 @@ int main(int argc, char** argv){
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 		if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
-		if (strcmp(argv[i], "-n") == 0) defaultv = from_string(argv[i + 1]);
+		if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
+		if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
 	}
 	
 	for (int i = 0; i < meta.nThread2; i++){
