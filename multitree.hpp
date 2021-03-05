@@ -20,28 +20,13 @@ struct Tripartition{
 	struct Partition{
 		struct Node{
 			score_t x = 0, y = 0, z = 0, tx = 0, ty = 0, tz = 0, q = 0;
-			int version = 0, up = -1, small = -1, large = -1; // -1 for dummy!
+			int up = -1, small = -1, large = -1; // -1 for dummy!
 			bool dup = false;
-			
-			void update(int v, int t){
-				if (version != v){
-					x = 0;
-					y = 0;
-					z = t;
-					tx = 0;
-					ty = 0;
-					tz = 0;
-					q = 0;
-					version = v;
-				}
-			}
 		};
 		
 		score_t normal(Node& w){
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
-			u.update(version, totalZ[w.small]);
-			v.update(version, totalZ[w.large]);
 			w.tx = u.tx + v.tx + u.y * v.z * (u.y + v.z - 2) + u.z * v.y * (u.z + v.y - 2);
 			w.ty = u.ty + v.ty + u.x * v.z * (u.x + v.z - 2) + u.z * v.x * (u.z + v.x - 2);
 			w.tz = u.tz + v.tz + u.x * v.y * (u.x + v.y - 2) + u.y * v.x * (u.y + v.x - 2);
@@ -57,8 +42,6 @@ struct Tripartition{
 		void special(Node& w){
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
-			u.update(version, totalZ[w.small]);
-			v.update(version, totalZ[w.large]);
 			w.tx = u.tx + v.tx;
 			w.ty = u.ty + v.ty;
 			w.tz = u.tz + v.tz;
@@ -67,10 +50,10 @@ struct Tripartition{
 		vector<vector<int> > leafParent;
 		score_t totalScore = 0;
 		vector<Node> nodes;
-		vector<score_t> totalZ;
+		vector<int> color;
 		int version = 0;
 		
-		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), totalZ(init.nodes[p].size()){
+		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -78,7 +61,7 @@ struct Tripartition{
 				nodes[i].dup = init.nodes[p][i].dup;
 			}
 		}
-		
+		/*
 		void reset(){
 			totalScore = 0;
 			version++;
@@ -145,6 +128,27 @@ struct Tripartition{
 				}
 			}
 		}
+		*/
+		void update(int x, int i){
+			int y = color[i];
+			if (x == y) return;
+			for (int u: leafParent[i]){
+				if (y != -1) ((y == 0) ? nodes[u].z : (y == 1) ? nodes[u].x : nodes[u].y)--;
+				if (x != -1) ((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y)++;
+				int w = nodes[u].up;
+				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
+					if (y != -1) ((y == 0) ? nodes[w].z : (y == 1) ? nodes[w].x : nodes[w].y)--;
+					if (x != -1) ((x == 0) ? nodes[w].z : (x == 1) ? nodes[w].x : nodes[w].y)++;
+					if (nodes[w].dup) special(nodes[w]); else totalScore += normal(nodes[w]);
+					u = w;
+					w = nodes[u].up;
+				}
+				if (w != -1){
+					special(nodes[w]);
+				}
+			}
+			color[i] = x;
+		}
 		
 		score_t score(){
 			return totalScore / 2;
@@ -192,7 +196,7 @@ struct Tripartition{
 		
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
-	
+	/*
 	void reset(){
 		for (int p = 0; p < parts.size(); p++) parts[p].reset();
 	}
@@ -222,6 +226,13 @@ struct Tripartition{
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
 		parts[0].rmv(x, i);
+		for (thread &t: thrds) t.join();
+	}
+	*/
+	void update(int x, int i){
+		vector<thread> thrds;
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
+		parts[0].update(x, i);
 		for (thread &t: thrds) t.join();
 	}
 	

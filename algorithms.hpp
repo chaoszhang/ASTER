@@ -128,13 +128,13 @@ struct PlacementAlgorithm{
 	void defaultInitializer(){
 		if (rootLeafId == -1){
 			rootLeafId = order[orderId];
-			trip.addTotal(order[orderId]);
+			//trip.addTotal(order[orderId]);
 			orderId++;
 		}
 		if (rootNodeId == -1){
 			rootNodeId = nodes.size();
 			nodes.emplace_back(order[orderId]);
-			trip.addTotal(order[orderId]);
+			//trip.addTotal(order[orderId]);
 			orderId++;
 		}
 		forceLeftHeavy(rootNodeId);
@@ -142,8 +142,9 @@ struct PlacementAlgorithm{
 	
 	void switchSubtree(int v, int src, int tgt){
 		if (leafId(v) != -1){
-			trip.rmv(src, leafId(v));
-			trip.add(tgt, leafId(v));
+			//trip.rmv(src, leafId(v));
+			//trip.add(tgt, leafId(v));
+			trip.update(tgt, leafId(v));
 		}
 		else{
 			switchSubtree(light(v), src, tgt);
@@ -153,44 +154,36 @@ struct PlacementAlgorithm{
 	
 	void scoringPlacementDP(int v, int i){
 		if (leafId(v) != -1){
-			//Wvi|-|-
-			trip.reset();
-			//Wi|v|-
-			trip.rmv(0, leafId(v));
-			trip.add(1, leafId(v));
+			//Wv|-|i
 			sNo(v) = 0;
 			//W|v|i
-			trip.rmv(0, i);
-			trip.add(2, i);
+			trip.update(1, leafId(v));
 			sYes(v) = trip.score();
 			placeHeavy(v) = false;
 			placeLight(v) = false;
-			//Wi|v|-
-			trip.rmv(2, i);
-			trip.add(0, i);
 		}
 		else{
-			//BCi|A|-
+			//AC|B|i
 			scoringPlacementDP(light(v), i);
+			//ABC|-|i
+			switchSubtree(light(v), 1, 0);
+			//BC|A|i
 			scoringPlacementDP(heavy(v), i);
-			//Ci|A|B
+			//C|A|Bi
 			switchSubtree(light(v), 0, 2);
 			score_t up, left, right, sibling;
-			up = trip.score();
-			//C|Ai|B
-			trip.rmv(0, i);
-			trip.add(1, i);
-			left = trip.score();
-			//C|A|Bi
-			trip.rmv(1, i);
-			trip.add(2, i);
 			right = trip.score();
+			//C|Ai|B
+			trip.update(1, i);
+			left = trip.score();
+			//Ci|A|B
+			trip.update(0, i);
+			up = trip.score();
+			//C|A|Bi
+			trip.update(2, i);
 			//C|AB|i
 			switchSubtree(light(v), 2, 1);
 			sibling = trip.score();
-			//Ci|AB|-
-			trip.rmv(2, i);
-			trip.add(0, i);
 			sNo(v) = sNo(light(v)) + sNo(heavy(v)) + up;
 			sYes(v) = sNo(v) + sibling;
 			placeHeavy(v) = false;
@@ -209,7 +202,10 @@ struct PlacementAlgorithm{
 	}
 	
 	int locateBranchAdding(int i){
-		trip.addTotal(i);
+		//trip.addTotal(i);
+		trip.update(2, i);
+		trip.update(0, rootLeafId);
+		switchSubtree(rootNodeId, -1, 0);
 		scoringPlacementDP(rootNodeId, i);
 		int v = rootNodeId;
 		while (placeHeavy(v) || placeLight(v)){
@@ -225,7 +221,7 @@ struct PlacementAlgorithm{
 	
 	int locateBranch(int i){
 		int v = locateBranchAdding(i);
-		trip.rmvTotal(i);
+		trip.update(-1, i); //trip.rmvTotal(i);
 		return v;
 	}
 	
@@ -370,9 +366,10 @@ struct PlacementAlgorithm{
 	
 	score_t nnMove(int v){
 		if (leafId(v) != -1){
-			trip.reset();
-			trip.rmv(0, leafId(v));
-			trip.add(1, leafId(v));
+			//trip.reset();
+			//trip.rmv(0, leafId(v));
+			//trip.add(1, leafId(v));
+			trip.update(1, leafId(v));
 			return 0;
 		}
 		else{
@@ -384,7 +381,12 @@ struct PlacementAlgorithm{
 				switchSubtree(light(heavy(v)), 0, 1);
 				switchSubtree(light(v), 1, 2);
 				ae_b_cd = trip.score();
+				//ABE|CD|-
+				switchSubtree(light(heavy(v)), 1, 0);
+				switchSubtree(light(v), 2, 1);
 			}
+			//ABCDE|-|-
+			switchSubtree(light(v), 1, 0);
 			//CDE|AB|-
 			score_t cde_a_b = nnMove(heavy(v));
 			//E|AB|CD
@@ -457,14 +459,20 @@ struct PlacementAlgorithm{
 	
 	pair<bool, hash_t> tripHashGenerator(int v){
 		if (leafId(v) != -1){
-			trip.reset();
-			trip.rmv(0, leafId(v));
-			trip.add(1, leafId(v));
+			//trip.reset();
+			//trip.rmv(0, leafId(v));
+			//trip.add(1, leafId(v));
+			trip.update(1, leafId(v));
 			return {leafId(v) == 0, taxonHash[leafId(v)]};
 		}
 		else{
-			pair<bool, hash_t> hLight = tripHashGenerator(light(v)), hHeavy = tripHashGenerator(heavy(v));
-			//BC|A|- -> C|A|B
+			//AC|B|-
+			pair<bool, hash_t> hLight = tripHashGenerator(light(v));
+			//ABC|-|-
+			switchSubtree(light(v), 1, 0);
+			//BC|A|-
+			pair<bool, hash_t> hHeavy = tripHashGenerator(heavy(v));
+			//C|A|B
 			switchSubtree(light(v), 0, 2);
 			score_t s = trip.score();
 			//C|AB|-
@@ -483,7 +491,13 @@ struct PlacementAlgorithm{
 			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
-		if (rNN >= 0) nnMove(rootNodeId);
+		if (rNN >= 0) {
+			trip.update(0, rootLeafId);
+			switchSubtree(rootNodeId, -1, 0);
+			nnMove(rootNodeId);
+		}
+		trip.update(0, rootLeafId);
+		switchSubtree(rootNodeId, -1, 0);
 		tripHashGenerator(rootNodeId);
 	}
 	
@@ -545,7 +559,7 @@ struct ConstrainedOptimizationAlgorithm{
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
 		if (nodes[v].leafId != -1){
 			if (selected.count(nodes[v].leafId)){
-				pAlg.trip.addTotal(nodes[v].leafId);
+				//pAlg.trip.addTotal(nodes[v].leafId);
 				if (pAlg.rootLeafId == -1){
 					pAlg.rootLeafId = nodes[v].leafId;
 					return -1;
@@ -591,7 +605,7 @@ struct ConstrainedOptimizationAlgorithm{
 		if (roundId != 0){
 			if (selected.count(0)){
 				pAlg.rootLeafId = 0;
-				pAlg.trip.addTotal(0);
+				//pAlg.trip.addTotal(0);
 				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, selected);
 			}
 			else {
@@ -610,7 +624,7 @@ struct ConstrainedOptimizationAlgorithm{
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, double subsampleRate){
 		if (nodes[v].leafId != -1){
 			if (randP(generator) < subsampleRate){
-				pAlg.trip.addTotal(nodes[v].leafId);
+				//pAlg.trip.addTotal(nodes[v].leafId);
 				if (pAlg.rootLeafId == -1){
 					pAlg.rootLeafId = nodes[v].leafId;
 					return -1;
@@ -656,7 +670,7 @@ struct ConstrainedOptimizationAlgorithm{
 		if (roundId != 0){
 			if (randP(generator) < subsampleRate){
 				pAlg.rootLeafId = 0;
-				pAlg.trip.addTotal(0);
+				//pAlg.trip.addTotal(0);
 				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, subsampleRate);
 			}
 			else {
@@ -686,7 +700,7 @@ struct ConstrainedOptimizationAlgorithm{
 				if (tree[i] != '\"' && tree[i] != '\'') s += tree[i];
 			}
 			int id = name2id.at(s);
-			pAlg.trip.addTotal(id);
+			//pAlg.trip.addTotal(id);
 			added.insert(id);
 			if (pAlg.rootLeafId == -1){
 				pAlg.rootLeafId = id;
@@ -868,7 +882,8 @@ struct ConstrainedOptimizationAlgorithm{
 			return true;
 		}
 		else {
-			pAlg.trip.rmvTotal(i);
+			//pAlg.trip.rmvTotal(i);
+			pAlg.trip.update(-1, i);
 			return false;
 		}
 	}
@@ -897,7 +912,7 @@ struct ConstrainedOptimizationAlgorithm{
 				{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
 				pAlg.run();
 				alg.addTripartitions(pAlg.tripHash);
-				for (int i = 0; i < n; i++) pAlg.trip.rmvTotal(order[i]);
+				for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]); //pAlg.trip.rmvTotal(order[i]);
 				pAlg.tripHash.clear();
 				pAlg.order.clear();
 				pAlg.nodes.clear();
@@ -945,11 +960,11 @@ struct ConstrainedOptimizationAlgorithm{
 						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
 						else abnormalOrder.push_back(i);
 					}
-					for (int i: added) pAlg.trip.rmvTotal(i);
+					for (int i: added) pAlg.trip.update(-1, i); //pAlg.trip.rmvTotal(i);
 				}
 			}
-			for (int i = n; i < N; i++) pAlg.trip.addTotal(order[i]);
-			for (int i: abnormalOrder) pAlg.trip.rmvTotal(i);
+			//for (int i = n; i < N; i++) pAlg.trip.addTotal(order[i]);
+			//for (int i: abnormalOrder) pAlg.trip.rmvTotal(i);
 			pAlg.order = abnormalOrder;
 			pAlg.nodes = pNodes;
 			pAlg.rootNodeId = rootNodeId;
@@ -1196,7 +1211,9 @@ struct MetaAlgorithm{
 		
 		string output = res.second;
 		cerr << "Final Tree: " << output << endl;
+		#ifdef SUPPORT
 		if (support) output = alg.printOptimalTreeWithSupport(support);
+		#endif
 		fout << output << endl;
 		
 		return res;
