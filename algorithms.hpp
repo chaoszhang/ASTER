@@ -1002,8 +1002,7 @@ struct ConstrainedOptimizationAlgorithm{
 #ifdef SUPPORT
 	void switchSubtree(Quadrupartition &quad, int v, int s, int t){
 		if (nodes[v].leafId != -1) {
-			quad.rmv(s, nodes[v].leafId);
-			quad.add(t, nodes[v].leafId);
+			quad.update(t, nodes[v].leafId);
 		}
 		else {
 			tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
@@ -1057,8 +1056,8 @@ struct ConstrainedOptimizationAlgorithm{
 	string printOptimalTreeWithSupport(int support){
 		string res;
 		Quadrupartition quad(tripInit);
-		quad.add(0, 0);
-		for (int i = 1; i < names.size(); i++) quad.add(2, i);
+		quad.update(0, 0);
+		for (int i = 1; i < names.size(); i++) quad.update(2, i);
 		int v = hash[-taxonHash[0]];
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-

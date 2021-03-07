@@ -285,13 +285,13 @@ struct Quadrupartition{
 		}
 		
 		vector<vector<int> > leafParent;
-		vector<score_t> score1, score2, score3, prod;
+		vector<score_t> score1, score2, score3;
 		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
 		vector<Node> nodes;
-		int version = 0;
+		vector<int> color;
 		
 		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), 
-				prod(init.nodes[p].size()), score1(init.nodes[p].size()), score2(init.nodes[p].size()), score3(init.nodes[p].size()){
+				score1(init.nodes[p].size()), score2(init.nodes[p].size()), score3(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -312,22 +312,6 @@ struct Quadrupartition{
 					u = w;
 					w = nodes[u].up;
 				}
-				/*
-				score_t t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 -= (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 -= (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 -= (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
-				score1[u] += s1; score2[u] += s2; score3[u] += s3;
-				prod[u] = nodes[u].a * nodes[u].b * nodes[u].c * nodes[u].d;
-				t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 += (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 += (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 += (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
-				*/
 				totalScore1 += s1;
 				totalScore2 += s2;
 				totalScore3 += s3;
@@ -346,30 +330,37 @@ struct Quadrupartition{
 					u = w;
 					w = nodes[u].up;
 				}
-				/*
-				score_t t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 -= (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 -= (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 -= (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
-				score1[u] += s1; score2[u] += s2; score3[u] += s3;
-				prod[u] = nodes[u].a * nodes[u].b * nodes[u].c * nodes[u].d;
-				t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 += (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 += (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 += (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
-				*/
 				totalScore1 += s1;
 				totalScore2 += s2;
 				totalScore3 += s3;
 			}
 		}
 		
-		array<score_t, 3> score(){
-			score_t prod = cnt[0] * cnt[1] * cnt[2] * cnt[3];
+		void update(int x, int i){
+			int y = color[i];
+			if (x == y) return;
+			if (y != -1) cnt[y]--;
+			if (x != -1) cnt[x]++;
+			for (int u: leafParent[i]){
+				score_t s1 = 0, s2 = 0, s3 = 0;
+				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d) -= nodes[u].length;
+				if (x != -1) ((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d) += nodes[u].length;
+				int w = nodes[u].up;
+				while (w != -1){
+					array<score_t, 3> s = normal(nodes[w]);
+					s1 += s[0]; s2 += s[1]; s3 += s[2];
+					u = w;
+					w = nodes[u].up;
+				}
+				totalScore1 += s1;
+				totalScore2 += s2;
+				totalScore3 += s3;
+			}
+			color[i] = x;
+		}
+		
+		array<double, 3> score(){
+			double prod = cnt[0] * cnt[1] * cnt[2] * cnt[3];
 			return {totalScore1 / prod, totalScore2 / prod, totalScore3 / prod};
 		}
 	};
@@ -394,8 +385,15 @@ struct Quadrupartition{
 		for (thread &t: thrds) t.join();
 	}
 	
-	array<score_t, 3> score(){
-		array<score_t, 3> res;
+	void update(int x, int i){
+		vector<thread> thrds;
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
+		parts[0].update(x, i);
+		for (thread &t: thrds) t.join();
+	}
+	
+	array<double, 3> score(){
+		array<double, 3> res;
 		res[0] = 0;
 		res[1] = 0;
 		res[2] = 0;

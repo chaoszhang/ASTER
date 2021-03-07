@@ -318,9 +318,9 @@ struct Quadrupartition{
 		vector<score_t> score1, score2, score3;
 		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
 		vector<Node> nodes;
-		//vector<int> color;
+		vector<int> color;
 		
-		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()) {//, color(init.leafParent[p].size(), -1){
+		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -329,13 +329,18 @@ struct Quadrupartition{
 			}
 		}
 		
-		void add(int x, int i){
-			cnt[x]++;
+		void update(int x, int i){
+			int y = color[i];
+			if (x == y) return;
+			if (y != -1) cnt[y]--;
+			if (x != -1) cnt[x]++;
 			for (int u: leafParent[i]){
-				((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d)++;
+				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d)--;
+				if (x != -1) ((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d)++;
 				int w = nodes[u].up;
 				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					((x == 0) ? nodes[w].a : (x == 1) ? nodes[w].b : (x == 2) ? nodes[w].c : nodes[w].d)++;
+					if (y != -1) ((y == 0) ? nodes[w].a : (y == 1) ? nodes[w].b : (y == 2) ? nodes[w].c : nodes[w].d)--;
+					if (x != -1) ((x == 0) ? nodes[w].a : (x == 1) ? nodes[w].b : (x == 2) ? nodes[w].c : nodes[w].d)++;
 					if (nodes[w].dup) special(nodes[w]);
 					else {
 						array<score_t, 3> s = normal(nodes[w]);
@@ -348,27 +353,7 @@ struct Quadrupartition{
 					special(nodes[w]);
 				}
 			}
-		}
-		
-		void rmv(int x, int i){
-			cnt[x]--;
-			for (int u: leafParent[i]){
-				((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d)--;
-				int w = nodes[u].up;
-				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					((x == 0) ? nodes[w].a : (x == 1) ? nodes[w].b : (x == 2) ? nodes[w].c : nodes[w].d)--;
-					if (nodes[w].dup) special(nodes[w]);
-					else {
-						array<score_t, 3> s = normal(nodes[w]);
-						totalScore1 += s[0]; totalScore2 += s[1]; totalScore3 += s[2];
-					}
-					u = w;
-					w = nodes[u].up;
-				}
-				if (w != -1){
-					special(nodes[w]);
-				}
-			}
+			color[i] = x;
 		}
 		
 		array<double, 3> score(){
@@ -384,17 +369,10 @@ struct Quadrupartition{
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
 	
-	void add(int x, int i){
+	void update(int x, int i){
 		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
+		parts[0].update(x, i);
 		for (thread &t: thrds) t.join();
 	}
 	
