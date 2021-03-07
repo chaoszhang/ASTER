@@ -1100,7 +1100,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 
 struct MetaAlgorithm{
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 0;
+	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
 	double p = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
