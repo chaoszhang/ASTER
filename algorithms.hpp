@@ -1028,20 +1028,20 @@ struct ConstrainedOptimizationAlgorithm{
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
-		array<score_t, 3> score = quad.score();
+		array<double, 3> score = quad.score();
 		//r|u|c0c1|-
 		switchSubtree(quad, get<0>(c), 3, 2);
 		if (score[0] + score[1] + score[2] < 1e-8) {
 			if (support == 1) return res + to_string(1.0 / 3.0);
 			else return res + "'support=(0,0,0);p=(0.333,0.333,0.333)'"; 
 		}
-		score_t tscore = score[0] + score[1] + score[2];
-		score_t i0 = 1.0 - incbeta(score[0] + 1.0, tscore + 1.0 - score[0], 1.0 / 3.0);
-		score_t i1 = 1.0 - incbeta(score[1] + 1.0, tscore + 1.0 - score[1], 1.0 / 3.0);
-		score_t i2 = 1.0 - incbeta(score[2] + 1.0, tscore + 1.0 - score[2], 1.0 / 3.0);
-		score_t lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + 1.0) - lgamma(tscore + 2.0);
-		score_t lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + 1.0) - lgamma(tscore + 2.0);
-		score_t lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + 1.0) - lgamma(tscore + 2.0);
+		double tscore = score[0] + score[1] + score[2];
+		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + 1.0 - score[0], 1.0 / 3.0);
+		double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + 1.0 - score[1], 1.0 / 3.0);
+		double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + 1.0 - score[2], 1.0 / 3.0);
+		double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + 1.0) - lgamma(tscore + 2.0);
+		double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + 1.0) - lgamma(tscore + 2.0);
+		double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + 1.0) - lgamma(tscore + 2.0);
 		if (support == 1) res += to_string(i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0)));
 		else {
 			res += "'support=(" + to_string(score[0]) + "," + to_string(score[1]) + "," + to_string(score[2]) + ");p=(";
@@ -1049,6 +1049,8 @@ struct ConstrainedOptimizationAlgorithm{
 			res += to_string(i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1))) + ",";
 			res += to_string(i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2))) + ")'";
 		}
+		if (3 * score[0] > tscore) res += ":" + to_string(-log(1.5 - 1.5 * score[0] / (tscore + 1)));
+		else res += ":0";
 		return res;
 	}
 	
