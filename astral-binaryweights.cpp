@@ -10,28 +10,20 @@ using namespace std;
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
-typedef long double score_t;
+typedef __int128 score_t;
 
-string to_string(long double x){
+string to_string(const __int128 x){
 	return to_string((double) x);
 }
 
-score_t from_string(const string s){
-	return stold(s);
-}
-
-ostream& operator<<(ostream& cout, long double x){
+ostream& operator<<(ostream& cout, __int128 x){
 	return cout << to_string(x);
 }
 #else
-typedef double score_t;
-
-score_t from_string(const string s){
-	return stod(s);
-}
+typedef long long score_t;
 #endif
 
-#include "genetreewithweight.hpp"
+#include "genetreewithbinaryweight.hpp"
 #include "algorithms.hpp"
 
 
@@ -46,7 +38,6 @@ int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
-score_t maxv = 100, minv = 0, defaultv = 0;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -64,13 +55,6 @@ int MAPPING(int begin, int end){
 	return name2id[s];
 }
 
-score_t WEIGHT(int begin, int end){
-	int i = begin;
-	while (i < end && TEXT[i] != ':') i++;
-	if (i == begin || i == end) return max(0.0, (defaultv - minv) / (maxv - minv));
-	else return max(0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
-}
-
 void parse(int parent = -1, bool isLeft = true){
 	int cur = tripInit.nodes[part].size();
 	tripInit.nodes[part].emplace_back();
@@ -85,14 +69,14 @@ void parse(int parent = -1, bool isLeft = true){
 		parse(cur, false);
 		vector<int> lst;
 		lst.push_back(cur);
-		tripInit.nodes[part][cur].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+		tripInit.nodes[part][cur].weight = 0;
 		while (TEXT[pos] != ')'){
 			int left = lst[rand() % lst.size()];
 			int up = tripInit.nodes[part].size();
 			tripInit.nodes[part].emplace_back();
 			lst.push_back(up);
 			if (cur == left) cur = up;
-			tripInit.nodes[part][up].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+			tripInit.nodes[part][up].weight = 0;
 			int g = tripInit.nodes[part][left].up;
 			if (g != -1){
 				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
@@ -106,7 +90,7 @@ void parse(int parent = -1, bool isLeft = true){
 		}
 		int i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
-		tripInit.nodes[part][cur].weight = WEIGHT(i, pos);
+		tripInit.nodes[part][cur].weight = 1;
 	} 
 	else {
 		int i = pos;
@@ -152,9 +136,6 @@ int main(int argc, char** argv){
 	
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-		if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
-		if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
-		if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
 	}
 	
 	for (int i = 0; i < meta.nThread2; i++){

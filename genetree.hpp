@@ -27,14 +27,7 @@ struct Tripartition{
 					Ty = 0, Tyux = 0, Tyuz = 0,
 					Tz = 0, Tzux = 0, Tzuy = 0,
 					Q = 0, Qux = 0, Quy = 0, Quz = 0, Quxy = 0, Quxz = 0, Quyz = 0, Qux2 = 0, Quy2 = 0, Quz2 = 0; //QuQ === 1
-			int up = -1, down = -1, version = 0; // -1 for dummy!
-			
-			void update(int v, Node &u){
-				if (version != v){
-					*this = u;
-					version = v;
-				}
-			}
+			int up = -1, down = -1; // -1 for dummy!
 			
 			void testAdd(Node &v){
 				const score_t vX2 = v.X*(v.X-1)/2, vY2 = v.Y*(v.Y-1)/2, vZ2 = v.Z*(v.Z-1)/2;
@@ -64,7 +57,7 @@ struct Tripartition{
 				u.sTyY += v.Ty * v.Y;
 				u.sTz += v.Tz;
 				u.sTzZ += v.Tz * v.Z;
-				u,sQ += v.Q;
+				u.sQ += v.Q;
 			}
 			
 			void testRmv(Node &v){
@@ -95,7 +88,7 @@ struct Tripartition{
 				u.sTyY -= v.Ty * v.Y;
 				u.sTz -= v.Tz;
 				u.sTzZ -= v.Tz * v.Z;
-				u,sQ -= v.Q;
+				u.sQ -= v.Q;
 			}
 			
 			void testAddSpecial(Node &w){
@@ -808,7 +801,7 @@ struct Tripartition{
 		Node dummy, nodeX, nodeY, nodeZ;
 		vector<vector<Node> > nodes, nodesTotal;
 		vector<int> roots;
-		int version = 0;
+		vector<int> color;
 		
 		int buildTree(int v, vector<TripartitionInitializer::Node> &iNodes, vector<vector<int> > &children){
 			for (int c: children[v]){
@@ -843,7 +836,8 @@ struct Tripartition{
 			else return v;
 		}
 		
-		Partition(const TripartitionInitializer &init, int k): nodes(init.roots[k].size()), leafParent(init.roots[k].size(), vector<int>(init.nTaxa, -1)), nodesTotal(init.roots[k].size()){
+		Partition(const TripartitionInitializer &init, int k): nodes(init.roots[k].size()), leafParent(init.roots[k].size(), vector<int>(init.nTaxa, -1)),
+			nodesTotal(init.roots[k].size()), color(init.nTaxa, -1){
 			nodeX.X = 1;
 			nodeY.Y = 1;
 			nodeZ.Z = 1;
@@ -881,61 +875,6 @@ struct Tripartition{
 			//cerr << "Init finished\n";
 		}
 		
-		void reset(){
-			totalScore = 0;
-			version++;
-		}
-		
-		void addTotal(int i){
-			//cerr << "+addTotal\n";
-			for (int k = 0; k < leafParent.size(); k++){
-				int u = leafParent[k][i], v = -2;
-				Node *pv = &nodeZ;
-				Node vOld = dummy;
-				while (u != -1){
-					Node *pu = &nodesTotal[k][u];
-					Node uOld = *pu;
-					if (pu->down == v){
-						doZspecial(*pu, *pv, vOld);//undoZspecial(*pu, vOld); doZspecial(*pu, *pv);
-					}
-					else {
-						Node &w = (pu->down == -1) ? dummy : nodesTotal[k][pu->down];
-						doZnormal(*pu, *pv, vOld, w);//undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);
-					}
-					vOld = uOld;
-					v = u;
-					pv = pu;
-					u = pu->up;
-				}
-			}
-			//cerr << "-addTotal\n";
-		}
-		
-		void rmvTotal(int i){
-			//cerr << "+addTotal\n";
-			for (int k = 0; k < leafParent.size(); k++){
-				int u = leafParent[k][i], v = -2;
-				Node *pv = &dummy;
-				Node vOld = nodeZ;
-				while (u != -1){
-					Node *pu = &nodesTotal[k][u];
-					Node uOld = *pu;
-					if (pu->down == v){
-						undoZspecial(*pu, *pv, vOld);//undoZspecial(*pu, vOld); doZspecial(*pu, *pv);
-					}
-					else {
-						Node &w = (pu->down == -1) ? dummy : nodesTotal[k][pu->down];
-						undoZnormal(*pu, *pv, vOld, w);//undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);
-					}
-					vOld = uOld;
-					v = u;
-					pv = pu;
-					u = pu->up;
-				}
-			}
-			//cerr << "-addTotal\n";
-		}
-		
 		void add(int x, int i){
 			//cerr << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
 			totalScore = 0;
@@ -944,12 +883,10 @@ struct Tripartition{
 				Node *pv = (x == 0) ? &nodeZ : (x == 1) ? &nodeX : &nodeY;
 				Node vOld = dummy;
 				if (u == -1){
-					nodes[k][roots[k]].update(version, nodesTotal[k][roots[k]]);
 					totalScore += nodes[k][roots[k]].Q;
 				}
 				while (u != -1){
 					Node *pu = &nodes[k][u];
-					pu->update(version, nodesTotal[k][u]);
 					Node uOld = *pu;
 					if (pu->down == v){
 						if (x == 0) doZspecial(*pu, *pv, vOld);//{undoZspecial(*pu, vOld); doZspecial(*pu, *pv);}
@@ -960,7 +897,6 @@ struct Tripartition{
 					}
 					else {
 						Node &w = (pu->down == -1) ? dummy : nodes[k][pu->down];
-						if (pu->down != -1) w.update(version, nodesTotal[k][pu->down]);
 						if (x == 0) doZnormal(*pu, *pv, vOld, w);//{undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);}
 						else if (x == 1) doXnormal(*pu, *pv, vOld, w);//{undoXnormal(*pu, vOld, w); doXnormal(*pu, *pv, w);}
 						else doYnormal(*pu, *pv, vOld, w);//{undoYnormal(*pu, vOld, w); doYnormal(*pu, *pv, w);}
@@ -984,12 +920,10 @@ struct Tripartition{
 				Node *pv = &dummy;
 				Node vOld = (x == 0) ? nodeZ : (x == 1) ? nodeX : nodeY;
 				if (u == -1){
-					nodes[k][roots[k]].update(version, nodesTotal[k][roots[k]]);
 					totalScore += nodes[k][roots[k]].Q;
 				}
 				while (u != -1){
 					Node *pu = &nodes[k][u];
-					pu->update(version, nodesTotal[k][u]);
 					Node uOld = *pu;
 					if (pu->down == v){
 						if (x == 0) undoZspecial(*pu, *pv, vOld);//{undoZspecial(*pu, vOld); doZspecial(*pu, *pv);}
@@ -998,12 +932,64 @@ struct Tripartition{
 					}
 					else {
 						Node &w = (pu->down == -1) ? dummy : nodes[k][pu->down];
-						if (pu->down != -1) w.update(version, nodesTotal[k][pu->down]);
 						if (x == 0) undoZnormal(*pu, *pv, vOld, w);//{undoZnormal(*pu, vOld, w); doZnormal(*pu, *pv, w);}
 						else if (x == 1) undoXnormal(*pu, *pv, vOld, w);//{undoXnormal(*pu, vOld, w); doXnormal(*pu, *pv, w);}
 						else undoYnormal(*pu, *pv, vOld, w);//{undoYnormal(*pu, vOld, w); doYnormal(*pu, *pv, w);}
 					}
 					vOld = uOld;
+					v = u;
+					pv = pu;
+					u = pu->up;
+				}
+				totalScore += pv->Q;
+			}
+		}
+		
+		void update(int x, int i){
+			int y = color[i];
+			if (x == y) return;
+			color[i] = x;
+			if (y == -1){
+				add(x, i);
+				return;
+			}
+			if (x == -1){
+				rmv(y, i);
+				return;
+			}
+			totalScore = 0;
+			for (int k = 0; k < leafParent.size(); k++){
+				int u = leafParent[k][i], v = -2;
+				Node *pv = (x == 0) ? &nodeZ : (x == 1) ? &nodeX : &nodeY;
+				Node vMid = dummy;
+				Node vOld = (y == 0) ? nodeZ : (y == 1) ? nodeX : nodeY;
+				if (u == -1){
+					totalScore += nodes[k][roots[k]].Q;
+				}
+				while (u != -1){
+					Node *pu = &nodes[k][u];
+					Node uOld = *pu, uMid;
+					if (pu->down == v){
+						if (y == 0) undoZspecial(*pu, vMid, vOld);
+						else if (y == 1) undoXspecial(*pu, vMid, vOld);
+						else undoYspecial(*pu, vMid, vOld);
+						uMid = *pu;
+						if (x == 0) doZspecial(*pu, *pv, vMid);
+						else if (x == 1) doXspecial(*pu, *pv, vMid);
+						else doYspecial(*pu, *pv, vMid);
+					}
+					else {
+						Node &w = (pu->down == -1) ? dummy : nodes[k][pu->down];
+						if (y == 0) undoZnormal(*pu, vMid, vOld, w);
+						else if (y == 1) undoXnormal(*pu, vMid, vOld, w);
+						else undoYnormal(*pu, vMid, vOld, w);
+						uMid = *pu;
+						if (x == 0) doZnormal(*pu, *pv, vMid, w);
+						else if (x == 1) doXnormal(*pu, *pv, vMid, w);
+						else doYnormal(*pu, *pv, vMid, w);
+					}
+					vOld = uOld;
+					vMid = uMid;
 					v = u;
 					pv = pu;
 					u = pu->up;
@@ -1023,35 +1009,10 @@ struct Tripartition{
 		for (int p = 0; p < init.roots.size(); p++) parts.emplace_back(init, p);
 	}
 	
-	void reset(){
-		for (int p = 0; p < parts.size(); p++) parts[p].reset();
-	}
-	
-	void addTotal(int i){
+	void update(int x, int i){
 		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
-		parts[0].addTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmvTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
-		parts[0].rmvTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void add(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
+		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
+		parts[0].update(x, i);
 		for (thread &t: thrds) t.join();
 	}
 	

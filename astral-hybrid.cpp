@@ -89,20 +89,29 @@ void parse(int parent = -1, bool isLeft = true){
 		pos++;
 		parse(cur, true); 
 		pos++;
-		parse(cur, false); 
+		parse(cur, false);
+		vector<int> lst;
+		lst.push_back(cur);
+		tripInit.nodes[part][cur].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+		tripInit.nodes[part][cur].length = 1;
 		while (TEXT[pos] != ')'){
-			tripInit.nodes[part][cur].weight = max(0.0, (defaultv - minv) / (maxv - minv));
-			tripInit.nodes[part][cur].length = 1;
-			int next = tripInit.nodes[part].size();
+			int left = lst[rand() % lst.size()];
+			int up = tripInit.nodes[part].size();
 			tripInit.nodes[part].emplace_back();
-			tripInit.nodes[part][cur].up = next;
-			tripInit.nodes[part][next].small = cur;
-			cur = next;
-			tripInit.nodes[part][cur].up = parent;
-			if (parent != -1 && isLeft) tripInit.nodes[part][parent].small = cur;
-			if (parent != -1 && !isLeft) tripInit.nodes[part][parent].large = cur;
+			lst.push_back(up);
+			if (cur == left) cur = up;
+			tripInit.nodes[part][up].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+			tripInit.nodes[part][up].length = 1;
+			int g = tripInit.nodes[part][left].up;
+			if (g != -1){
+				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
+				else tripInit.nodes[part][g].large = up;
+			}
+			tripInit.nodes[part][up].up = g;
+			tripInit.nodes[part][left].up = up; 
+			tripInit.nodes[part][up].small = left;
 			pos++;
-			parse(cur, false);
+			parse(up, false);
 		}
 		int i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
@@ -171,7 +180,7 @@ int main(int argc, char** argv){
 	
 	cerr << "#Genetrees: " << K << endl;
 	
-	score_t score = meta.run().first / 2;
+	score_t score = meta.run().first;
 	cerr << "Score: " << score << endl;
 	return 0;
 }

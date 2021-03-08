@@ -133,8 +133,6 @@ int main(int argc, char** argv){
 	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
 	
 	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
-			
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 	}
 	

@@ -1048,7 +1048,7 @@ struct ConstrainedOptimizationAlgorithm{
 			res += to_string(i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1))) + ",";
 			res += to_string(i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2))) + ")'";
 		}
-		if (3 * score[0] > tscore) res += ":" + to_string(-log(1.5 - 1.5 * score[0] / (tscore + 1)));
+		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + 1))));
 		else res += ":0";
 		return res;
 	}

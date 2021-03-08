@@ -300,42 +300,6 @@ struct Quadrupartition{
 			}
 		}
 		
-		void add(int x, int i){
-			cnt[x]++;
-			for (int u: leafParent[i]){
-				score_t s1 = 0, s2 = 0, s3 = 0;
-				((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d) += nodes[u].length;
-				int w = nodes[u].up;
-				while (w != -1){
-					array<score_t, 3> s = normal(nodes[w]);
-					s1 += s[0]; s2 += s[1]; s3 += s[2];
-					u = w;
-					w = nodes[u].up;
-				}
-				totalScore1 += s1;
-				totalScore2 += s2;
-				totalScore3 += s3;
-			}
-		}
-		
-		void rmv(int x, int i){
-			cnt[x]--;
-			for (int u: leafParent[i]){
-				score_t s1 = 0, s2 = 0, s3 = 0;
-				((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d) -= nodes[u].length;
-				int w = nodes[u].up;
-				while (w != -1){
-					array<score_t, 3> s = normal(nodes[w]);
-					s1 += s[0]; s2 += s[1]; s3 += s[2];
-					u = w;
-					w = nodes[u].up;
-				}
-				totalScore1 += s1;
-				totalScore2 += s2;
-				totalScore3 += s3;
-			}
-		}
-		
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
@@ -369,20 +333,6 @@ struct Quadrupartition{
 	
 	Quadrupartition(const TripartitionInitializer &init){
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
-	}
-	
-	void add(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
-		for (thread &t: thrds) t.join();
 	}
 	
 	void update(int x, int i){
