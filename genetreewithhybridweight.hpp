@@ -285,18 +285,17 @@ struct Quadrupartition{
 		}
 		
 		vector<vector<int> > leafParent;
-		vector<score_t> score1, score2, score3;
 		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
 		vector<Node> nodes;
 		vector<int> color;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), 
-				score1(init.nodes[p].size()), score2(init.nodes[p].size()), score3(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
+		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
 				nodes[i].large = init.nodes[p][i].large;
 				nodes[i].weight = init.nodes[p][i].weight;
+				nodes[i].length = init.nodes[p][i].length;
 			}
 		}
 		
