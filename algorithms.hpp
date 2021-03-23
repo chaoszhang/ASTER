@@ -276,24 +276,26 @@ struct PlacementAlgorithm{
 		switchSubtree(light(v), 1, 2);
 		score_t abe_c_d = 0, cde_a_b = 0;
 		if (leafId(light(v)) == -1){
+			int c = heavy(light(v)), d = light(light(v));
 			//ABE|C|D
 			switchSubtree(heavy(v), 1, 0);
-			switchSubtree(heavy(light(v)), 2, 1);
+			switchSubtree(c, 2, 1);
 			abe_c_d = trip.score();
 			//ABE|CD|-
-			switchSubtree(light(light(v)), 2, 1);
+			switchSubtree(d, 2, 1);
 			if (recurse) abe_c_d = nnLocal(light(v), false, abe_c_d);
 			//E|AB|CD
 			switchSubtree(heavy(v), 0, 1);
 			switchSubtree(light(v), 1, 2);
 		}
 		if (leafId(heavy(v)) == -1){
+			int b = light(heavy(v));
 			//CDE|A|B
 			switchSubtree(light(v), 2, 0);
-			switchSubtree(light(heavy(v)), 1, 2);
+			switchSubtree(b, 1, 2);
 			cde_a_b = trip.score();
 			//CDE|AB|-
-			switchSubtree(light(heavy(v)), 2, 1);
+			switchSubtree(b, 2, 1);
 			if (recurse) cde_a_b = nnLocal(heavy(v), false, cde_a_b);
 			//E|AB|CD
 			switchSubtree(light(v), 0, 2);
@@ -366,9 +368,6 @@ struct PlacementAlgorithm{
 	
 	score_t nnMove(int v){
 		if (leafId(v) != -1){
-			//trip.reset();
-			//trip.rmv(0, leafId(v));
-			//trip.add(1, leafId(v));
 			trip.update(1, leafId(v));
 			return 0;
 		}
@@ -377,16 +376,17 @@ struct PlacementAlgorithm{
 			score_t abe_c_d = nnMove(light(v));
 			score_t ae_b_cd = 0;
 			if (leafId(heavy(v)) == -1){
+				int b = light(heavy(v));
 				//AE|B|CD
-				switchSubtree(light(heavy(v)), 0, 1);
+				switchSubtree(b, 0, 1);
 				switchSubtree(light(v), 1, 2);
 				ae_b_cd = trip.score();
-				//ABE|CD|-
-				switchSubtree(light(heavy(v)), 1, 0);
-				switchSubtree(light(v), 2, 1);
+				//ABCDE|-|-
+				switchSubtree(b, 1, 0);
+				switchSubtree(light(v), 2, 0);
 			}
 			//ABCDE|-|-
-			switchSubtree(light(v), 1, 0);
+			else switchSubtree(light(v), 1, 0);
 			//CDE|AB|-
 			score_t cde_a_b = nnMove(heavy(v));
 			//E|AB|CD
@@ -495,6 +495,7 @@ struct PlacementAlgorithm{
 			trip.update(0, rootLeafId);
 			switchSubtree(rootNodeId, -1, 0);
 			nnMove(rootNodeId);
+			cerr << "#localmove:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
 		}
 		trip.update(0, rootLeafId);
 		switchSubtree(rootNodeId, -1, 0);
@@ -1011,7 +1012,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}	
 	}
 
-	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support){
+	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda){
 		if (nodes[v].leafId != -1) return names[nodes[v].leafId];
 		//r|u|c0c1|-
 		string res = "(";
@@ -1019,11 +1020,11 @@ struct ConstrainedOptimizationAlgorithm{
 		//ru|c1|c0|-
 		switchSubtree(quad, u, 1, 0);
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support) + ",";
+		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda) + ",";
 		//ru|c0|c1|-
 		switchSubtree(quad, get<0>(c), 2, 1);
 		switchSubtree(quad, get<1>(c), 1, 2);
-		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support) + ")";
+		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda) + ")";
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
@@ -1035,12 +1036,12 @@ struct ConstrainedOptimizationAlgorithm{
 			else return res + "'support=(0,0,0);p=(0.333,0.333,0.333)'"; 
 		}
 		double tscore = score[0] + score[1] + score[2];
-		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + 1.0 - score[0], 1.0 / 3.0);
-		double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + 1.0 - score[1], 1.0 / 3.0);
-		double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + 1.0 - score[2], 1.0 / 3.0);
-		double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + 1.0) - lgamma(tscore + 2.0);
-		double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + 1.0) - lgamma(tscore + 2.0);
-		double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + 1.0) - lgamma(tscore + 2.0);
+		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
+		double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
+		double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
+		double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+		double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+		double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
 		if (support == 1) res += to_string(i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0)));
 		else {
 			res += "'support=(" + to_string(score[0]) + "," + to_string(score[1]) + "," + to_string(score[2]) + ");p=(";
@@ -1048,12 +1049,12 @@ struct ConstrainedOptimizationAlgorithm{
 			res += to_string(i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1))) + ",";
 			res += to_string(i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2))) + ")'";
 		}
-		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + 1))));
+		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
 		else res += ":0";
 		return res;
 	}
 	
-	string printOptimalTreeWithSupport(int support){
+	string printOptimalTreeWithSupport(int support, double lambda){
 		string res;
 		Quadrupartition quad(tripInit);
 		quad.update(0, 0);
@@ -1062,11 +1063,11 @@ struct ConstrainedOptimizationAlgorithm{
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support);
+		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda);
 		//0|c0|c1|-
 		switchSubtree(quad, get<1>(c), 1, 2);
 		switchSubtree(quad, get<0>(c), 2, 1);
-		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support);
+		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda);
 		return res + ")," + names[0] + ");";
 	}
 #endif
@@ -1082,6 +1083,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 -s  number of total rounds of subsampling (default: 0)
 -p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
+-l  rate lambda of Yule process under which the species tree is modeled (default: 0.5)
 -u  output support level (0, default: no output support value, 1: branch local posterior probability, 2: detailed)
 )V0G0N";
 #else
@@ -1100,7 +1102,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 struct MetaAlgorithm{
 	vector<string> files, names;
 	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
-	double p = 0.5;
+	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
@@ -1126,6 +1128,7 @@ struct MetaAlgorithm{
 			if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
 			if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
 			if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
+			if (strcmp(argv[i], "-l") == 0) sscanf(argv[i + 1], "%lf", &lambda);
 			if (strcmp(argv[i], "-u") == 0) sscanf(argv[i + 1], "%d", &support);
 			if (strcmp(argv[i], "-h") == 0) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
@@ -1213,7 +1216,7 @@ struct MetaAlgorithm{
 		string output = res.second;
 		cerr << "Final Tree: " << output << endl;
 		#ifdef SUPPORT
-		if (support) output = alg.printOptimalTreeWithSupport(support);
+		if (support) output = alg.printOptimalTreeWithSupport(support, lambda);
 		#endif
 		fout << output << endl;
 		
