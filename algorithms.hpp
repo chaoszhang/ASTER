@@ -1012,19 +1012,24 @@ struct ConstrainedOptimizationAlgorithm{
 		}	
 	}
 
-	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda){
-		if (nodes[v].leafId != -1) return names[nodes[v].leafId];
+	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda,
+			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo){
+		if (nodes[v].leafId != -1) {
+			array<double, 3> t;
+			if (support == 3) qInfo[v] = make_tuple(t, t, names[nodes[v].leafId]);
+			return names[nodes[v].leafId];
+		}
 		//r|u|c0c1|-
 		string res = "(";
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//ru|c1|c0|-
 		switchSubtree(quad, u, 1, 0);
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda) + ",";
+		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo) + ",";
 		//ru|c0|c1|-
 		switchSubtree(quad, get<0>(c), 2, 1);
 		switchSubtree(quad, get<1>(c), 1, 2);
-		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda) + ")";
+		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo) + ")";
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
@@ -1044,17 +1049,36 @@ struct ConstrainedOptimizationAlgorithm{
 		double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
 		if (support == 1) res += to_string(i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0)));
 		else {
+			array<double, 3> p;
+			p[0] = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
+			p[1] = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
+			p[2] = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
 			res += "'support=(" + to_string(score[0]) + "," + to_string(score[1]) + "," + to_string(score[2]) + ");p=(";
-			res += to_string(i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0))) + ",";
-			res += to_string(i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1))) + ",";
-			res += to_string(i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2))) + ")'";
+			res += to_string(p[0]) + "," + to_string(p[1]) + "," + to_string(p[2]) + ")'";
+			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
 		else res += ":0";
 		return res;
 	}
 	
+	void printFreqQuadCSV(int v, int u, string top, ostream &fcsv, unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo){
+		if (nodes[v].leafId != -1) return;
+		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+		printFreqQuadCSV(get<0>(c), get<1>(c), top + "," + get<2>(qInfo[u]), fcsv, qInfo);
+		printFreqQuadCSV(get<1>(c), get<0>(c), top + "," + get<2>(qInfo[u]), fcsv, qInfo);
+		double tscore = get<0>(get<0>(qInfo[v])) + get<1>(get<0>(qInfo[v])) + get<2>(get<0>(qInfo[v]));
+		fcsv << "N" << v << "\tt1\t{" << get<2>(qInfo[get<0>(c)]) << "}|{" << get<2>(qInfo[get<1>(c)]) << "}#{" << get<2>(qInfo[u]) << "}|{" << top << "}\t"
+			<< get<0>(get<1>(qInfo[v])) << "\t" << get<0>(get<0>(qInfo[v])) << "\t" << tscore << endl;
+		fcsv << "N" << v << "\tt2\t{" << top << "}|{" << get<2>(qInfo[get<1>(c)]) << "}#{" << get<2>(qInfo[u]) << "}|{" << get<2>(qInfo[get<0>(c)]) << "}\t"
+			<< get<1>(get<1>(qInfo[v])) << "\t" << get<1>(get<0>(qInfo[v])) << "\t" << tscore << endl;
+		fcsv << "N" << v << "\tt3\t{" << get<2>(qInfo[get<0>(c)]) << "}|{" << top << "}#{" << get<2>(qInfo[u]) << "}|{" << get<2>(qInfo[get<1>(c)]) << "}\t"
+			<< get<2>(get<1>(qInfo[v])) << "\t" << get<2>(get<0>(qInfo[v])) << "\t" << tscore << endl;
+		
+	}
+	
 	string printOptimalTreeWithSupport(int support, double lambda){
+		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > qInfo;
 		string res;
 		Quadrupartition quad(tripInit);
 		quad.update(0, 0);
@@ -1063,11 +1087,16 @@ struct ConstrainedOptimizationAlgorithm{
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda);
+		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo);
 		//0|c0|c1|-
 		switchSubtree(quad, get<1>(c), 1, 2);
 		switchSubtree(quad, get<0>(c), 2, 1);
-		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda);
+		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo);
+		if (support == 3) {
+			ofstream fcsv("freqQuad.csv");
+			printFreqQuadCSV(get<0>(c), get<1>(c), names[0], fcsv, qInfo);
+			printFreqQuadCSV(get<1>(c), get<0>(c), names[0], fcsv, qInfo);
+		}
 		return res + ")," + names[0] + ");";
 	}
 #endif
@@ -1084,7 +1113,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 -p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
 -l  rate lambda of Yule process under which the species tree is modeled (default: 0.5)
--u  output support level (0, default: no output support value, 1: branch local posterior probability, 2: detailed)
+-u  output support level (0, default: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)
 )V0G0N";
 #else
 const string HELP_TEXT_1 = "binary_path [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread";
