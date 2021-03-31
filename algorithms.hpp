@@ -920,6 +920,7 @@ struct ConstrainedOptimizationAlgorithm{
 				pAlg.rootNodeId = -1;
 				pAlg.rootLeafId = -1;
 				pAlg.orderId = 0;
+				pAlg.rNN = ROUND_NN;
 			}
 			alg.computeOptimalTree();
 			//cerr << alg.printOptimalTree() << endl;
