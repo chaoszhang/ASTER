@@ -37,10 +37,12 @@ struct Tripartition{
 	const vector<score_t> pi; // pos * letter
 	const vector<vector<int> > seq; // taxon * pos -> letter
 	const vector<bool> weight;
+	vector<int> color;
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos){}
-	
+	Tripartition(const TripartitionInitializer &init): nThreads(init.nThreads), npos(init.npos), seq(init.seq), pi(init.pi), weight(init.weight), cnt(init.npos), total(init.npos), 
+			color(init.seq.size(), -1){}
+	/*
 	void resetWork(int start, int end){
 		for (int p = start; p < end; p++){
 			for (int a = 0; a < 4; a++){
@@ -79,17 +81,6 @@ struct Tripartition{
 		}
 	}
 	
-	void scoreWork(score_t &res, int start, int end){
-		score_t temp = 0, tempH = 0;
-		for (int p = start; p < end; p++){
-			if (weight[p]) {
-				temp += scorePos(cnt[p], pi[p]);
-				//tempH += scorePosHelper(cnt[p], pi[p]);
-			}
-		}
-		res = temp; // + tempH * weightHelper[n];
-	}
-	
 	void reset(){
 		vector<thread> thrds;
 		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::resetWork, this, npos * t / nThreads, npos * (t + 1) / nThreads);
@@ -125,6 +116,34 @@ struct Tripartition{
 		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::rmvWork, this, x, i, npos * t / nThreads, npos * (t + 1) / nThreads);
 		rmvWork(x, i, 0, npos / nThreads);
 		for (thread &t: thrds) t.join();
+	}
+	*/
+	void updateWork(int x, int y, int i, int start, int end){
+		for (int p = start; p < end; p++){
+			int a = seq[i][p];
+			if (a != -1 && y != -1) cnt[p][y][a]--;
+			if (a != -1 && x != -1) cnt[p][x][a]++;
+		}
+	}
+	
+	void update(int x, int i){
+		int y = color[i];
+		if (x == y) return;
+		vector<thread> thrds;
+		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::updateWork, this, x, y, i, npos * t / nThreads, npos * (t + 1) / nThreads);
+		updateWork(x, y, i, 0, npos / nThreads);
+		for (thread &t: thrds) t.join();
+	}
+	
+	void scoreWork(score_t &res, int start, int end){
+		score_t temp = 0;
+		for (int p = start; p < end; p++){
+			if (weight[p]) {
+				temp += scorePos(cnt[p], pi[p]);
+				//tempH += scorePosHelper(cnt[p], pi[p]);
+			}
+		}
+		res = temp; // + tempH * weightHelper[n];
 	}
 	
 	score_t score(){
