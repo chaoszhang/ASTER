@@ -133,6 +133,7 @@ struct Tripartition{
 		for (int t = 1; t < nThreads; t++) thrds.emplace_back(&Tripartition::updateWork, this, x, y, i, npos * t / nThreads, npos * (t + 1) / nThreads);
 		updateWork(x, y, i, 0, npos / nThreads);
 		for (thread &t: thrds) t.join();
+		color[i] = x;
 	}
 	
 	void scoreWork(score_t &res, int start, int end){
