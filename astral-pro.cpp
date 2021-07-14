@@ -40,6 +40,7 @@ int pos = 0;
 int K = 0;
 vector<string> &id2name = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
+bool resolvePolytomies = false;
 	
 class DynamicBitset{
 	int size = 0;
@@ -370,6 +371,16 @@ void annotate(string input, string mapping){
 	while (pos < TEXT.size()){
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
 		if (pos < TEXT.size()) {
+			int leafCnt = 1, internalCnt = 0;
+			for (int i = pos; i < TEXT.size() && TEXT[i] != ';'; i++){
+				if (TEXT[i] == '(') internalCnt++;
+				if (TEXT[i] == ',') leafCnt++;
+			}
+			if (internalCnt < leafCnt - 2 && !resolvePolytomies) {
+				cerr << "Non-binary input tree(s) detected!\nCurrently ASTRAL-Pro does not guarentee correct output if input trees contain polytomies!";
+				exit(0);
+			}
+			
 			pos++;
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, pair<long long, long long> > children;
@@ -384,6 +395,7 @@ void annotate(string input, string mapping){
 }
 
 string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+-e  0(default): exit when input contains polytomies; 1: resolve polytomies (no guarentee on accuracy)
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
@@ -393,7 +405,7 @@ int main(int argc, char** argv){
 	
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
-			
+		if (strcmp(argv[i], "-e") == 0) resolvePolytomies = stoi(argv[i + 1]);
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 	}
 	
