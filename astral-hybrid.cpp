@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define LARGE_DATA
+//#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef long double score_t;
 
@@ -177,6 +177,7 @@ int main(int argc, char** argv){
 	cerr << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << to_string(score) << endl;
+	//cerr << "Score: " << to_string(score) << endl;
+	fprintf(stderr, "Score: %10lf\n", (double) score);
 	return 0;
 }
