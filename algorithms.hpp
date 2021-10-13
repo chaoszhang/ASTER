@@ -1114,7 +1114,7 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 -p  subsampling probability of keeping each taxon (default: 0.5)
 -t  number of threads (default: 1)
 -l  rate lambda of Yule process under which the species tree is modeled (default: 0.5)
--u  output support level (0, default: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)
+-u  output support level (0: no output support value, 1<default>: branch local posterior probability, 2: detailed, 3: freqQuad.csv)
 )V0G0N";
 #else
 const string HELP_TEXT_1 = "binary_path [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread";
@@ -1236,11 +1236,14 @@ struct MetaAlgorithm{
 		if (constraintTree == "") {
 			cerr << "*** Subsample Process ***" << endl;
 			score_t prevS;
+			int roundNum = 0;
 			do {
 				prevS = res.first;
 				res = alg.run(nSample, nThread1, p);
+				cerr << "Current score: " << (double) res.first << endl;
+				roundNum++;
 			}
-			while (prevS < res.first);
+			while (prevS < res.first && roundNum < 5);
 		}
 		
 		string output = res.second;
