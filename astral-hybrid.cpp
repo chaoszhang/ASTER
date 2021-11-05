@@ -1,3 +1,5 @@
+#define DRIVER_VERSION "0"
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -42,6 +44,7 @@ int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
+vector<int> &nameCnts = meta.tripInit.nameCnts;
 score_t maxv = 100, minv = 0, defaultv = 0;
 
 int MAPPING(int begin, int end){
@@ -147,21 +150,24 @@ void readInputTrees(string input, string mapping) {
 
 string HELP = " -a taxonNameMaps -x maxWeight -n minWeight -d defaultWeight";
 string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab
--x max possible weight in weight scale (default: 100)
--n min possible weight in weight scale (default: 0)
--d min default weight when weight not provided (default: 0)
+-m  treating duplicated taxa in a gene tree as: 1) muti-copy genes (default) or 2) multi-individual of the same species.
+-x  max possible weight in weight scale (default: 100)
+-n  min possible weight in weight scale (default: 0)
+-d  min default weight when weight not provided (default: 0)
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
+	int dupType = 1;
 	string mappingFile;
 	meta.initialize(argc, argv, HELP, HELP_TEXT);
-	
-	for (int i = 1; i < argc; i += 2){
+	for (int i = 1; i < argc - 1; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-		if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
-		if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
-		if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
+		else if (strcmp(argv[i], "-m") == 0) dupType = from_string(argv[i + 1]);
+		else if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
+		else if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
+		else if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
+		else if (!meta.opt.isValid(argv[i])) {cerr << "Error: Failed to parse input arguments. Please try -h for correct formating.\n"; exit(0);}
 	}
 	
 	for (int i = 0; i < meta.nThread2; i++){
@@ -174,10 +180,23 @@ int main(int argc, char** argv){
 	}
 	readInputTrees(argv[argc - 1], mappingFile);
 	
+	if (dupType == 2){
+		for (string s: names){
+			nameCnts.push_back(1 - leafname_mapping.count(s));
+		}
+		for (auto e: leafname_mapping){
+			nameCnts[name2id[e.second]]++;
+		}
+	}
+	else {
+		for (string s: names){
+			nameCnts.push_back(1);
+		}
+	}
 	cerr << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
 	//cerr << "Score: " << to_string(score) << endl;
-	fprintf(stderr, "Score: %10lf\n", (double) score);
+	fprintf(stderr, "Score: %.10lg\n", (double) score);
 	return 0;
 }

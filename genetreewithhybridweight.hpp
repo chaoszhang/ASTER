@@ -1,3 +1,5 @@
+#define OBJECTIVE_VERSION "0"
+
 #include<vector>
 #include<array>
 #include<thread>
@@ -12,6 +14,7 @@ struct TripartitionInitializer{
 		score_t weight = 1, length = 1;
 	};
 	
+	vector<int> nameCnts;
 	vector<vector<Node> > nodes;
 	vector<vector<vector<int> > > leafParent;
 };
@@ -66,7 +69,7 @@ struct Tripartition{
 		vector<Node> nodes;
 		vector<int> color;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
+		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -288,8 +291,9 @@ struct Quadrupartition{
 		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
 		vector<Node> nodes;
 		vector<int> color;
+		vector<int> nameCnts;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
+		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -302,8 +306,8 @@ struct Quadrupartition{
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
-			if (y != -1) cnt[y]--;
-			if (x != -1) cnt[x]++;
+			if (y != -1) cnt[y] -= nameCnts[i];
+			if (x != -1) cnt[x] += nameCnts[i];
 			for (int u: leafParent[i]){
 				score_t s1 = 0, s2 = 0, s3 = 0;
 				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d) -= nodes[u].length;

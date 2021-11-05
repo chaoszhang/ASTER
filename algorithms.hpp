@@ -1,3 +1,5 @@
+#define ALG_VERSION "v1.0"
+
 typedef unsigned __int128 hash_t;
 
 #include<vector>
@@ -1104,7 +1106,7 @@ struct ConstrainedOptimizationAlgorithm{
 };
 
 #ifdef SUPPORT
-const string HELP_TEXT_1 = "feast [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -u supportLevel";
+const string HELP_TEXT_1 = "binary_path [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -u supportLevel";
 const string HELP_TEXT_2 = R"V0G0N(] inputList
 -c  path to constraint subtree file
 -g  path to guide tree file
@@ -1130,12 +1132,24 @@ const string HELP_TEXT_2 = R"V0G0N(] inputList
 #endif
 
 struct MetaAlgorithm{
+	struct Option{
+		unordered_set<string> options;
+		bool check(const char* c1, const char* c2){
+			options.insert(c2);
+			return strcmp(c1, c2) == 0;
+		}
+		bool isValid(char* c2){
+			return options.count(c2);
+		}
+	};
+
 	vector<string> files, names;
 	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
 	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
+	Option opt;
 	
 	TripartitionInitializer tripInit;
 	vector<TripartitionInitializer> batchInit;
@@ -1147,20 +1161,29 @@ struct MetaAlgorithm{
 	}
 	
 	void initialize(int argc, char** argv, string helpTextS1, string helpTextS2){
+		string version = ALG_VERSION;
+		#ifdef OBJECTIVE_VERSION
+			version = version + "." + OBJECTIVE_VERSION;
+		#endif
+		#ifdef DRIVER_VERSION
+			version = version + "." + DRIVER_VERSION;
+		#endif
+		cerr << "Version: " << version << endl;
+		
 		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		for (int i = 1; i < argc; i += 2){
-			if (strcmp(argv[i], "-y") == 0) {i--; continue;}
+			if (opt.check(argv[i], "-y")) {i--; continue;}
 			
-			if (strcmp(argv[i], "-c") == 0) constraintFile = argv[i + 1];
-			if (strcmp(argv[i], "-g") == 0) guideFile = argv[i + 1];
-			if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
-			if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
-			if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
-			if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
-			if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-			if (strcmp(argv[i], "-l") == 0) sscanf(argv[i + 1], "%lf", &lambda);
-			if (strcmp(argv[i], "-u") == 0) sscanf(argv[i + 1], "%d", &support);
-			if (strcmp(argv[i], "-h") == 0) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
+			if (opt.check(argv[i], "-c")) constraintFile = argv[i + 1];
+			if (opt.check(argv[i], "-g")) guideFile = argv[i + 1];
+			if (opt.check(argv[i], "-o")) outputFile = argv[i + 1];
+			if (opt.check(argv[i], "-r")) sscanf(argv[i + 1], "%d", &nRounds);
+			if (opt.check(argv[i], "-s")) sscanf(argv[i + 1], "%d", &nSample);
+			if (opt.check(argv[i], "-p")) sscanf(argv[i + 1], "%lf", &p);
+			if (opt.check(argv[i], "-t")) sscanf(argv[i + 1], "%d", &nThreads);
+			if (opt.check(argv[i], "-l")) sscanf(argv[i + 1], "%lf", &lambda);
+			if (opt.check(argv[i], "-u")) sscanf(argv[i + 1], "%d", &support);
+			if (opt.check(argv[i], "-h")) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
 		
 		if (nRounds < nThreads && nRounds > 0){
