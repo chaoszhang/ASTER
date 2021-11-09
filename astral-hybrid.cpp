@@ -1,8 +1,9 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
 
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
+#include<unordered_set>
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
@@ -37,6 +38,7 @@ MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
 vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
+unordered_map<string, unordered_set<string> > reverse_mapping;
 unordered_map<string, string> leafname_mapping;
 string TEXT;
 int pos = 0;
@@ -52,7 +54,13 @@ int MAPPING(int begin, int end){
 	for (int i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
-	if (leafname_mapping.count(s)) s = leafname_mapping[s];
+	if (leafname_mapping.count(s)) {
+		reverse_mapping[leafname_mapping[s]].insert(s);
+		s = leafname_mapping[s];
+	}
+	else{
+		reverse_mapping[s].insert(s);
+	}
 	if (name2id.count(s) == 0){
 		name2id[s] = names.size();
 		names.push_back(s);
@@ -182,10 +190,7 @@ int main(int argc, char** argv){
 	
 	if (dupType == 2){
 		for (string s: names){
-			nameCnts.push_back(1 - leafname_mapping.count(s));
-		}
-		for (auto e: leafname_mapping){
-			nameCnts[name2id[e.second]]++;
+			nameCnts.push_back(reverse_mapping[s].size());
 		}
 	}
 	else {

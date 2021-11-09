@@ -1,4 +1,4 @@
-#define ALG_VERSION "v1.0"
+#define ALG_VERSION "v1.1"
 
 typedef unsigned __int128 hash_t;
 
@@ -27,7 +27,7 @@ struct Hasher{
 	}
 };
 
-const int ROUND_NN = 50;
+int ROUND_NN = 50;
 
 struct PlacementAlgorithm{
 	
@@ -1231,6 +1231,8 @@ struct MetaAlgorithm{
 	}
 	
 	pair<score_t, string> run(){
+		ROUND_NN = 20 + 10 * sqrt(names.size());
+
 		ostream &fout = (outputFile == "") ? cout : fileOut;
 		if (outputFile != "") fileOut.open(outputFile);
 		
