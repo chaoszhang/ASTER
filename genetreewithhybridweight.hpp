@@ -1,9 +1,9 @@
-#define OBJECTIVE_VERSION "0"
+#define OBJECTIVE_VERSION "1"
 
 #include<vector>
 #include<array>
 #include<thread>
-
+#include<cmath>
 #define SUPPORT
 
 using namespace std;
@@ -288,12 +288,13 @@ struct Quadrupartition{
 		}
 		
 		vector<vector<int> > leafParent;
-		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
+		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {}, totalSqrScore = 0, gtCnt = 0;
 		vector<Node> nodes;
+		vector<score_t> rootScores;
 		vector<int> color;
 		vector<int> nameCnts;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
+		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), rootScores(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -322,13 +323,17 @@ struct Quadrupartition{
 				totalScore1 += s1;
 				totalScore2 += s2;
 				totalScore3 += s3;
+				totalSqrScore -= rootScores[u] * rootScores[u];
+				if (rootScores[u] > 1e-9) gtCnt--;
+				rootScores[u] += s1 + s2 + s3;
+				totalSqrScore += rootScores[u] * rootScores[u];
+				if (rootScores[u] > 1e-9) gtCnt++;
 			}
 			color[i] = x;
 		}
 		
-		array<double, 3> score(){
-			double prod = cnt[0] * cnt[1] * cnt[2] * cnt[3];
-			return {totalScore1 / prod, totalScore2 / prod, totalScore3 / prod};
+		array<double, 5> score(){
+			return {totalScore1, totalScore2, totalScore3, totalSqrScore, gtCnt};
 		}
 	};
 	
@@ -350,12 +355,19 @@ struct Quadrupartition{
 		res[0] = 0;
 		res[1] = 0;
 		res[2] = 0;
+		double sqrsum = 0;
+		double cnt = 0;
 		for (int p = 0; p < parts.size(); p++){
 			auto t = parts[p].score();
 			res[0] += t[0];
 			res[1] += t[1];
 			res[2] += t[2];
+			sqrsum += t[3];
+			cnt += t[4];
 		}
+		res[0] = (cnt < 0.5) ? 0 : res[0] * sqrt(cnt / sqrsum);
+		res[1] = (cnt < 0.5) ? 0 : res[1] * sqrt(cnt / sqrsum);
+		res[2] = (cnt < 0.5) ? 0 : res[2] * sqrt(cnt / sqrsum);
 		return res;
 	}
 };
