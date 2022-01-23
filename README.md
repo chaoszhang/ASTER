@@ -119,3 +119,6 @@ see
  - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro
  - [README/wastral.md](README/wastral.md) for weighted ASTRAL series
  - [README/asterisk.md](README/asterisk.md) for ASTERISK series.
+
+# ACKNOWLEGEMENT
+ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab.
