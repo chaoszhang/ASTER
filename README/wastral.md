@@ -85,7 +85,7 @@ If you want to give hints by providing candidate species trees or trees similar 
 ./PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
-If you want **long double** instead **double** precision. Use the following command instead (***it is slow!***):
+If you want **long double** instead **double** precision. Use the following command instead (***It is slow!***):
 
 ```
 ./PROGRAM_NAME_precise -o OUTPUT_FILE INPUT_FILE
@@ -121,6 +121,11 @@ gene_B2 species_name_B
 gene_B3 species_name_B
 ...
 ```
+
+1. **Weighted ASTRAL by Branch Support (astral-weighted)**: Non-root interal node labels must be a non-negative number being support. Eg. `((A,B)100,(C,D)0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+2. **Weighted ASTRAL by Branch Length (astral-lengthweighted)**: Non-root labels must have branch lengths after `:`. Eg. `((A,B):1,(C,D):0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+3. **Weighted ASTRAL - Hybrid (astral-hybrid)**: Non-root interal node labels must be a non-negative number being support before `:` and non-root labels must have branch lengths after `:`. Eg. `((A:1,B:1)100:1,(C:1,D:1)0:0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+
 # OUTPUT
 The output in is Newick format and gives:
 
