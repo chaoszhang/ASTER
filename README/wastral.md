@@ -38,6 +38,12 @@ To find the species tree with input gene trees from in a file called `INPUT_FILE
 
 Currently, INPUT_FILE is hard-coded to be the ***last argument***. 
 
+***Notice:*** For `astral-weighted` (support) and `astral-hybrid` (hybrid), you ***must*** provide max (`-x`) and min (`-n`) of support value to the program; otherwise it will default to `max=100, min=0`. For **Bootstrap** support, the default value should be fine; for **local Baysian** support, `-x 1 -n 0.333` is recommended; for other **probability & likelihood** support, `-x 1 -n 0` may be more reasonable. Please ensure that you provide the correct max and min; otherwise, the output of the program ***may not be meaningful***.
+
+```
+./PROGRAM_NAME -x MAX_SUPPORT -n MIN_SUPPORT INPUT_FILE
+```
+
 The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
 ```
