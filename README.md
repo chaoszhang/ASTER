@@ -19,7 +19,7 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
 
 # INSTALLATION
-For most users, installing ASTER is VERY easy!
+For most users, installing ASTER is ***very*** easy!
 Download using one of two approaches:
   - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
   - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
