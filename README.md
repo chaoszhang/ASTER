@@ -50,7 +50,7 @@ Download using one of two approaches:
   3. Double click `make.bat` inside the downloaded directory
 
 # EXECUTION
-ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to [`bin`](Linux/Unix/WSL) or [`exe`](Win) in the location where you have downloaded the software, find the name of your program of interest, and issue the following command:
+ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to `bin`(Linux/Unix/WSL) or `exe`(Win) in the location where you have downloaded the software, find the name of your program of interest, and issue the following command:
 
 ```
 ./PROGRAM_NAME 
