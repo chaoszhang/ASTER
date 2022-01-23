@@ -85,6 +85,12 @@ If you want to give hints by providing candidate species trees or trees similar 
 ./astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
+Species tree with more than **10,000** taxa may cause **overflow**. Use the following command instead:
+
+```
+./astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
+```
+
 # INPUT
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa and multiple genes per species.
@@ -118,6 +124,11 @@ Example:
 ./astral -t 4 -o ../example/genetree.astral-pro.nw ../example/genetree.nw 2>../example/genetree.astral.log
 ```
 On Windows, replace `./astral` with `.\astral.exe`.
+
+Species tree with more than **10,000** taxa may cause **overflow**. Use the following command instead:
+```
+./astral_int128 -o OUTPUT_FILE INPUT_FILE
+```
 
 * The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.
 * When individuals genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
