@@ -1,4 +1,4 @@
-#define ALG_VERSION "v1.1"
+#define ALG_VERSION "v1.2"
 
 typedef unsigned __int128 hash_t;
 
@@ -1041,7 +1041,7 @@ struct ConstrainedOptimizationAlgorithm{
 		switchSubtree(quad, get<0>(c), 3, 2);
 		if (score[0] + score[1] + score[2] < 1e-8) {
 			if (support == 1) return res + to_string(1.0 / 3.0);
-			else return res + "'support=(0,0,0);p=(0.333,0.333,0.333)'"; 
+			else return res + "'[pp1=0.333333;pp2=0.333333;pp3=0.333333;f1=0;f2=0;f3=0]'"; 
 		}
 		double tscore = score[0] + score[1] + score[2];
 		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
@@ -1056,8 +1056,7 @@ struct ConstrainedOptimizationAlgorithm{
 			p[0] = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
 			p[1] = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
 			p[2] = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
-			res += "'support=(" + to_string(score[0]) + "," + to_string(score[1]) + "," + to_string(score[2]) + ");p=(";
-			res += to_string(p[0]) + "," + to_string(p[1]) + "," + to_string(p[2]) + ")'";
+			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) + "]'";
 			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
