@@ -3,11 +3,11 @@ ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for es
 
 ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in a **faster**, **more accurate**, and **easier to install** and **lower memory consumption** way. However, ASTER version of original ASTRAL may be **slower** and **less accuracy** with few small gene trees. Please choose wisely!
 
-## Publication:
+## Publication
 
 Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, , msaa139, https://doi.org/10.1093/molbev/msaa139
 
-# Bug Reports:
+# Bug Reports
 
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
@@ -71,7 +71,7 @@ ASTRAL-Pro algorithm first performs `R` (4 by default) rounds of search and then
 
 When `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
 
-# Input:
+# Input
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa and multiple genes per species.
 * Different from ASTRAL, ASTRAL-Pro by default **does not allow polytomies (unresolved branches)** and **no guarentee of accuracy** is provided for allowing polytomies by force.
@@ -88,7 +88,7 @@ gene_B3 species_name_B
 ...
 ```
 
-# Output:
+# Output
 The output in is Newick format and gives:
 
 * the species tree topology
