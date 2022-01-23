@@ -1,5 +1,5 @@
 # Accurate Species Tree EstimatoR
-A family of Optimatization algorithms for species tree inference:
+A family of optimatization algorithms for species tree inference:
 1. [ASTRAL](README/astral-pro.md) (re-implemented in C++)
 2. [ASTRAL-Pro](README/astral-pro.md) (re-implemented in C++ for better running time, memory consumption, and accuracy)
 3. [Weighted ASTRAL by Branch Support](README/wastral.md)
@@ -64,6 +64,8 @@ To find the species tree with input from in a file called `INPUT_FILE`, use:
 ./PROGRAM_NAME INPUT_FILE
 ```
 
+Currently, INPUT_FILE is hard-coded to be the ***last argument***. 
+
 The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
 ```
@@ -81,3 +83,19 @@ ASTER supports multi-threading. To run program with 4 threads, add `-t 4` before
 ```
 ./PROGRAM_NAME -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
+
+## Advanced Options
+
+ASTER algorithm first performs `R` (4 by default) rounds of search and then repeatedly performs `S` (4 by default) rounds of subsampling and exploration until no improvement found.
+
+```
+./PROGRAM_NAME -t T -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
+
+For ASTRAL(-Pro) and wASTRAL seriers, when `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
+
+# INPUT, OUTPUT, AND PROGRAM SPECIFIC FEATURES
+see 
+ - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro
+ - [README/wastral.md](README/wastral.md) for weighted ASTRAL series
+ - [README/asterisk.md](README/asterisk.md) for ASTERISK series.
