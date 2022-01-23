@@ -5,7 +5,7 @@ ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in a **fas
 
 ## Publication
 
-Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, , msaa139, https://doi.org/10.1093/molbev/msaa139
+Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 
 ## Bug Reports
 
