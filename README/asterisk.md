@@ -1,6 +1,3 @@
-# Accurate Species Tree EstimatoR
-A family of ASTRAL-like algorithms
-
 # ASTERISK
 Accurate Species Tree Estimation by diRectly Inferring from Site Kernels
 
