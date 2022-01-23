@@ -97,7 +97,7 @@ If you want **long double** instead **double** precision. Use the following comm
 ./PROGRAM_NAME_precise -o OUTPUT_FILE INPUT_FILE
 ```
 
-Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+**Currently branch lengths and local-PP is only for `astral-hybrid`.** Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
 ./PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
