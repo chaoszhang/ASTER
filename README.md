@@ -115,9 +115,9 @@ Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only
 ./PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 # INPUT, OUTPUT, AND PROGRAM SPECIFIC FEATURES
-see 
- - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro
- - [README/wastral.md](README/wastral.md) for weighted ASTRAL series
+See 
+ - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro;
+ - [README/wastral.md](README/wastral.md) for weighted ASTRAL series;
  - [README/asterisk.md](README/asterisk.md) for ASTERISK series.
 
 # ACKNOWLEGEMENT
