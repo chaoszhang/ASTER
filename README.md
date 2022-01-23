@@ -7,7 +7,7 @@ A family of optimatization algorithms for species tree inference:
 5. [Weighted ASTRAL - Hybrid](README/wastral.md)
 6. [ASTERISK](README/asterisk.md)
 
-# Bug Reports:
+## Bug Reports:
 
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
