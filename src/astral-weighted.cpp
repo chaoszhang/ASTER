@@ -170,6 +170,6 @@ int main(int argc, char** argv){
 	cerr << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << score << endl;
+	cerr << "Score: " << (double) score << endl;
 	return 0;
 }
