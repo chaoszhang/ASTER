@@ -12,10 +12,6 @@ using namespace std;
 #ifdef LARGE_DATA
 typedef long double score_t;
 
-string to_string(long double x){
-	return to_string((double) x);
-}
-
 score_t from_string(const string s){
 	return stold(s);
 }

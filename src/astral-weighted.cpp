@@ -12,10 +12,6 @@ using namespace std;
 #ifdef LARGE_DATA
 typedef long double score_t;
 
-string to_string(long double x){
-	return to_string((double) x);
-}
-
 score_t from_string(const string s){
 	return stold(s);
 }
@@ -67,8 +63,8 @@ int MAPPING(int begin, int end){
 score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
-	if (i == begin || i == end) return max(0.0, (defaultv - minv) / (maxv - minv));
-	else return max(0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
+	if (i == begin || i == end) return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
+	else return max((score_t)0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
 }
 
 void parse(int parent = -1, bool isLeft = true){
@@ -85,14 +81,14 @@ void parse(int parent = -1, bool isLeft = true){
 		parse(cur, false);
 		vector<int> lst;
 		lst.push_back(cur);
-		tripInit.nodes[part][cur].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+		tripInit.nodes[part][cur].weight = max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 		while (TEXT[pos] != ')'){
 			int left = lst[rand() % lst.size()];
 			int up = tripInit.nodes[part].size();
 			tripInit.nodes[part].emplace_back();
 			lst.push_back(up);
 			if (cur == left) cur = up;
-			tripInit.nodes[part][up].weight = max(0.0, (defaultv - minv) / (maxv - minv));
+			tripInit.nodes[part][up].weight = max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 			int g = tripInit.nodes[part][left].up;
 			if (g != -1){
 				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
