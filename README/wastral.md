@@ -85,7 +85,7 @@ If you want to give hints by providing candidate species trees or trees similar 
 ./PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
-Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+If you want **long double** instead **double** precision. Use the following command instead (***it is slow!***):
 
 ```
 ./PROGRAM_NAME_precise -o OUTPUT_FILE INPUT_FILE
