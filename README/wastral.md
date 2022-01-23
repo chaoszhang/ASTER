@@ -1,73 +1,119 @@
-# Accurate Species Tree EstimatoR
-A family of ASTRAL-like algorithms
+# Weighted ASTRAL Series (wASTRAL)
+1. Weighted ASTRAL by Branch Support (astral-weighted)
+2. Weighted ASTRAL by Branch Length (astral-lengthweighted)
+3. Weighted ASTRAL - Hybrid (astral-hybrid)
 
-# ASTERISK
-Accurate Species Tree Estimation by diRectly Inferring from Site Kernels
+## Publication
 
-# Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread asterisk.cpp -o asterisk`
+Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 
-# Run
-asterisk [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+## Bug Reports
 
--o  path to output file (default: stdout)
+Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
--r  number of total rounds of placements (default: 4)
+# Documentations
+- The rest of this file
+- [README.md](../README.md)
+- Forums:
+  - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
+  - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
 
--s  number of total rounds of subsampling (default: 4)
+# INSTALLATION
+See [README.md](../README.md).
 
--p  subsampling probability of keeping each taxon (default: 0.5)
+# EXECUTION
+Weighted ASTRAL currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to `bin`(Linux/Unix/WSL) or `exe`(Win) in the location where you have downloaded the software, find the name of your program of interest, and issue the following command:
 
--t  number of threads (default: 1)
+```
+./PROGRAM_NAME
+```
 
--y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
+Replace `PROGRAM_NAME` with `astral-weighted` (support), `astral-lengthweighted` (length), or `astral-hybrid` (hybrid). This will give you a list of options available. On Windows, replace `./PROGRAM_NAME` with `.\PROGRAM_NAME.exe`.
 
-inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
+To find the species tree with input gene trees from in a file called `INPUT_FILE`, use:
 
-Gene files must be in FASTA format. The header line should be ">Species_Name".
+```
+./PROGRAM_NAME INPUT_FILE
+```
 
-Example run:
+Currently, INPUT_FILE is hard-coded to be the ***last argument***. 
 
-`./asterisk example/list.txt`
+The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
-`./asterisk -y example/example.phylip`
+```
+./PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE
+```
 
-# Assumptions for Statistical Consistency
-## The multi-species coalescent model
-1. The gene trees are generated independently, and as the number of genes goes to infinity, ASTERISK is statistically consistent.
-2. The coalescent units do not need to be the same across branches.
+To save the logs (**also recommended**), run:
 
-## Gene tree and sequence model
-1. The mutation rates (per time) do not need to be the same across branches, and within each branch across different time, the mutation rate does not need to scale the same way as coalescent does, as long as being reasonable (e.g. infimum/minimum above zero and capped).
-2. The length of each gene can be arbitrary and may be dependent on parameters above, as long as being reasonable (e.g. infimum/minimum above zero and capped).
+```
+./PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
 
-## Felsenstein 1981 model-like
-1. Base frequencies are provided and allowed to vary from 0.25, but the rate matrix must be F81-like.
-2. The sum of top 2 base frequencies must be less than 1. In other words, the number of categories must be at least 3, which unfortunately excludes binary inputs (e.g. major or minor alleles) but allowing nucleotides (4) and amino acids (20). (Base positions with the number of effective categories no more than 2 will neither contribute to nor bias the inferred species tree.)
-3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
+Weighted ASTRAL supports multi-threading. To run program with 4 threads, add `-t 4` before `INPUT_FILE`:
 
+```
+./PROGRAM_NAME -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
 
-# astral(-pro)
-Optimizing ASTRAL(-pro) objective function using ASTER method
+Example: 
+```
+./astral-hybrid -t 4 -o ../example/genetree.astral-hybrid.nw ../example/genetree.nw 2>../example/genetree.astral-hybrid.log
+```
 
-# Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral`
+## Advanced Options
 
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro`
+Weighted ASTRAL algorithm first performs `R` (4 by default) rounds of search and then repeatedly performs `S` (4 by default) rounds of subsampling and exploration until no improvement found.
 
-# Run
-astral(-pro) [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
+```
+./PROGRAM_NAME -t T -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
 
--o  path to output file (default: stdout)
+When `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
 
--r  number of total rounds of placements (default: 4)
+If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
--s  number of total rounds of subsampling (default: 4)
+```
+./PROGRAM_NAME -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+```
 
--p  subsampling probability of keeping each taxon (default: 0.5)
+Specifically, you can score and annotate a ***fully resolved*** species tree containing all taxa with `-c SPECIES_TREE_IN_NEWICK_FORMAT`.
 
--t  number of threads (default: 1)
+If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
--a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+```
+./PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
 
-inputGeneTrees: the path to a file containing all gene trees in Newick format
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+
+```
+./PROGRAM_NAME_precise -o OUTPUT_FILE INPUT_FILE
+```
+
+# INPUT
+* The input gene trees are in the Newick format
+* The input trees can have missing taxa and multiple genes per species.
+* Different from ASTRAL, ASTRAL-Pro by default **does not allow polytomies (unresolved branches)** and **no guarentee of accuracy** is provided for allowing polytomies by force.
+* When multiple genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple genes from the same species the same name in the input gene trees.
+  2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats:
+
+```
+gene_A1 species_name_A
+gene_A2 species_name_A
+gene_B1 species_name_B
+gene_B2 species_name_B
+gene_B3 species_name_B
+...
+```
+
+# OUTPUT
+The output in is Newick format and gives:
+
+* the species tree topology
+* branch lengths in coalescent units (only for internal branches)
+* branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
+* It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
+
+The weighted ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
