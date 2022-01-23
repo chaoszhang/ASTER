@@ -71,6 +71,20 @@ ASTRAL-Pro algorithm first performs `R` (4 by default) rounds of search and then
 
 When `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
 
+If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
+
+```
+./astral-pro -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+```
+
+Specifically, you can score and annotate a ***fully resolved*** species tree containing all taxa with `-c SPECIES_TREE_IN_NEWICK_FORMAT`.
+
+If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
+
+```
+./astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
+
 # Input
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa and multiple genes per species.
@@ -117,3 +131,5 @@ individual_B2 species_name_B
 individual_B3 species_name_B
 ...
 ```
+## Publication for ASTRAL
+Zhang, Chao, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
