@@ -45,29 +45,3 @@ Example run:
 1. Base frequencies are provided and allowed to vary from 0.25, but the rate matrix must be F81-like.
 2. The sum of top 2 base frequencies must be less than 1. In other words, the number of categories must be at least 3, which unfortunately excludes binary inputs (e.g. major or minor alleles) but allowing nucleotides (4) and amino acids (20). (Base positions with the number of effective categories no more than 2 will neither contribute to nor bias the inferred species tree.)
 3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
-
-
-# astral(-pro)
-Optimizing ASTRAL(-pro) objective function using ASTER method
-
-# Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral`
-
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro`
-
-# Run
-astral(-pro) [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
-
--o  path to output file (default: stdout)
-
--r  number of total rounds of placements (default: 4)
-
--s  number of total rounds of subsampling (default: 4)
-
--p  subsampling probability of keeping each taxon (default: 0.5)
-
--t  number of threads (default: 1)
-
--a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
-
-inputGeneTrees: the path to a file containing all gene trees in Newick format
