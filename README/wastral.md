@@ -93,12 +93,19 @@ Species tree with more than **5000** taxa may cause **overflow**. Use the follow
 
 # INPUT
 * The input gene trees are in the Newick format
-* The input trees can have missing taxa and multiple genes per species.
-* Different from ASTRAL, ASTRAL-Pro by default **does not allow polytomies (unresolved branches)** and **no guarentee of accuracy** is provided for allowing polytomies by force.
-* When multiple genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
-  1. You can give multiple genes from the same species the same name in the input gene trees.
-  2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats:
-
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals/genes per species.
+* When individuals/genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals/genes from the same species the same name in the input gene trees.
+  2. OR, a mapping file needs to be provided using the `-a` option.
+```
+individual_A1 species_name_A
+individual_A2 species_name_A
+individual_B1 species_name_B
+individual_B2 species_name_B
+individual_B3 species_name_B
+...
+```
+  Or
 ```
 gene_A1 species_name_A
 gene_A2 species_name_A
@@ -107,7 +114,6 @@ gene_B2 species_name_B
 gene_B3 species_name_B
 ...
 ```
-
 # OUTPUT
 The output in is Newick format and gives:
 
