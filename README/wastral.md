@@ -91,6 +91,13 @@ Species tree with more than **5000** taxa may cause **overflow**. Use the follow
 ./PROGRAM_NAME_precise -o OUTPUT_FILE INPUT_FILE
 ```
 
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolution of each branch.
+
+```
+./PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+./PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
 # INPUT
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals/genes per species.
