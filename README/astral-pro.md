@@ -7,7 +7,7 @@ ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in a **fas
 
 Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, , msaa139, https://doi.org/10.1093/molbev/msaa139
 
-# Bug Reports
+## Bug Reports
 
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
@@ -85,7 +85,7 @@ If you want to give hints by providing candidate species trees or trees similar 
 ./astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
-# Input
+# INPUT
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa and multiple genes per species.
 * Different from ASTRAL, ASTRAL-Pro by default **does not allow polytomies (unresolved branches)** and **no guarentee of accuracy** is provided for allowing polytomies by force.
@@ -102,7 +102,7 @@ gene_B3 species_name_B
 ...
 ```
 
-# Output
+# OUTPUT
 The output in is Newick format and gives:
 
 * the species tree topology
