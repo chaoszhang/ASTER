@@ -28,7 +28,7 @@ ASTRAL-Pro currently has no GUI. You need to run it through the command-line. In
 ./astral-pro
 ```
 
-This will give you a list of options available. Windows program name should include `.exe` extension.
+This will give you a list of options available. On Windows, replace `./astral-pro` with `.\astral-pro.exe`.
 
 To find the species tree with input gene trees from in a file called `INPUT_FILE`, use:
 
@@ -71,7 +71,7 @@ ASTRAL-Pro algorithm first performs `R` (4 by default) rounds of search and then
 
 When `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
 
-###### Input:
+# Input:
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa and multiple genes per species.
 * Different from ASTRAL, ASTRAL-Pro by default **does not allow polytomies (unresolved branches)** and **no guarentee of accuracy** is provided for allowing polytomies by force.
@@ -87,14 +87,33 @@ gene_B2 species_name_B
 gene_B3 species_name_B
 ...
 ```
-###### Output:
+
+# Output:
 The output in is Newick format and gives:
 
 * the species tree topology
 * branch lengths in coalescent units (only for internal branches)
 * branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
-* It can also annotate branches with other quantities, such as quartet support, as described in the [tutorial](astral-tutorial.md).
+* It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 
-The ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
+The ASTRAL-Pro tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 
-### Other features (local posterior, bootstrapping):
+# ASTRAL
+Example: 
+```
+./astral -t 4 -o ../example/genetree.astral-pro.nw ../example/genetree.nw 2>../example/genetree.astral.log
+```
+On Windows, replace `./astral` with `.\astral.exe`.
+
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.
+* When individuals genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals from the same species the same name in the input gene trees.
+  2. OR, a mapping file needs to be provided using the `-a` option.
+```
+individual_A1 species_name_A
+individual_A2 species_name_A
+individual_B1 species_name_B
+individual_B2 species_name_B
+individual_B3 species_name_B
+...
+```
