@@ -94,6 +94,18 @@ ASTER algorithm first performs `R` (4 by default) rounds of search and then repe
 
 For ASTRAL(-Pro) and wASTRAL seriers, when `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
 
+If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
+
+```
+./PROGRAM_NAME -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+```
+
+If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
+
+```
+./PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
+
 # INPUT, OUTPUT, AND PROGRAM SPECIFIC FEATURES
 see 
  - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro
