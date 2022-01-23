@@ -91,7 +91,7 @@ Species tree with more than **5000** taxa may cause **overflow**. Use the follow
 ./astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
 ```
 
-Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolution of each branch.
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
 ./astral-pro -u 0 -o OUTPUT_FILE INPUT_FILE
