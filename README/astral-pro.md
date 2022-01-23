@@ -85,7 +85,7 @@ If you want to give hints by providing candidate species trees or trees similar 
 ./astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
-Species tree with more than **10,000** taxa may cause **overflow**. Use the following command instead:
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 
 ```
 ./astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
@@ -125,7 +125,7 @@ Example:
 ```
 On Windows, replace `./astral` with `.\astral.exe`.
 
-Species tree with more than **10,000** taxa may cause **overflow**. Use the following command instead:
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 ```
 ./astral_int128 -o OUTPUT_FILE INPUT_FILE
 ```
