@@ -1,4 +1,5 @@
 all: astral astral-pro astral-weighted astral-lengthweighted astral-hybrid asterisk
+	echo "*** Installation complete! ***"
 
 astral:
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral
