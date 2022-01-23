@@ -20,11 +20,12 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
 
 # INSTALLATION
 For most users, installing ASTER is VERY easy!
-## For Linux/Unix/WSL users
-1. Download using one of two approaches:
+Download using one of two approaches:
   - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
   - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
-2. In terminal, `cd` into the downloaded directory and run `make`.
+
+## For Linux/Unix/WSL users
+1. In terminal, `cd` into the downloaded directory and run `make`.
   - If you see `*** Installation complete! ***` then you are done!
   - If you see `Command 'g++' not found` then
     - Debian (Ubuntu) users try
@@ -38,76 +39,45 @@ For most users, installing ASTER is VERY easy!
       sudo yum install gcc-c++
       ```
     - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
-3. Binary files should be in the `bin` directory
+2. Binary files should be in the `bin` folder.
 
+## For Windows users
+- Executables for x86-64 are available in `exe` folder
+- [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
+- To compile windows excutables:
+  1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
+  2. Add path to `bin` folder of MinGW to [system environment variable `PATH`](https://www.google.com/search?q=Edit+the+system+environment+variables+windows)
+  3. Double click `make.bat` inside the downloaded directory
 
-# ASTERISK
-Accurate Species Tree Estimation by diRectly Inferring from Site Kernels
+# EXECUTION
+ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to [`bin`](Linux/Unix/WSL) or [`exe`](Win) in the location where you have downloaded the software, find the name of your program of interest, and issue the following command:
 
-# Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread asterisk.cpp -o asterisk`
+```
+./PROGRAM_NAME 
+```
 
-# Run
-asterisk [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
+This will give you a list of options available. Windows program name should include `.exe` extension.
 
--o  path to output file (default: stdout)
+To find the species tree with input from in a file called `INPUT_FILE`, use:
 
--r  number of total rounds of placements (default: 4)
+```
+./PROGRAM_NAME INPUT_FILE
+```
 
--s  number of total rounds of subsampling (default: 4)
+The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
--p  subsampling probability of keeping each taxon (default: 0.5)
+```
+./PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE
+```
 
--t  number of threads (default: 1)
+To save the logs (**also recommended**), run:
 
--y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
+```
+./PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
 
-inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
+ASTER supports multi-threading. To run program with 4 threads, add `-t 4` before `INPUT_FILE`:
 
-Gene files must be in FASTA format. The header line should be ">Species_Name".
-
-Example run:
-
-`./asterisk example/list.txt`
-
-`./asterisk -y example/example.phylip`
-
-# Assumptions for Statistical Consistency
-## The multi-species coalescent model
-1. The gene trees are generated independently, and as the number of genes goes to infinity, ASTERISK is statistically consistent.
-2. The coalescent units do not need to be the same across branches.
-
-## Gene tree and sequence model
-1. The mutation rates (per time) do not need to be the same across branches, and within each branch across different time, the mutation rate does not need to scale the same way as coalescent does, as long as being reasonable (e.g. infimum/minimum above zero and capped).
-2. The length of each gene can be arbitrary and may be dependent on parameters above, as long as being reasonable (e.g. infimum/minimum above zero and capped).
-
-## Felsenstein 1981 model-like
-1. Base frequencies are provided and allowed to vary from 0.25, but the rate matrix must be F81-like.
-2. The sum of top 2 base frequencies must be less than 1. In other words, the number of categories must be at least 3, which unfortunately excludes binary inputs (e.g. major or minor alleles) but allowing nucleotides (4) and amino acids (20). (Base positions with the number of effective categories no more than 2 will neither contribute to nor bias the inferred species tree.)
-3. Different base positions (or genes) are allowed to have different base frequencies and be dependent on parameters above, as long as being reasonable (e.g. non-zero for at least 3 categories) and provided.
-
-
-# astral(-pro)
-Optimizing ASTRAL(-pro) objective function using ASTER method
-
-# Compile for Linux/Unix
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral.cpp -o astral`
-
-`g++ -std=gnu++11 -march=native -Ofast -pthread astral-pro.cpp -o astral-pro`
-
-# Run
-astral(-pro) [-o oFilePath -r nRound -s nSample -p probability -t nThread -a taxonNameMaps] inputGeneTrees
-
--o  path to output file (default: stdout)
-
--r  number of total rounds of placements (default: 4)
-
--s  number of total rounds of subsampling (default: 4)
-
--p  subsampling probability of keeping each taxon (default: 0.5)
-
--t  number of threads (default: 1)
-
--a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
-
-inputGeneTrees: the path to a file containing all gene trees in Newick format
+```
+./PROGRAM_NAME -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
