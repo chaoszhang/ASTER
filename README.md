@@ -1,5 +1,45 @@
 # Accurate Species Tree EstimatoR
-A family of ASTRAL-like algorithms
+A family of Optimatization algorithms for species tree inference:
+1. [ASTRAL](README/astral-pro.md) (re-implemented in C++)
+2. [ASTRAL-Pro](README/astral-pro.md) (re-implemented in C++ for better running time, memory consumption, and accuracy)
+3. [Weighted ASTRAL by Branch Support](README/wastral.md)
+4. [Weighted ASTRAL by Branch Length](README/wastral.md)
+5. [Weighted ASTRAL - Hybrid](README/wastral.md)
+6. [ASTERISK](README/asterisk.md)
+
+# Bug Reports:
+
+Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
+
+# Documentations
+- The rest of this README file
+- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
+- Forums:
+  - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
+  - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
+
+# INSTALLATION
+For most users, installing ASTER is VERY easy!
+## For Linux/Unix/WSL users
+1. Download using one of two approaches:
+  - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
+  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
+2. In terminal, `cd` into the downloaded directory and run `make`.
+  - If you see `*** Installation complete! ***` then you are done!
+  - If you see `Command 'g++' not found` then
+    - Debian (Ubuntu) users try
+      ```
+      sudo apt update
+      sudo apt install g++
+      ```
+    - CentOS (RedHat) users try
+      ```
+      sudo yum update
+      sudo yum install gcc-c++
+      ```
+    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
+3. Binary files should be in the `bin` directory
+
 
 # ASTERISK
 Accurate Species Tree Estimation by diRectly Inferring from Site Kernels
