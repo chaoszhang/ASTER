@@ -136,7 +136,7 @@ gene_B3 species_name_B
 The output in is Newick format and gives:
 
 * the species tree topology
-* branch lengths in coalescent units (only for internal branches)
+* branch lengths in coalescent units for astral-weighted and in **combined (coalensecent + 2 * substitution) units** (only for internal branches)
 * branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
 * It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 
