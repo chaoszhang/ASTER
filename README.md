@@ -1,4 +1,4 @@
-# Accurate Species Tree EstimatoR
+# Accurate Species Tree EstimatoR (ASTER❋)
 A family of optimatization algorithms for species tree inference:
 1. [ASTRAL](README/astral-pro.md) (re-implemented in C++, suitable for large data)
 2. [ASTRAL-Pro](README/astral-pro.md) (re-implemented in C++ for better running time, memory consumption, and accuracy)
