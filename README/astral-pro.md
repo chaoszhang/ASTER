@@ -1,7 +1,7 @@
 # Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro)
 ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees and is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL-pro extends ASTRAL to allow multi-copy genes. ASTRAL-pro finds the species tree that has the maximum number of shared induced quartet tree equivalent classes with the set of gene trees, subject to the constraint that the set of bipartitions in the species tree comes from a predefined set of bipartitions. Please see the paper below for the definition of the PL-quartet scores, which is what ASTRAL-Pro optimizes. We refer to the tool both as A-Pro and ASTRAL-Pro. 
 
-ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in a **faster**, **more accurate**, and **easier to install** and **lower memory consumption** way. However, ASTER version of original ASTRAL is only useful for large data set and may be **slower** and **less accuracy** with few small gene trees. Please choose wisely!
+ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in a **faster**, **more accurate**, and **easier to install** and **lower memory consumption** way. However, ASTER version of original ASTRAL is only useful for large data set and large taxon loss rate and may be **slower** and **less accuracy** with very few small gene trees. Please choose wisely!
 
 ## Publication
 
