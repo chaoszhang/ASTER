@@ -1,4 +1,4 @@
-#define ALG_VERSION "v1.2"
+#define ALG_VERSION "v1.3"
 
 typedef unsigned __int128 hash_t;
 
@@ -19,6 +19,9 @@ typedef unsigned __int128 hash_t;
 #include <cmath>
 #endif
 
+#ifndef ERROR_TOLERANCE
+#define ERROR_TOLERANCE 0
+#endif
 using namespace std;
 
 struct Hasher{
@@ -320,12 +323,12 @@ struct PlacementAlgorithm{
 			switchSubtree(c, 1, 0);
 			score_t ce_ab_d = trip.score();
 			
-			if (best_score < cde_a_b + de_ab_c + e_abc_d) {
+			if (best_score + ERROR_TOLERANCE < cde_a_b + de_ab_c + e_abc_d) {
 				best_score = cde_a_b + de_ab_c + e_abc_d;
 				best_case = 1;
 				top_score = e_abc_d;
 			}
-			if (best_score < cde_a_b + ce_ab_d + e_abd_c) {
+			if (best_score + ERROR_TOLERANCE < cde_a_b + ce_ab_d + e_abd_c) {
 				best_score = cde_a_b + ce_ab_d + e_abd_c;
 				best_case = 2;
 				top_score = e_abd_c;
@@ -350,12 +353,12 @@ struct PlacementAlgorithm{
 			switchSubtree(b, 2, 1);
 			score_t ae_b_cd = trip.score();
 			
-			if (best_score < abe_c_d + ae_b_cd + e_a_bcd) {
+			if (best_score + ERROR_TOLERANCE < abe_c_d + ae_b_cd + e_a_bcd) {
 				best_score = abe_c_d + ae_b_cd + e_a_bcd;
 				best_case = 3;
 				top_score = e_a_bcd;
 			}
-			if (best_score < abe_c_d + be_a_cd + e_acd_b) {
+			if (best_score + ERROR_TOLERANCE < abe_c_d + be_a_cd + e_acd_b) {
 				best_score = abe_c_d + be_a_cd + e_acd_b;
 				best_case = 4;
 				top_score = e_acd_b;
@@ -413,12 +416,12 @@ struct PlacementAlgorithm{
 				switchSubtree(c, 1, 0);
 				score_t ce_ab_d = trip.score();
 				
-				if (best_score < cde_a_b + de_ab_c + e_abc_d) {
+				if (best_score + ERROR_TOLERANCE < cde_a_b + de_ab_c + e_abc_d) {
 					best_score = cde_a_b + de_ab_c + e_abc_d;
 					best_case = 1;
 					top_score = e_abc_d;
 				}
-				if (best_score < cde_a_b + ce_ab_d + e_abd_c) {
+				if (best_score + ERROR_TOLERANCE < cde_a_b + ce_ab_d + e_abd_c) {
 					best_score = cde_a_b + ce_ab_d + e_abd_c;
 					best_case = 2;
 					top_score = e_abd_c;
@@ -439,12 +442,12 @@ struct PlacementAlgorithm{
 				switchSubtree(light(v), 2, 1);
 				score_t e_acd_b = trip.score();
 				
-				if (best_score < abe_c_d + ae_b_cd + e_a_bcd) {
+				if (best_score + ERROR_TOLERANCE < abe_c_d + ae_b_cd + e_a_bcd) {
 					best_score = abe_c_d + ae_b_cd + e_a_bcd;
 					best_case = 3;
 					top_score = e_a_bcd;
 				}
-				if (best_score < abe_c_d + be_a_cd + e_acd_b) {
+				if (best_score + ERROR_TOLERANCE < abe_c_d + be_a_cd + e_acd_b) {
 					best_score = abe_c_d + be_a_cd + e_acd_b;
 					best_case = 4;
 					top_score = e_acd_b;
@@ -459,6 +462,15 @@ struct PlacementAlgorithm{
 		}
 	}
 	
+	void nnMove(){
+		if (ROUND_NN >= 0) {
+			trip.update(0, rootLeafId);
+			switchSubtree(rootNodeId, -1, 0);
+			nnMove(rootNodeId);
+			cerr << "#localmove:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
+		}
+	}
+
 	pair<bool, hash_t> tripHashGenerator(int v){
 		if (leafId(v) != -1){
 			//trip.reset();
@@ -493,12 +505,7 @@ struct PlacementAlgorithm{
 			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
-		if (rNN >= 0) {
-			trip.update(0, rootLeafId);
-			switchSubtree(rootNodeId, -1, 0);
-			nnMove(rootNodeId);
-			cerr << "#localmove:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
-		}
+		nnMove();
 		trip.update(0, rootLeafId);
 		switchSubtree(rootNodeId, -1, 0);
 		tripHashGenerator(rootNodeId);
@@ -894,7 +901,7 @@ struct ConstrainedOptimizationAlgorithm{
 	void twoStepWorkflow(PlacementAlgorithm &pAlg){
 		int N, rId;
 		{ const lock_guard<mutex> lock(mtx); N = ntaxa; rId = roundId; }
-		int n = sqrt(N);
+		int n = sqrt(N) * log2(names.size()) / 4;
 		vector<int> order;
 		if (rId == 0){
 			mtx.lock();
@@ -935,7 +942,7 @@ struct ConstrainedOptimizationAlgorithm{
 			unordered_set<int> selected;
 			for (int i = 0; i < n; i++) selected.insert(order[i]);
 			{ const lock_guard<mutex> lock(mtx); createPlacementAlgorithm(pAlg, selected); }
-			cerr << "Subsampled nodes: " << pAlg.nodes.size() << endl;
+			pAlg.nnMove();
 		}
 		{
 			vector<int> abnormalOrder;
@@ -946,7 +953,7 @@ struct ConstrainedOptimizationAlgorithm{
 				int originalRootNodeId = pAlg.rootNodeId;//, originalRootLeafId = pAlg.rootLeafId;
 				
 				vector<vector<int> > nodeBranch(pNodes.size());
-				cerr << "pNodes: " << pNodes.size() << endl;
+				
 				for (int i = n; i < N; i++) {
 					if ((i - n) & 127 == 0) cerr << "Binning " << i - n << "/" << N - n << endl; 
 					nodeBranch[pAlg.locateBranch(order[i])].push_back(order[i]);
@@ -976,6 +983,7 @@ struct ConstrainedOptimizationAlgorithm{
 			pAlg.orderId = 0;
 		}
 		cerr << "Remaining: " << pAlg.order.size() << endl;
+		pAlg.nnMove();
 		pAlg.run();
 	}
 	
@@ -1143,7 +1151,7 @@ struct MetaAlgorithm{
 	};
 
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
+	int nThreads = 1, nRounds = 16, nSample = 16, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
 	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
@@ -1230,7 +1238,7 @@ struct MetaAlgorithm{
 	}
 	
 	pair<score_t, string> run(){
-		ROUND_NN = 20 + 10 * sqrt(names.size());
+		ROUND_NN = 20 + 2 * sqrt(names.size()) * log2(names.size());
 
 		ostream &fout = (outputFile == "") ? cout : fileOut;
 		if (outputFile != "") fileOut.open(outputFile);
@@ -1247,7 +1255,7 @@ struct MetaAlgorithm{
 			ifstream fin(guideFile);
 			string tree;
 			while (getline(fin, tree)){
-				alg.addGuideTree(tree, name2id);
+				if (tree.size()) alg.addGuideTree(tree, name2id);
 			}
 		}
 		
@@ -1257,6 +1265,8 @@ struct MetaAlgorithm{
 		}
 		
 		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
+		cerr << "Initial score: " << (double) res.first << endl;
+		cerr << "Initial tree: " << res.second << endl;
 		if (constraintTree == "") {
 			cerr << "*** Subsample Process ***" << endl;
 			score_t prevS;
@@ -1265,9 +1275,11 @@ struct MetaAlgorithm{
 				prevS = res.first;
 				res = alg.run(nSample, nThread1, p);
 				cerr << "Current score: " << (double) res.first << endl;
+				cerr << "Current tree: " << res.second << endl;
 				roundNum++;
 			}
-			while (prevS < res.first && roundNum < 5);
+			while (prevS < res.first && roundNum < 20);
+			if (prevS < res.first) cerr << "Search stopped due to excessive rounds. Tree may not be optimal!" << endl;
 		}
 		
 		string output = res.second;
