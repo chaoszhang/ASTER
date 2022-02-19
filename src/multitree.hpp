@@ -1,6 +1,9 @@
-#include<vector>
-#include<array>
-#include<thread>
+#define OBJECTIVE_VERSION "1"
+
+#include <vector>
+#include <array>
+#include <thread>
+#include "threadpool.hpp"
 
 #define SUPPORT
 
@@ -62,74 +65,7 @@ struct Tripartition{
 				nodes[i].dup = init.nodes[p][i].dup;
 			}
 		}
-		/*
-		void reset(){
-			totalScore = 0;
-			version++;
-		}
-		
-		void addTotal(int i){
-			for (int u: leafParent[i]){
-				totalZ[u]++;
-				int w = nodes[u].up;
-				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					totalZ[w]++;
-					u = w;
-					w = nodes[u].up;
-				}
-			}
-		}
-		
-		void rmvTotal(int i){
-			for (int u: leafParent[i]){
-				totalZ[u]--;
-				int w = nodes[u].up;
-				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					totalZ[w]--;
-					u = w;
-					w = nodes[u].up;
-				}
-			}
-		}
-		
-		void add(int x, int i){
-			for (int u: leafParent[i]){
-				nodes[u].update(version, totalZ[u]);
-				if (x == 0) nodes[u].z++; else if (x == 1) nodes[u].x++; else nodes[u].y++;
-				int w = nodes[u].up;
-				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					nodes[w].update(version, totalZ[w]);
-					if (x == 0) nodes[w].z++; else if (x == 1) nodes[w].x++; else nodes[w].y++;
-					if (nodes[w].dup) special(nodes[w]); else totalScore += normal(nodes[w]);
-					u = w;
-					w = nodes[u].up;
-				}
-				if (w != -1){
-					nodes[w].update(version, totalZ[w]);
-					special(nodes[w]);
-				}
-			}
-		}
-		
-		void rmv(int x, int i){
-			for (int u: leafParent[i]){
-				nodes[u].update(version, totalZ[u]);
-				if (x == 0) nodes[u].z--; else if (x == 1) nodes[u].x--; else nodes[u].y--;
-				int w = nodes[u].up;
-				while (w != -1 && (nodes[w].dup == false || nodes[w].large == u)){
-					nodes[w].update(version, totalZ[w]);
-					if (x == 0) nodes[w].z--; else if (x == 1) nodes[w].x--; else nodes[w].y--;
-					if (nodes[w].dup) special(nodes[w]); else totalScore += normal(nodes[w]);
-					u = w;
-					w = nodes[u].up;
-				}
-				if (w != -1){
-					nodes[w].update(version, totalZ[w]);
-					special(nodes[w]);
-				}
-			}
-		}
-		*/
+
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
@@ -197,39 +133,11 @@ struct Tripartition{
 		
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
-	/*
-	void reset(){
-		for (int p = 0; p < parts.size(); p++) parts[p].reset();
+
+	void updatePart(int part, int x, int i){
+		parts[part].update(x, i);
 	}
-	
-	void addTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
-		parts[0].addTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmvTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
-		parts[0].rmvTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void add(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	*/
+
 	void update(int x, int i){
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
@@ -237,6 +145,10 @@ struct Tripartition{
 		for (thread &t: thrds) t.join();
 	}
 	
+	score_t scorePart(int part){
+		return parts[part].score();
+	}
+
 	score_t score(){
 		score_t res = 0;
 		for (int p = 0; p < parts.size(); p++) res += parts[p].score();

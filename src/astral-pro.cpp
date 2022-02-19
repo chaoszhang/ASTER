@@ -1,3 +1,5 @@
+#define DRIVER_VERSION "0"
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
