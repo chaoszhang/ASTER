@@ -24,6 +24,10 @@ typedef unsigned __int128 hash_t;
 #endif
 using namespace std;
 
+#ifdef THREAD_POOL
+ThreadPool TP;
+#endif
+
 struct Hasher{
 	size_t operator()(const hash_t h) const{
 		return (size_t) h;
@@ -145,6 +149,561 @@ struct PlacementAlgorithm{
 		forceLeftHeavy(rootNodeId);
 	}
 	
+	void place(int i){
+		addSibling(locateBranchAdding(i), i);
+	}
+	
+	#ifdef THREAD_POOL
+	void tripUpdateSet(int tgt, int i){
+		Tripartition &t = trip;
+		TP.push([=, &t](int part)->score_t{t.updatePart(part, tgt, i); return 0;});
+	}
+
+	void tripUpdateGet(int tgt, int i){
+		TP.pop();
+	}
+
+	void tripScoreSet(){
+		Tripartition &t = trip;
+		TP.push([=, &t](int part)->score_t{return t.scorePart(part);});
+	}
+
+	score_t tripScoreGet(){
+		return TP.pop();
+	}
+
+	void switchSubtreeSet(int v, int src, int tgt){
+		if (leafId(v) != -1){
+			tripUpdateSet(tgt, leafId(v));
+		}
+		else{
+			switchSubtreeSet(light(v), src, tgt);
+			switchSubtreeSet(heavy(v), src, tgt);
+		}
+	}
+	
+	void switchSubtreeGet(int v, int src, int tgt){
+		if (leafId(v) != -1){
+			tripUpdateGet(tgt, leafId(v));
+		}
+		else{
+			switchSubtreeGet(light(v), src, tgt);
+			switchSubtreeGet(heavy(v), src, tgt);
+		}
+	}
+
+	void switchSubtree(int v, int src, int tgt){
+		switchSubtreeSet(v, src, tgt);
+		switchSubtreeGet(v, src, tgt);
+	}
+
+	void scoringPlacementDPSet(int v, int i){
+		if (leafId(v) != -1){
+			//Wv|-|i
+			//W|v|i
+			tripUpdateSet(1, leafId(v));
+			tripScoreSet();
+		}
+		else{
+			//AC|B|i
+			scoringPlacementDPSet(light(v), i);
+			//ABC|-|i
+			switchSubtreeSet(light(v), 1, 0);
+			//BC|A|i
+			scoringPlacementDPSet(heavy(v), i);
+			//C|A|Bi
+			switchSubtreeSet(light(v), 0, 2);
+			tripScoreSet();
+			//C|Ai|B
+			tripUpdateSet(1, i);
+			tripScoreSet();
+			//Ci|A|B
+			tripUpdateSet(0, i);
+			tripScoreSet();
+			//C|A|Bi
+			tripUpdateSet(2, i);
+			//C|AB|i
+			switchSubtreeSet(light(v), 2, 1);
+			tripScoreSet();
+		}
+	}
+		
+	void scoringPlacementDPGet(int v, int i){
+		if (leafId(v) != -1){
+			//Wv|-|i
+			sNo(v) = 0;
+			//W|v|i
+			tripUpdateGet(1, leafId(v));
+			sYes(v) = tripScoreGet();
+			placeHeavy(v) = false;
+			placeLight(v) = false;
+		}
+		else{
+			//AC|B|i
+			scoringPlacementDPGet(light(v), i);
+			//ABC|-|i
+			switchSubtreeGet(light(v), 1, 0);
+			//BC|A|i
+			scoringPlacementDPGet(heavy(v), i);
+			//C|A|Bi
+			switchSubtreeGet(light(v), 0, 2);
+			score_t up, left, right, sibling;
+			right = tripScoreGet();
+			//C|Ai|B
+			tripUpdateGet(1, i);
+			left = tripScoreGet();
+			//Ci|A|B
+			tripUpdateGet(0, i);
+			up = tripScoreGet();
+			//C|A|Bi
+			tripUpdateGet(2, i);
+			//C|AB|i
+			switchSubtreeGet(light(v), 2, 1);
+			sibling = tripScoreGet();
+			sNo(v) = sNo(light(v)) + sNo(heavy(v)) + up;
+			sYes(v) = sNo(v) + sibling;
+			placeHeavy(v) = false;
+			placeLight(v) = false;
+			if (sYes(v) < sYes(light(v)) + sNo(heavy(v)) + right){
+				sYes(v) = sYes(light(v)) + sNo(heavy(v)) + right;
+				placeHeavy(v) = false;
+				placeLight(v) = true;
+			}
+			if (sYes(v) < sNo(light(v)) + sYes(heavy(v)) + left){
+				sYes(v) = sNo(light(v)) + sYes(heavy(v)) + left;
+				placeHeavy(v) = true;
+				placeLight(v) = false;
+			}
+		}
+	}
+
+	void locateBranchAddingSet(int i){
+		tripUpdateSet(2, i);
+		tripUpdateSet(0, rootLeafId);
+		switchSubtreeSet(rootNodeId, -1, 0);
+		scoringPlacementDPSet(rootNodeId, i);
+	}
+	
+	int locateBranchAddingGet(int i){
+		//trip.addTotal(i);
+		tripUpdateGet(2, i);
+		tripUpdateGet(0, rootLeafId);
+		switchSubtreeGet(rootNodeId, -1, 0);
+		scoringPlacementDPGet(rootNodeId, i);
+		int v = rootNodeId;
+		while (placeHeavy(v) || placeLight(v)){
+			if (placeHeavy(v)) v = heavy(v);
+			else v = light(v);
+		}
+		return v;
+	}
+	
+	int locateBranchAdding(int i){
+		locateBranchAddingSet(i);
+		return locateBranchAddingGet(i);
+	}
+	
+	int locateBranch(int i){
+		locateBranchAddingSet(i);
+		tripUpdateSet(-1, i);
+		int v = locateBranchAddingGet(i);
+		tripUpdateGet(-1, i);
+		return v;
+	}
+
+	inline score_t nnPerform(int v, int best_case, score_t top_score){
+		if (best_case == 1){
+			int u = light(v), c = heavy(u), d = light(u), ab = heavy(v);
+			parent(ab) = u; heavy(u) = ab;
+			parent(c) = u; light(u) = c;
+			parent(u) = v; heavy(v) = u;
+			parent(d) = v; light(v) = d;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 2){
+			int u = light(v), c = heavy(u), d = light(u), ab = heavy(v);
+			parent(ab) = u; heavy(u) = ab;
+			parent(d) = u; light(u) = d;
+			parent(u) = v; heavy(v) = u;
+			parent(c) = v; light(v) = c;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 3){
+			int u = heavy(v), a = heavy(u), b = light(u), cd = light(v);
+			parent(b) = u; heavy(u) = b;
+			parent(cd) = u; light(u) = cd;
+			parent(a) = v; heavy(v) = a;
+			parent(u) = v; light(v) = u;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		if (best_case == 4){
+			int u = heavy(v), a = heavy(u), b = light(u), cd = light(v);
+			parent(a) = u; heavy(u) = a;
+			parent(cd) = u; light(u) = cd;
+			parent(u) = v; heavy(v) = u;
+			parent(b) = v; light(v) = b;
+			leafCnt(u) = leafCnt(heavy(u)) + leafCnt(light(u));
+			return nnLocal(v, true, top_score);
+		}
+		return top_score;
+	}
+	
+	score_t nnLocal(int v, bool recurse, score_t e_ab_cd){
+		//E|ABCD|-
+		if (recurse) {
+			if (rNN <= 0) return e_ab_cd;
+			rNN--;
+		}
+		
+		//E|AB|CD
+		switchSubtree(light(v), 1, 2);
+		score_t abe_c_d = 0, cde_a_b = 0;
+		if (leafId(light(v)) == -1){
+			int c = heavy(light(v)), d = light(light(v));
+			//ABE|C|D
+			switchSubtreeSet(heavy(v), 1, 0);
+			switchSubtreeSet(c, 2, 1);
+			tripScoreSet();
+			//ABE|CD|-
+			switchSubtreeSet(d, 2, 1);
+
+			//ABE|C|D
+			switchSubtreeGet(heavy(v), 1, 0);
+			switchSubtreeGet(c, 2, 1);
+			abe_c_d = tripScoreGet();
+			//ABE|CD|-
+			switchSubtreeGet(d, 2, 1);
+			if (recurse) abe_c_d = nnLocal(light(v), false, abe_c_d);
+			//E|AB|CD
+			switchSubtreeSet(heavy(v), 0, 1);
+			switchSubtreeSet(light(v), 1, 2);
+
+			//E|AB|CD
+			switchSubtreeGet(heavy(v), 0, 1);
+			switchSubtreeGet(light(v), 1, 2);
+		}
+		if (leafId(heavy(v)) == -1){
+			int b = light(heavy(v));
+			//CDE|A|B
+			switchSubtreeSet(light(v), 2, 0);
+			switchSubtreeSet(b, 1, 2);
+			tripScoreSet();
+			//CDE|AB|-
+			switchSubtreeSet(b, 2, 1);
+			
+			//CDE|A|B
+			switchSubtreeGet(light(v), 2, 0);
+			switchSubtreeGet(b, 1, 2);
+			cde_a_b = tripScoreGet();
+			//CDE|AB|-
+			switchSubtreeGet(b, 2, 1);
+
+			if (recurse) cde_a_b = nnLocal(heavy(v), false, cde_a_b);
+			//E|AB|CD
+			switchSubtree(light(v), 0, 2);
+		}
+		int best_case = 0;
+		score_t best_score = abe_c_d + cde_a_b + e_ab_cd, top_score = e_ab_cd;
+		if (leafId(light(v)) == -1){
+			int c = heavy(light(v)), d = light(light(v));
+			//DE|AB|C
+			switchSubtreeSet(d, 2, 0);
+			tripScoreSet();
+			//E|ABD|C
+			switchSubtreeSet(d, 0, 1);
+			tripScoreSet();
+			//E|ABC|D
+			switchSubtreeSet(d, 1, 2);
+			switchSubtreeSet(c, 2, 1);
+			tripScoreSet();
+			//CE|AB|D
+			switchSubtreeSet(c, 1, 0);
+			tripScoreSet();
+			//E|AB|CD
+			switchSubtreeSet(c, 0, 2);
+
+			//DE|AB|C
+			switchSubtreeGet(d, 2, 0);
+			score_t de_ab_c = tripScoreGet();
+			//E|ABD|C
+			switchSubtreeGet(d, 0, 1);
+			score_t e_abd_c = tripScoreGet();
+			//E|ABC|D
+			switchSubtreeGet(d, 1, 2);
+			switchSubtreeGet(c, 2, 1);
+			score_t e_abc_d = tripScoreGet();
+			//CE|AB|D
+			switchSubtreeGet(c, 1, 0);
+			score_t ce_ab_d = tripScoreGet();
+			if (best_score + ERROR_TOLERANCE < cde_a_b + de_ab_c + e_abc_d) {
+				best_score = cde_a_b + de_ab_c + e_abc_d;
+				best_case = 1;
+				top_score = e_abc_d;
+			}
+			if (best_score + ERROR_TOLERANCE < cde_a_b + ce_ab_d + e_abd_c) {
+				best_score = cde_a_b + ce_ab_d + e_abd_c;
+				best_case = 2;
+				top_score = e_abd_c;
+			}
+			//E|AB|CD
+			switchSubtreeGet(c, 0, 2);
+		}
+		if (leafId(heavy(v)) == -1){
+			int a = heavy(heavy(v)), b = light(heavy(v));
+			//BE|A|CD
+			switchSubtreeSet(b, 1, 0);
+			tripScoreSet();
+			//E|A|BCD
+			switchSubtreeSet(b, 0, 2);
+			tripScoreSet();
+			//E|ACD|B
+			switchSubtreeSet(light(v), 2, 1);
+			tripScoreSet();
+			//AE|B|CD
+			switchSubtreeSet(light(v), 1, 2);
+			switchSubtreeSet(a, 1, 0);
+			switchSubtreeSet(b, 2, 1);
+			tripScoreSet();
+			//E|AB|CD
+			switchSubtreeSet(a, 0, 1);
+			
+			//BE|A|CD
+			switchSubtreeGet(b, 1, 0);
+			score_t be_a_cd = tripScoreGet();
+			//E|A|BCD
+			switchSubtreeGet(b, 0, 2);
+			score_t e_a_bcd = tripScoreGet();
+			//E|ACD|B
+			switchSubtreeGet(light(v), 2, 1);
+			score_t e_acd_b = tripScoreGet();
+			//AE|B|CD
+			switchSubtreeGet(light(v), 1, 2);
+			switchSubtreeGet(a, 1, 0);
+			switchSubtreeGet(b, 2, 1);
+			score_t ae_b_cd = tripScoreGet();
+			if (best_score + ERROR_TOLERANCE < abe_c_d + ae_b_cd + e_a_bcd) {
+				best_score = abe_c_d + ae_b_cd + e_a_bcd;
+				best_case = 3;
+				top_score = e_a_bcd;
+			}
+			if (best_score + ERROR_TOLERANCE < abe_c_d + be_a_cd + e_acd_b) {
+				best_score = abe_c_d + be_a_cd + e_acd_b;
+				best_case = 4;
+				top_score = e_acd_b;
+			}
+			//E|AB|CD
+			switchSubtreeGet(a, 0, 1);
+		}
+		//E|ABCD|-
+		switchSubtree(light(v), 2, 1);
+		return nnPerform(v, best_case, top_score);
+	}
+	
+	score_t nnMove(int v){
+		if (leafId(v) != -1){
+			tripUpdateSet(1, leafId(v));
+			tripUpdateGet(1, leafId(v));
+			return 0;
+		}
+		else{
+			//ABE|CD|-
+			score_t abe_c_d = nnMove(light(v));
+			score_t ae_b_cd = 0;
+			if (leafId(heavy(v)) == -1){
+				int b = light(heavy(v));
+				//AE|B|CD
+				switchSubtreeSet(b, 0, 1);
+				switchSubtreeSet(light(v), 1, 2);
+				tripScoreSet();
+				//ABCDE|-|-
+				switchSubtreeSet(b, 1, 0);
+				switchSubtreeSet(light(v), 2, 0);
+
+				//AE|B|CD
+				switchSubtreeGet(b, 0, 1);
+				switchSubtreeGet(light(v), 1, 2);
+				ae_b_cd = tripScoreGet();
+				//ABCDE|-|-
+				switchSubtreeGet(b, 1, 0);
+				switchSubtreeGet(light(v), 2, 0);
+			}
+			//ABCDE|-|-
+			else switchSubtree(light(v), 1, 0);
+			//CDE|AB|-
+			score_t cde_a_b = nnMove(heavy(v));
+			//E|AB|CD
+			switchSubtree(light(v), 0, 2);
+			score_t e_ab_cd = trip.score();
+			int best_case = 0;
+			score_t best_score = abe_c_d + cde_a_b + e_ab_cd, top_score = e_ab_cd;
+			
+			if (leafId(light(v)) == -1){
+				int c = heavy(light(v)), d = light(light(v));
+				//DE|AB|C
+				switchSubtreeSet(d, 2, 0);
+				tripScoreSet();
+				//E|ABD|C
+				switchSubtreeSet(d, 0, 1);
+				tripScoreSet();
+				//E|ABC|D
+				switchSubtreeSet(d, 1, 2);
+				switchSubtreeSet(c, 2, 1);
+				tripScoreSet();
+				//CE|AB|D
+				switchSubtreeSet(c, 1, 0);
+				tripScoreSet();
+				//E|AB|CD
+				switchSubtreeSet(c, 0, 2);
+
+				//DE|AB|C
+				switchSubtreeGet(d, 2, 0);
+				score_t de_ab_c = tripScoreGet();
+				//E|ABD|C
+				switchSubtreeGet(d, 0, 1);
+				score_t e_abd_c = tripScoreGet();
+				//E|ABC|D
+				switchSubtreeGet(d, 1, 2);
+				switchSubtreeGet(c, 2, 1);
+				score_t e_abc_d = tripScoreGet();
+				//CE|AB|D
+				switchSubtreeGet(c, 1, 0);
+				score_t ce_ab_d = tripScoreGet();
+				
+				if (best_score + ERROR_TOLERANCE < cde_a_b + de_ab_c + e_abc_d) {
+					best_score = cde_a_b + de_ab_c + e_abc_d;
+					best_case = 1;
+					top_score = e_abc_d;
+				}
+				if (best_score + ERROR_TOLERANCE < cde_a_b + ce_ab_d + e_abd_c) {
+					best_score = cde_a_b + ce_ab_d + e_abd_c;
+					best_case = 2;
+					top_score = e_abd_c;
+				}
+				//E|AB|CD
+				switchSubtreeGet(c, 0, 2);
+			}
+			if (leafId(heavy(v)) == -1){
+				int b = light(heavy(v));
+				//E|A|BCD
+				switchSubtreeSet(b, 1, 2);
+				tripScoreSet();
+				//BE|A|CD
+				switchSubtreeSet(b, 2, 0);
+				tripScoreSet();
+				//E|ACD|B
+				switchSubtreeSet(b, 0, 2);
+				switchSubtreeSet(light(v), 2, 1);
+				tripScoreSet();
+				//E|AB|CD
+				switchSubtreeSet(b, 2, 1);
+				switchSubtreeSet(light(v), 1, 2);
+
+				//E|A|BCD
+				switchSubtreeGet(b, 1, 2);
+				score_t e_a_bcd = tripScoreGet();
+				//BE|A|CD
+				switchSubtreeGet(b, 2, 0);
+				score_t be_a_cd = tripScoreGet();
+				//E|ACD|B
+				switchSubtreeGet(b, 0, 2);
+				switchSubtreeGet(light(v), 2, 1);
+				score_t e_acd_b = tripScoreGet();
+				
+				if (best_score + ERROR_TOLERANCE < abe_c_d + ae_b_cd + e_a_bcd) {
+					best_score = abe_c_d + ae_b_cd + e_a_bcd;
+					best_case = 3;
+					top_score = e_a_bcd;
+				}
+				if (best_score + ERROR_TOLERANCE < abe_c_d + be_a_cd + e_acd_b) {
+					best_score = abe_c_d + be_a_cd + e_acd_b;
+					best_case = 4;
+					top_score = e_acd_b;
+				}
+				//E|AB|CD
+				switchSubtreeGet(b, 2, 1);
+				switchSubtreeGet(light(v), 1, 2);
+			}
+			//E|ABCD|-
+			switchSubtree(light(v), 2, 1);
+			return nnPerform(v, best_case, top_score);
+		}
+	}
+	
+	void nnMove(){
+		if (ROUND_NN >= 0) {
+			tripUpdateSet(0, rootLeafId);
+			switchSubtreeSet(rootNodeId, -1, 0);
+			tripUpdateGet(0, rootLeafId);
+			switchSubtreeGet(rootNodeId, -1, 0);
+			nnMove(rootNodeId);
+			cerr << "#NNI moves:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
+		}
+	}
+	
+	void tripHashGeneratorSet(int v){
+		if (leafId(v) != -1){
+			tripUpdateSet(1, leafId(v));
+		}
+		else{
+			//AC|B|-
+			tripHashGeneratorSet(light(v));
+			//ABC|-|-
+			switchSubtreeSet(light(v), 1, 0);
+			//BC|A|-
+			tripHashGeneratorSet(heavy(v));
+			//C|A|B
+			switchSubtreeSet(light(v), 0, 2);
+			tripScoreSet();
+			//C|AB|-
+			switchSubtreeSet(light(v), 2, 1);
+		}
+		
+	}
+
+	pair<bool, hash_t> tripHashGeneratorGet(int v){
+		if (leafId(v) != -1){
+			tripUpdateGet(1, leafId(v));
+			return {leafId(v) == 0, taxonHash[leafId(v)]};
+		}
+		else{
+			//AC|B|-
+			pair<bool, hash_t> hLight = tripHashGeneratorGet(light(v));
+			//ABC|-|-
+			switchSubtreeGet(light(v), 1, 0);
+			//BC|A|-
+			pair<bool, hash_t> hHeavy = tripHashGeneratorGet(heavy(v));
+			//C|A|B
+			switchSubtreeGet(light(v), 0, 2);
+			score_t s = tripScoreGet();
+			//C|AB|-
+			switchSubtreeGet(light(v), 2, 1);
+			if (hHeavy.first) tripHash.push_back(make_tuple(hLight.second, -hHeavy.second-hLight.second, s));
+			else if (hLight.first) tripHash.push_back(make_tuple(hHeavy.second, -hHeavy.second-hLight.second, s));
+			else tripHash.push_back(make_tuple(hHeavy.second, hLight.second, s));
+			return {hHeavy.first || hLight.first, hHeavy.second + hLight.second};
+		}
+		
+	}
+	
+	void run(){
+		defaultInitializer();
+		for (; orderId < order.size(); orderId++){
+			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
+			place(order[orderId]);
+		}
+		nnMove();
+		tripUpdateSet(0, rootLeafId);
+		switchSubtreeSet(rootNodeId, -1, 0);
+		tripHashGeneratorSet(rootNodeId);
+		tripUpdateGet(0, rootLeafId);
+		switchSubtreeGet(rootNodeId, -1, 0);
+		tripHashGeneratorGet(rootNodeId);
+	}
+
+	#else
 	void switchSubtree(int v, int src, int tgt){
 		if (leafId(v) != -1){
 			//trip.rmv(src, leafId(v));
@@ -220,16 +779,12 @@ struct PlacementAlgorithm{
 		return v;
 	}
 	
-	void place(int i){
-		addSibling(locateBranchAdding(i), i);
-	}
-	
 	int locateBranch(int i){
 		int v = locateBranchAdding(i);
 		trip.update(-1, i); //trip.rmvTotal(i);
 		return v;
 	}
-	
+
 	inline score_t nnPerform(int v, int best_case, score_t top_score){
 		if (best_case == 1){
 			int u = light(v), c = heavy(u), d = light(u), ab = heavy(v);
@@ -467,10 +1022,9 @@ struct PlacementAlgorithm{
 			trip.update(0, rootLeafId);
 			switchSubtree(rootNodeId, -1, 0);
 			nnMove(rootNodeId);
-			cerr << "#localmove:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
+			cerr << "#NNI moves:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
 		}
 	}
-
 	pair<bool, hash_t> tripHashGenerator(int v){
 		if (leafId(v) != -1){
 			//trip.reset();
@@ -510,8 +1064,8 @@ struct PlacementAlgorithm{
 		switchSubtree(rootNodeId, -1, 0);
 		tripHashGenerator(rootNodeId);
 	}
-	
-	
+	#endif
+
 	string printSubtree(int v){
 		if (leafId(v) != -1) return to_string(leafId(v));
 		return string("(") + printSubtree(heavy(v)) + "," + printSubtree(light(v)) + ")";
@@ -1192,7 +1746,11 @@ struct MetaAlgorithm{
 			if (opt.check(argv[i], "-u")) sscanf(argv[i + 1], "%d", &support);
 			if (opt.check(argv[i], "-h")) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
-		
+		#ifdef THREAD_POOL
+		nThread2 = nThreads;
+		nThread1 = 1;
+		TP.initialize(nThreads);
+		#else
 		if (nRounds < nThreads && nRounds > 0){
 			nThread2 = nThreads / nRounds;
 			nThread1 = nRounds;
@@ -1201,7 +1759,7 @@ struct MetaAlgorithm{
 			nThread2 = 1;
 			nThread1 = nThreads;
 		}
-		
+		#endif
 		batchInit.resize(nBatch);
 	}
 	
