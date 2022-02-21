@@ -1,3 +1,5 @@
+#define DRIVER_VERSION "0"
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -19,7 +21,13 @@ typedef int count_t;
 
 #define ERROR_TOLERANCE 0.001
 
+//#define USE_CUDA
+#ifdef USE_CUDA
+#include "biallelic-cuda.hpp"
+#else
 #include "biallelic.hpp"
+#endif
+
 #include "algorithms.hpp"
 
 using namespace std;
@@ -164,12 +172,14 @@ void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs)
 			}
 		}
 	}
+	vector<int> triallelicSingle, triallelicNoSingle;
+	/*
 	vector<int> biallelic, triallelic;
 	vector<int> bitriallelic, quadriallelic;
-	vector<int> triallelicSingle, triallelicNoSingle;
 	vector<int> quadriallelicSingle, quadriallelicNoSingle;
 	vector<int> quadriallelicFew, quadriallelicMany;
 	vector<int> quadriallelicNotRapid, quadriallelicRapid;
+	*/
 	unordered_set<int> biallelicSet, triallelicSet, quadriallelicSet;
 	unordered_set<int> bitriallelicSet;
 	int totalA = 0, totalC = 0, totalG = 0, totalT = 0;
@@ -192,10 +202,11 @@ void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs)
 		int fewCnt = (cntA <= 2) + (cntC <= 2) + (cntG <= 2) + (cntT <= 2);
 		int rTh = max(4, (int) geneSeqs.size() / 20);
 		bool rapid = (cntA >= rTh && cntC >= rTh && cntG >= rTh && cntT >= rTh);
+		if (allelicCnt == 3 && singleCnt > 0) triallelicNoSingle.push_back(j);
+		/*
 		if (allelicCnt == 2 && singleCnt == 0) biallelic.push_back(j);
 		if (allelicCnt == 3) triallelic.push_back(j);
 		if (allelicCnt == 3 && singleCnt == 0) triallelicSingle.push_back(j);
-		if (allelicCnt == 3 && singleCnt > 0) triallelicNoSingle.push_back(j);
 		if (allelicCnt == 2 || allelicCnt == 3) bitriallelic.push_back(j);
 		if (allelicCnt == 4) quadriallelic.push_back(j);
 		if (allelicCnt == 4 && singleCnt > 0) quadriallelicSingle.push_back(j);
@@ -204,10 +215,9 @@ void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs)
 		if (allelicCnt == 4 && fewCnt == 0) quadriallelicMany.push_back(j);
 		if (allelicCnt == 4 && fewCnt == 0 && !rapid) quadriallelicNotRapid.push_back(j);
 		if (allelicCnt == 4 && rapid) quadriallelicRapid.push_back(j);
-
+		*/
 		if (allelicCnt == 2 && singleCnt == 0) biallelicSet.insert(j);
-		if ((allelicCnt == 2 && singleCnt == 0) || allelicCnt == 3) bitriallelicSet.insert(j);
-		//if (allelicCnt == 2) biallelicSet.insert(j);
+		//if ((allelicCnt == 2 && singleCnt == 0) || allelicCnt == 3) bitriallelicSet.insert(j);
 		if (allelicCnt == 3) triallelicSet.insert(j);
 		if (allelicCnt == 4) quadriallelicSet.insert(j);
 		totalA += cntA; totalC += cntC; totalG += cntG; totalT += cntT; 
@@ -231,42 +241,8 @@ void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs)
 				bin.push_back(division[j]);
 			}
 			addBin(bin, PI, geneNames, geneSeqs);
-			//for (int e: bin) cerr << e << " "; cerr << endl;
-		} //cerr << endl;
-	}
-	/*
-	
-		vector<int> bin;
-		vector<int> biallelicBin, triallelicBin, quadriallelicBin;
-		vector<int> bitriallelicBin;
-		for (int j = i * numKeep / nBin, jmax = (i + 1) * numKeep / nBin; j < jmax; j++){
-			int p = ordered[j].first;
-			if (quadriallelicSet.count(p) || bitriallelicSet.count(p)) bin.push_back(p);
-			if (biallelicSet.count(p)) biallelicBin.push_back(p);
-			if (triallelicSet.count(p)) triallelicBin.push_back(p);
-			if (quadriallelicSet.count(p)) quadriallelicBin.push_back(p);
-			if (bitriallelicSet.count(p)) bitriallelicBin.push_back(p);
 		}
-		//addBin(bin, PI, geneNames, geneSeqs);
-		//addBin(biallelicBin, PI, geneNames, geneSeqs);
-		//addBin(triallelicBin, PI, geneNames, geneSeqs);
-		addBin(quadriallelicBin, PI, geneNames, geneSeqs);
-		addBin(bitriallelicBin, PI, geneNames, geneSeqs);
 	}
-	
-	addBin(biallelic, PI, geneNames, geneSeqs);
-	addBin(triallelic, PI, geneNames, geneSeqs);
-	 //addBin(triallelicSingle, PI, geneNames, geneSeqs);
-	 //addBin(triallelicNoSingle, PI, geneNames, geneSeqs);
-	 //addBin(bitriallelic, PI, geneNames, geneSeqs);
-	 //addBin(quadriallelic, PI, geneNames, geneSeqs);
-	addBin(quadriallelicSingle, PI, geneNames, geneSeqs);
-	 //addBin(quadriallelicNoSingle, PI, geneNames, geneSeqs);
-	addBin(quadriallelicFew, PI, geneNames, geneSeqs);
-	//addBin(quadriallelicMany, PI, geneNames, geneSeqs);
-	addBin(quadriallelicNotRapid, PI, geneNames, geneSeqs);
-	//addBin(quadriallelicRapid, PI, geneNames, geneSeqs);
-	*/
 }
 
 void readPhilip(istream &fin){
@@ -308,7 +284,8 @@ int main(int argc, char** argv){
 	bool phylip = false;
 	string mappingFile;
 	meta.initialize(argc, argv, " -y", HELP_TEXT);
-	
+	tripInit.numThreads = meta.nThreads;
+
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
 	}

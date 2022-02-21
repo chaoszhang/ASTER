@@ -1746,10 +1746,13 @@ struct MetaAlgorithm{
 			if (opt.check(argv[i], "-u")) sscanf(argv[i + 1], "%d", &support);
 			if (opt.check(argv[i], "-h")) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
+		#ifdef USE_CUDA
+		nThread2 = 1;
+		nThread1 = 1;
+		#else
 		#ifdef THREAD_POOL
 		nThread2 = nThreads;
 		nThread1 = 1;
-		TP.initialize(nThreads);
 		#else
 		if (nRounds < nThreads && nRounds > 0){
 			nThread2 = nThreads / nRounds;
@@ -1759,6 +1762,10 @@ struct MetaAlgorithm{
 			nThread2 = 1;
 			nThread1 = nThreads;
 		}
+		#endif
+		#endif
+		#ifdef THREAD_POOL
+		TP.initialize(nThreads);
 		#endif
 		batchInit.resize(nBatch);
 	}
