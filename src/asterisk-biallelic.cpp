@@ -9,6 +9,8 @@
 #include<cstring>
 #include<algorithm>
 #include<random>
+#include<thread>
+#include<mutex>
 
 #define LARGE_DATA
 #ifdef LARGE_DATA
@@ -40,6 +42,8 @@ TripartitionInitializer &tripInit = meta.tripInit;
 
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
+
+mutex mtx;
 
 string formatName(const string name){
 	string res;
@@ -136,6 +140,7 @@ vector<pair<int, double> > infoSort(vector<array<vector<bool>, 4> > &sites, vect
 
 void addBin(const vector<int> &bin, const array<score_t, 4> &PI, const vector<string> &geneNames, const vector<string> &geneSeqs){
 	if (bin.size() < 2) return;
+	const lock_guard<mutex> lock(mtx);
 	int oldL = (tripInit.breakPoints.size()) ? tripInit.breakPoints.back() : 0;
 	int L = oldL + bin.size();
 	tripInit.breakPoints.push_back(L);
@@ -160,15 +165,18 @@ void addBin(const vector<int> &bin, const array<score_t, 4> &PI, const vector<st
 }
 
 void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs){
-	int L = (tripInit.breakPoints.size()) ? tripInit.breakPoints.back() : 0;
-	for (string n: geneNames){
-		if (name2id.count(n) == 0){
-			int I = names.size();
-			name2id[n] = I;
-			names.push_back(n);
-			tripInit.h.emplace_back();
-			for (int x = 0; x < 4; x++){
-				tripInit.h[I][x].resize(L, false);
+	{
+		const lock_guard<mutex> lock(mtx);
+		int L = (tripInit.breakPoints.size()) ? tripInit.breakPoints.back() : 0;
+		for (string n: geneNames){
+			if (name2id.count(n) == 0){
+				int I = names.size();
+				name2id[n] = I;
+				names.push_back(n);
+				tripInit.h.emplace_back();
+				for (int x = 0; x < 4; x++){
+					tripInit.h[I][x].resize(L, false);
+				}
 			}
 		}
 	}
@@ -247,6 +255,7 @@ void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs)
 
 void readPhilip(istream &fin){
 	int M, L;
+	vector<thread> thrds;
 	while (fin >> M){
 		fin >> L;
 		vector<string> geneNames, geneSeqs;
@@ -257,11 +266,17 @@ void readPhilip(istream &fin){
 			geneNames.push_back(s);
 			geneSeqs.push_back(line);
 		}
-		formatGene(geneNames, geneSeqs);
+		thrds.emplace_back(formatGene, move(geneNames), move(geneSeqs));
+		if (thrds.size() == meta.nThreads){
+			for (thread &t: thrds) t.join();
+			thrds.clear();
+		}
 	}
+	for (thread &t: thrds) t.join();
 }
 
-void readFasta(istream &fin){
+void readFasta(string file){
+	ifstream fin(file);
 	vector<string> geneNames, geneSeqs;
 	string line;
 	while (getline(fin, line)){
@@ -296,10 +311,15 @@ int main(int argc, char** argv){
 	}
 	else {
 		ifstream listIn(argv[argc - 1]);
+		vector<thread> thrds;
 		for (string file; getline(listIn, file);){
-			ifstream fin(file);
-			readFasta(fin);
+			thrds.emplace_back(readFasta, file);
+			if (thrds.size() == meta.nThreads){
+				for (thread &t: thrds) t.join();
+				thrds.clear();
+			}
 		}
+		for (thread &t: thrds) t.join();
 	}
 	
 	cerr << "#Bases: " << tripInit.breakPoints.back() << endl;

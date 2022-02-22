@@ -1843,8 +1843,8 @@ struct MetaAlgorithm{
 				cerr << "Current tree: " << res.second << endl;
 				roundNum++;
 			}
-			while (prevS < res.first && roundNum < 20);
-			if (prevS < res.first) cerr << "Search stopped due to excessive rounds. Tree may not be optimal!" << endl;
+			while (prevS + ERROR_TOLERANCE < res.first && roundNum < 20);
+			if (prevS + ERROR_TOLERANCE < res.first) cerr << "Search stopped due to excessive rounds. Tree may not be optimal!" << endl;
 		}
 		
 		string output = res.second;
