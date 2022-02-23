@@ -39,6 +39,13 @@ class ThreadPool{
 		}
 	}
 	
+	#ifdef USE_CUDA
+	void work(){
+		for (const function<score_t(const int)> &f: funcs) f(0);
+		funcs.clear();
+		gpuWork(sums);
+	}
+	#else
 	void work(){
 		const shared_ptr<const vector<function<score_t(const int)> > > pFuncs(new const vector<function<score_t(const int)> >(move(funcs)));
 		funcs = vector<function<score_t(const int)> >();
@@ -64,8 +71,13 @@ class ThreadPool{
 			sums.push(s);
 		}
 	}
-	
+	#endif
+
 public:
+	#ifdef USE_CUDA
+	static function<void(queue<score_t>&)> gpuWork;
+	#endif
+
 	ThreadPool(){}
 
 	ThreadPool(int n): nThreads(n - 1), tasks(n - 1){
@@ -99,3 +111,7 @@ public:
 		return v;
 	}
 };
+
+#ifdef USE_CUDA
+function<void(queue<score_t>&)> ThreadPool::gpuWork;
+#endif

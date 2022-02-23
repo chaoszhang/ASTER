@@ -164,7 +164,7 @@ void addBin(const vector<int> &bin, const array<score_t, 4> &PI, const vector<st
 	tripInit.w.push_back(1.0 / (bin.size() - 1));
 }
 
-void formatGene(const vector<string> &geneNames, const vector<string> &geneSeqs){
+void formatGene(const vector<string> geneNames, const vector<string> geneSeqs){
 	{
 		const lock_guard<mutex> lock(mtx);
 		int L = (tripInit.breakPoints.size()) ? tripInit.breakPoints.back() : 0;

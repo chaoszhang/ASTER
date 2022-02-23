@@ -172,6 +172,11 @@ struct PlacementAlgorithm{
 		return TP.pop();
 	}
 
+	score_t tripScore(){
+		tripScoreSet();
+		return tripScoreGet();
+	}
+
 	void switchSubtreeSet(int v, int src, int tgt){
 		if (leafId(v) != -1){
 			tripUpdateSet(tgt, leafId(v));
@@ -536,7 +541,7 @@ struct PlacementAlgorithm{
 			score_t cde_a_b = nnMove(heavy(v));
 			//E|AB|CD
 			switchSubtree(light(v), 0, 2);
-			score_t e_ab_cd = trip.score();
+			score_t e_ab_cd = tripScore();
 			int best_case = 0;
 			score_t best_score = abe_c_d + cde_a_b + e_ab_cd, top_score = e_ab_cd;
 			
@@ -611,7 +616,6 @@ struct PlacementAlgorithm{
 				switchSubtreeGet(b, 0, 2);
 				switchSubtreeGet(light(v), 2, 1);
 				score_t e_acd_b = tripScoreGet();
-				
 				if (best_score + ERROR_TOLERANCE < abe_c_d + ae_b_cd + e_a_bcd) {
 					best_score = abe_c_d + ae_b_cd + e_a_bcd;
 					best_case = 3;
@@ -706,8 +710,6 @@ struct PlacementAlgorithm{
 	#else
 	void switchSubtree(int v, int src, int tgt){
 		if (leafId(v) != -1){
-			//trip.rmv(src, leafId(v));
-			//trip.add(tgt, leafId(v));
 			trip.update(tgt, leafId(v));
 		}
 		else{
@@ -1388,7 +1390,7 @@ struct ConstrainedOptimizationAlgorithm{
 		vector<PlacementAlgorithm> jobs;
 		vector<thread> thrds;
 		for (int i = 0; i < nJobs; i++){
-			jobs.push_back(createPlacementAlgorithm(subsampleRate));
+			jobs.emplace_back(move(createPlacementAlgorithm(subsampleRate)));
 		}
 		for (int i = 1; i < nThrds; i++){
 			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::batchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);

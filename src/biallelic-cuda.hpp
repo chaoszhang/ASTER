@@ -5,7 +5,7 @@
 #include<array>
 #include<algorithm>
 #include<bitset>
-//#include "threadpool.hpp"
+#include "threadpool.hpp"
 #include "biallelic-cuda.cuh"
 
 using namespace std;
@@ -29,6 +29,8 @@ struct Tripartition{
 	int n, kc;
 	vector<char> color;
 	vector<double> batchScore;
+	vector<short> todo;
+	bool DeletedFlag = false;
 
 	Tripartition(const TripartitionInitializer &TI): n(TI.h.size()), color(TI.h.size(), -1){
 		vector<pair<int, int> > lengthSorted;
@@ -75,7 +77,7 @@ struct Tripartition{
 			}
 		}
 		vector<SiteBatch> VS(vsSize);
-		batchScore.resize(kc);
+		batchScore.resize(kc * TAPE_SIZE);
 		myCudaMalloc((void**) &GI, VGI.size() * sizeof(GroupIBatch));
 		myCudaMalloc((void**) &GF, VGF.size() * sizeof(GroupFBatch));
 		myCudaMalloc((void**) &S, VS.size() * sizeof(SiteBatch));
@@ -90,6 +92,7 @@ struct Tripartition{
 	}
 
 	~Tripartition(){
+		if (DeletedFlag) return;
 		myCudaFree(GI);
 		myCudaFree(GF);
 		myCudaFree(S);
@@ -97,15 +100,18 @@ struct Tripartition{
 		myCudaFree(BS);
 	}
 
+	Tripartition (Tripartition && T): GI(T.GI), GF(T.GF), S(T.S), H(T.H), BS(T.BS), n(T.n), kc(T.kc), 
+			color(move(T.color)), batchScore(move(T.batchScore)), todo(move(T.todo)){
+		T.DeletedFlag = true;
+	}
+
+    Tripartition& operator= ( Tripartition && ) = delete;
+    Tripartition( const Tripartition & ) = delete;
+    Tripartition& operator= ( const Tripartition & ) = delete;
+
 	void update(int x, int i){
 		int y = color[i];
 		cudaUpdate(GI, S, H, n, x, y, i, kc, BATCH);
-		SiteBatch s;
-		myCudaMemcpyD2H(&s, S, sizeof(SiteBatch));
-		//cerr << x << " " << y << endl;
-		//cerr << s[0][0][0] << " " << s[1][0][0] << " " << s[2][0][0] << " " << s[3][0][0] << endl;
-		//cerr << s[0][1][0] << " " << s[1][1][0] << " " << s[2][1][0] << " " << s[3][1][0] << endl;
-		//cerr << s[0][2][0] << " " << s[1][2][0] << " " << s[2][2][0] << " " << s[3][2][0] << endl << endl;
 		color[i] = x;
 	}
 
@@ -114,7 +120,53 @@ struct Tripartition{
 		myCudaMemcpyD2H(&batchScore[0], BS, kc * sizeof(double));
 		score_t result = 0.0;
 		for (double s: batchScore) result += s;
-		//cerr << result << endl;
 		return result;
 	}
+
+	#ifdef THREAD_POOL
+	void updatePart(int part, int x, int i){
+		ThreadPool::gpuWork = [&](queue<score_t>& Q)->void{gpuWork(Q);};
+		int y = color[i];
+		todo.push_back(x);
+		todo.push_back(y);
+		todo.push_back(i);
+		todo.push_back(0);
+		color[i] = x;
+	}
+
+	score_t scorePart(int part){
+		ThreadPool::gpuWork = [&](queue<score_t>& Q)->void{gpuWork(Q);};
+		if (todo.size() == 0){
+			todo.push_back(-1);
+			todo.push_back(-1);
+			todo.push_back(-1);
+			todo.push_back(1);
+		}
+		else todo.back()++;
+		return 0;
+	}
+
+	void gpuWork(queue<score_t>& Q){
+		int tot = 0;
+		for (int i = 0; i < todo.size(); i += 4 * TAPE_SIZE){
+			const int tapeSize = min(4 * TAPE_SIZE, (int) todo.size() - i);
+			myCudaMemcpyH2C(&todo[i], tapeSize * sizeof(short));
+			cudaWork(GI, GF, S, BS, H, n, kc, BATCH, tapeSize);
+			int cnt = 0;
+			for (int j = 0; j < tapeSize; j += 4){
+				if (todo[i+j+3] > 0) cnt++;
+			}
+			myCudaMemcpyD2H(&batchScore[0], BS, cnt * kc * sizeof(double));
+			for (int j = 0, t = 0; j < tapeSize; j += 4){
+				if (todo[i+j+2] != -1) {Q.push(0); tot++;} 
+				if (todo[i+j+3] > 0){
+					score_t sum = 0;
+					for (int tMax = t + kc; t < tMax; t++) sum += batchScore[t];
+					for (int x = 0; x < todo[i+j+3]; x++) Q.push(sum);
+				}
+			}
+		}
+		todo.clear();
+	}
+	#endif
 };
