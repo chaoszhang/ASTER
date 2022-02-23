@@ -36,3 +36,9 @@ asterisk:
 	
 clean:
 	rm bin/*
+
+aaa-gpu:
+	nvcc -O3 -rdc=true -c src/biallelic-cuda.cu -o bin/biallelic-cuda.o
+	nvcc -dlink -o bin/biallelic-cuda_link.o bin/biallelic-cuda.o -lcudadevrt -lcudart
+	g++ -std=gnu++11 -march=native -Ofast -pthread -D"USE_CUDA" bin/biallelic-cuda.o bin/biallelic-cuda_link.o src/asterisk-biallelic.cpp -o bin/asterisk-biallelic-cuda -L/usr/local/cuda/lib64 -lcudart -lcudadevrt
+	rm bin/*.o

@@ -1,6 +1,6 @@
-#include<vector>
-#include<array>
-#include<thread>
+#include <vector>
+#include <array>
+#include <thread>
 
 using namespace std;
 
