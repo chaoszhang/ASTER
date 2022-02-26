@@ -27,7 +27,7 @@ Download using one of two approaches:
 ## For Linux/Unix/WSL users
 1. In terminal, `cd` into the downloaded directory and run `make`.
   - If you see `*** Installation complete! ***` then you are done!
-  - If you see `Command 'g++' not found` then before rerun `make`,
+  - If you see `Command 'g++' not found` then before rerunning `make`,
     - Debian (Ubuntu) users try
       ```
       sudo apt update
