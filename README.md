@@ -42,7 +42,7 @@ Download using one of two approaches:
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
-- Executables for x86-64 are available in `exe` folder
+- Executables for x86-64 are available in `exe` folder and it is **very likely** that it already works.
 - [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
 - To compile windows excutables:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
