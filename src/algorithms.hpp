@@ -1805,8 +1805,6 @@ struct MetaAlgorithm{
 	}
 	
 	pair<score_t, string> run(){
-		ROUND_NN = 20 + 2 * sqrt(names.size()) * log2(names.size());
-
 		ostream &fout = (outputFile == "") ? cout : fileOut;
 		if (outputFile != "") fileOut.open(outputFile);
 		
@@ -1829,6 +1827,9 @@ struct MetaAlgorithm{
 		if (constraintFile != ""){
 			ifstream fin(constraintFile);
 			getline(fin, constraintTree);
+		}
+		else{
+			ROUND_NN = 20 + 2 * sqrt(names.size()) * log2(names.size());
 		}
 		
 		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
