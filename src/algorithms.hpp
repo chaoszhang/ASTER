@@ -34,7 +34,7 @@ struct Hasher{
 	}
 };
 
-int ROUND_NN = 0;
+int ROUND_NN = -1;
 
 struct PlacementAlgorithm{
 	
