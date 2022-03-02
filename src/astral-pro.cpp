@@ -297,41 +297,22 @@ string MAPPING(int begin, int end){
 long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, pair<long long, long long> > &children){
 	int i = pos;
 	long long cur;
-	while (TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
-	if (TEXT[pos] == '(') {
-		pos++;
-		cur = parse(leafname, children);
-		while (TEXT[pos] != ',') pos++;
-	}
-	else {
+	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
+	if (TEXT[pos] != '(') {
 		cur = nodecnt++;
 		leafname[cur] = MAPPING(i, pos);
+		return cur;
 	}
-	vector<long long> lst;
-	lst.push_back(cur);
-	while (TEXT[pos] != ')'){
-		i = ++pos;
-		while (TEXT[pos] != ')' && TEXT[pos] != '(' && TEXT[pos] != ',') pos++;
-		/*
-		if (TEXT[pos] == '(') {
-			pos++;
-			long long left = cur, right = parse(leafname, children);
-			cur = nodecnt++;
-			children[cur] = {left, right};
-			while (TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
-		}
-		else {
-			long long left = cur, right = nodecnt++;
-			leafname[right] = MAPPING(i, pos);
-			cur = nodecnt++;
-			children[cur] = {left, right};
-		}
-		*/
-		long long temp = lst[rand() % lst.size()];
-		if (TEXT[pos] == '(') {
-			pos++;
+	else {
+		pos++; // (
+		cur = parse(leafname, children);
+		while (TEXT[pos] != ',') pos++;
+		vector<long long> lst;
+		lst.push_back(cur);
+		while (TEXT[pos] != ')'){
+			pos++; // ,
+			long long temp = lst[rand() % lst.size()];
 			long long left = nodecnt++, right = parse(leafname, children);
-			while (TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
 			if (leafname.count(temp)) {
 				leafname[left] = leafname[temp];
 				leafname.erase(temp);
@@ -341,21 +322,11 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 			lst.push_back(left);
 			lst.push_back(right);
 		}
-		else {
-			long long left = nodecnt++, right = nodecnt++;
-			leafname[right] = MAPPING(i, pos);
-			if (leafname.count(temp)) {
-				leafname[left] = leafname[temp];
-				leafname.erase(temp);
-			}
-			else children[left] = children[temp];
-			children[temp] = {left, right};
-			lst.push_back(left);
-			lst.push_back(right);
-		}
+		while (TEXT[pos] != ')') pos++;
+		pos++; // )
+		while (TEXT[pos] != ',' && TEXT[pos] != ')' && TEXT[pos] != ';') pos++;
+		return cur;
 	}
-	pos++;
-	return cur;
 }
 
 void annotate(string input, string mapping){
@@ -379,11 +350,10 @@ void annotate(string input, string mapping){
 				if (TEXT[i] == ',') leafCnt++;
 			}
 			if (internalCnt < leafCnt - 2 && !resolvePolytomies) {
-				cerr << "Non-binary input tree(s) detected!\nCurrently ASTRAL-Pro does not guarentee correct output if input trees contain polytomies!";
+				cerr << "Non-binary input tree(s) detected!\nCurrently ASTRAL-Pro does not guarentee correct output if input trees contain polytomies!\n Please add \"-e 1\" to randomly resolve polytomies.";
 				exit(0);
 			}
 			
-			pos++;
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, pair<long long, long long> > children;
 			long long root = parse(leafname, children);
