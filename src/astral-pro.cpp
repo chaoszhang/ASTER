@@ -25,6 +25,7 @@ ostream& operator<<(ostream& cout, __int128 x){
 typedef long long score_t;
 #endif
 
+#include "argparser.hpp"
 #include "multitree.hpp"
 #include "algorithms.hpp"
 
@@ -372,15 +373,26 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
+	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
+	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
+	ARG.addIntArg('e', "exit", 0, "0: terminating when input contains polytomies; 1: resolving polytomies (no theoretical guarentees)");
+	ARG.addFlag('E', "noexit", "No termination when input contains polytomies (`-e 1`)", [&](){
+			ARG.getIntArg("exit") = 1;
+	}, true);
+	
 	string mappingFile;
 	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
-	
+	mappingFile = ARG.getStringArg("mapping");
+	resolvePolytomies = ARG.getIntArg("exit");
+
+	/*
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
 		if (strcmp(argv[i], "-e") == 0) resolvePolytomies = stoi(argv[i + 1]);
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 	}
-	
+	*/
+
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
