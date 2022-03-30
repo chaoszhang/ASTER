@@ -73,7 +73,7 @@ int MAPPING(int begin, int end){
 score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
-	if (i == begin || i == end) return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
+	if (i == begin) return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 	else return max((score_t)0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
 }
 

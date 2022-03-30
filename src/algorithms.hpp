@@ -1731,10 +1731,10 @@ struct MetaAlgorithm{
 		#ifdef DRIVER_VERSION
 			version = version + "." + DRIVER_VERSION;
 		#endif
-		cerr << ARG.getFullName() << endl;
-		cerr << "Version: " << version << endl;
 		
 	#ifdef ARG_PARSER
+		cerr << ARG.getFullName() << endl;
+		cerr << "Version: " << version << endl;
 		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
 		ARG.addStringArg('g', "guide", "", "Newick file containing binary trees as guide trees");
 		ARG.addStringArg('o', "output", "<standard output>", "File name for the output species tree", true);
@@ -1764,6 +1764,7 @@ struct MetaAlgorithm{
 		lambda = ARG.getDoubleArg("lambda");
 		support = ARG.getIntArg("support");
 	#else
+		cerr << "Version: " << version << endl;
 		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		for (int i = 1; i < argc; i += 2){
 			if (opt.check(argv[i], "-y")) {i--; continue;}
