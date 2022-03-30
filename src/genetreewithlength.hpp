@@ -1,6 +1,10 @@
+#define OBJECTIVE_VERSION "0"
+
 #include<vector>
 #include<array>
 #include<thread>
+#include<cmath>
+#include "threadpool.hpp"
 
 using namespace std;
 
@@ -10,6 +14,7 @@ struct TripartitionInitializer{
 		score_t weight = 1;
 	};
 	
+	vector<int> nameCnts;
 	vector<vector<Node> > nodes;
 	vector<vector<vector<int> > > leafParent;
 };
@@ -163,44 +168,20 @@ struct Tripartition{
 	Tripartition(const TripartitionInitializer &init){
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
-	/*
-	void reset(){
-		for (int p = 0; p < parts.size(); p++) parts[p].reset();
-	}
 	
-	void addTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
-		parts[0].addTotal(i);
-		for (thread &t: thrds) t.join();
+	void updatePart(int part, int x, int i){
+		parts[part].update(x, i);
 	}
-	
-	void rmvTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
-		parts[0].rmvTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void add(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	*/
+
 	void update(int x, int i){
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
 		parts[0].update(x, i);
 		for (thread &t: thrds) t.join();
+	}
+	
+	score_t scorePart(int part){
+		return parts[part].score();
 	}
 	
 	score_t score(){

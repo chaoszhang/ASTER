@@ -1,3 +1,5 @@
+#define DRIVER_VERSION "0"
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -27,6 +29,7 @@ score_t from_string(const string s){
 }
 #endif
 
+#include "argparser.hpp"
 #include "genetreewithlength.hpp"
 #include "algorithms.hpp"
 
@@ -35,6 +38,7 @@ MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
 vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
+unordered_map<string, unordered_set<string> > reverse_mapping;
 unordered_map<string, string> leafname_mapping;
 string TEXT;
 int pos = 0;
@@ -42,14 +46,20 @@ int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
-
+vector<int> &nameCnts = meta.tripInit.nameCnts;
 
 int MAPPING(int begin, int end){
 	string s;
 	for (int i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
-	if (leafname_mapping.count(s)) s = leafname_mapping[s];
+	if (leafname_mapping.count(s)) {
+		reverse_mapping[leafname_mapping[s]].insert(s);
+		s = leafname_mapping[s];
+	}
+	else{
+		reverse_mapping[s].insert(s);
+	}
 	if (name2id.count(s) == 0){
 		name2id[s] = names.size();
 		names.push_back(s);
@@ -134,17 +144,19 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
+string HELP = " -a taxonNameMaps";
 string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
+	ARG.setProgramName("astral-lengthweighted", "Weighted ASTRAL by Branch Length");
+	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-	}
+	int dupType = 1;
+	string mappingFile;
+	meta.initialize(argc, argv, HELP, HELP_TEXT);
+	mappingFile = ARG.getStringArg("mapping");
 	
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
@@ -156,9 +168,20 @@ int main(int argc, char** argv){
 	}
 	readInputTrees(argv[argc - 1], mappingFile);
 	
+	if (dupType == 2){
+		for (string s: names){
+			nameCnts.push_back(reverse_mapping[s].size());
+		}
+	}
+	else {
+		for (string s: names){
+			nameCnts.push_back(1);
+		}
+	}
 	cerr << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << (double) score << endl;
+	//cerr << "Score: " << (double) score << endl;
+	fprintf(stderr, "Score: %.10lg\n", (double) score);
 	return 0;
 }

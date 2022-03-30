@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "1"
+#define DRIVER_VERSION "2"
 
 #include<iostream>
 #include<fstream>
@@ -30,6 +30,7 @@ score_t from_string(const string s){
 }
 #endif
 
+#include "argparser.hpp"
 #include "genetreewithhybridweight.hpp"
 #include "algorithms.hpp"
 
@@ -166,9 +167,30 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
+	ARG.setProgramName("astral-hybrid", "Weighted ASTRAL - Hybrid");
+	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
+	ARG.addDoubleArg('x', "max", 100, "Max possible support value in weight scale");
+	ARG.addDoubleArg('n', "min", 0, "Min possible support value in weight scale");
+	ARG.addDoubleArg('d', "default", 0, "Default support value when weight not provided");
+	ARG.addFlag('S', "bootstrap", "Bootstrap support value mode (default mode, `-x 100 -n 0 -d 0`)", [&](){
+		ARG.getDoubleArg("max") = 100; ARG.getDoubleArg("min") = 0; ARG.getDoubleArg("default") = 0;
+	}, true);
+	ARG.addFlag('L', "lrt", "Likelihood (alrt) support value mode (`-x 1 -n 0 -d 0`)", [&](){
+		ARG.getDoubleArg("max") = 1; ARG.getDoubleArg("min") = 0; ARG.getDoubleArg("default") = 0;
+	}, true);
+	ARG.addFlag('B', "bayes", "Probability (abayes) support value mode (`-x 1 -n 0.333 -d 0.333`)", [&](){
+		ARG.getDoubleArg("max") = 1; ARG.getDoubleArg("min") = 0.333; ARG.getDoubleArg("default") = 0.333;
+	}, true);
+	
 	int dupType = 1;
 	string mappingFile;
 	meta.initialize(argc, argv, HELP, HELP_TEXT);
+	mappingFile = ARG.getStringArg("mapping");
+	maxv = ARG.getDoubleArg("max");
+	minv = ARG.getDoubleArg("min");
+	defaultv = ARG.getDoubleArg("default");
+
+	/*
 	for (int i = 1; i < argc - 1; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
 		else if (strcmp(argv[i], "-m") == 0) dupType = from_string(argv[i + 1]);
@@ -177,7 +199,8 @@ int main(int argc, char** argv){
 		else if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
 		else if (!meta.opt.isValid(argv[i])) {cerr << "Error: Failed to parse input arguments. Please try -h for correct formating.\n"; exit(0);}
 	}
-	
+	*/
+
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
