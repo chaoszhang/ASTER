@@ -1,4 +1,4 @@
-#define ALG_VERSION "v1.3"
+#define ALG_VERSION "v1.4"
 
 typedef unsigned __int128 hash_t;
 
@@ -1707,7 +1707,7 @@ struct MetaAlgorithm{
 	};
 
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 16, nSample = 16, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
+	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
 	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
@@ -1733,6 +1733,30 @@ struct MetaAlgorithm{
 		#endif
 		cerr << "Version: " << version << endl;
 		
+	#ifdef ARG_PARSER
+		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
+		ARG.addStringArg('g', "guide", "", "Newick file containing binary trees as guide trees");
+		ARG.addStringArg('o', "output", "<standard output>", "File name for the output species tree", true);
+		ARG.addIntArg('r', "round", 4, "Number of initial rounds of placements");
+		ARG.addIntArg('s', "subsample", 4, "Number of rounds of subsampling per exploration step");
+		ARG.addDoubleArg('p', "proportion", 0.5, "Proportion of taxa in the subsample in naive algorithm");
+		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
+		#ifdef SUPPORT
+		ARG.addDoubleArg('l', "lambda", 0.5, " Rate lambda of Yule process under which the species tree is modeled");
+		ARG.addIntArg('u', "support", 1, "output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
+		#endif
+		
+		ARG.parse(argc, argv);
+		constraintFile = ARG.getStringArg("constraint");
+		guideFile = ARG.getStringArg("guide");
+		outputFile = ARG.getStringArg("output");
+		nRounds = ARG.getIntArg("round");
+		nSample = ARG.getIntArg("subsample");
+		p = ARG.getDoubleArg("proportion");
+		nThreads = ARG.getIntArg("thread");
+		lambda = ARG.getDoubleArg("lambda");
+		support = ARG.getIntArg("support");
+	#else
 		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		for (int i = 1; i < argc; i += 2){
 			if (opt.check(argv[i], "-y")) {i--; continue;}
@@ -1748,6 +1772,7 @@ struct MetaAlgorithm{
 			if (opt.check(argv[i], "-u")) sscanf(argv[i + 1], "%d", &support);
 			if (opt.check(argv[i], "-h")) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
 		}
+	#endif
 		#ifdef USE_CUDA
 		nThread2 = 1;
 		nThread1 = 1;
@@ -1805,8 +1830,8 @@ struct MetaAlgorithm{
 	}
 	
 	pair<score_t, string> run(){
-		ostream &fout = (outputFile == "") ? cout : fileOut;
-		if (outputFile != "") fileOut.open(outputFile);
+		ostream &fout = (outputFile == "" || outputFile == "<standard output>") ? cout : fileOut;
+		if (outputFile != "" && outputFile != "<standard output>") fileOut.open(outputFile);
 		
 		cerr << "#Species: " << names.size() << endl;
 		cerr << "#Rounds: " << nRounds << endl;
