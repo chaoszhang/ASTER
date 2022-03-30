@@ -106,6 +106,7 @@ public:
 
     void parse(int argc, char** argv){
         bool inputLast = true;
+        if (argc == 1) func["help"]();
         for (int i = 1; i < argc; i++){
             if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) func["help"]();
             if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--input") == 0) inputLast = false;
