@@ -310,7 +310,7 @@ struct Quadrupartition{
 			color[i] = x;
 		}
 		
-		array<double, 5> score(){
+		array<score_t, 5> score(){
 			return {totalScore1, totalScore2, totalScore3, totalSqrScore, gtCnt};
 		}
 	};

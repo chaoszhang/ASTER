@@ -1,6 +1,10 @@
+#define OBJECTIVE_VERSION "0"
+
 #include<vector>
 #include<array>
 #include<thread>
+#include<cmath>
+#include "threadpool.hpp"
 
 #define SUPPORT
 
@@ -12,6 +16,7 @@ struct TripartitionInitializer{
 		score_t weight = 1;
 	};
 	
+	vector<int> nameCnts;
 	vector<vector<Node> > nodes;
 	vector<vector<vector<int> > > leafParent;
 };
@@ -165,40 +170,11 @@ struct Tripartition{
 	Tripartition(const TripartitionInitializer &init){
 		for (int p = 0; p < init.nodes.size(); p++) parts.emplace_back(init, p);
 	}
-	/*
-	void reset(){
-		for (int p = 0; p < parts.size(); p++) parts[p].reset();
-	}
 	
-	void addTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::addTotal, &parts[p], i);
-		parts[0].addTotal(i);
-		for (thread &t: thrds) t.join();
+	void updatePart(int part, int x, int i){
+		parts[part].update(x, i);
 	}
-	
-	void rmvTotal(int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmvTotal, &parts[p], i);
-		parts[0].rmvTotal(i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void add(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::add, &parts[p], x, i);
-		parts[0].add(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	void rmv(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::rmv, &parts[p], x, i);
-		parts[0].rmv(x, i);
-		for (thread &t: thrds) t.join();
-	}
-	*/
-	
+
 	void update(int x, int i){
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
@@ -206,6 +182,10 @@ struct Tripartition{
 		for (thread &t: thrds) t.join();
 	}
 	
+	score_t scorePart(int part){
+		return parts[part].score();
+	}
+
 	score_t score(){
 		score_t res = 0;
 		for (int p = 0; p < parts.size(); p++) res += parts[p].score();
@@ -286,13 +266,13 @@ struct Quadrupartition{
 		}
 		
 		vector<vector<int> > leafParent;
-		vector<score_t> score1, score2, score3, prod;
-		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0;
+		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {}, totalSqrScore = 0, gtCnt = 0;
 		vector<Node> nodes;
+		vector<score_t> rootScores;
 		vector<int> color;
+		vector<int> nameCnts;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), 
-				prod(init.nodes[p].size()), score1(init.nodes[p].size()), score2(init.nodes[p].size()), score3(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
+		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), rootScores(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
@@ -304,6 +284,8 @@ struct Quadrupartition{
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
+			if (y != -1) cnt[y] -= nameCnts[i];
+			if (x != -1) cnt[x] += nameCnts[i];
 			for (int u: leafParent[i]){
 				score_t s1 = 0, s2 = 0, s3 = 0;
 				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d)--;
@@ -315,26 +297,20 @@ struct Quadrupartition{
 					u = w;
 					w = nodes[u].up;
 				}
-				score_t t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 -= (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 -= (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 -= (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
-				score1[u] += s1; score2[u] += s2; score3[u] += s3;
-				prod[u] = nodes[u].a * nodes[u].b * nodes[u].c * nodes[u].d;
-				t = score1[u] + score2[u] + score3[u];
-				if (prod[u] > 1e-8){
-					totalScore1 += (score1[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore2 += (score2[u] + (prod[u] - t) / 3) / prod[u];
-					totalScore3 += (score3[u] + (prod[u] - t) / 3) / prod[u];
-				}
+				totalScore1 += s1;
+				totalScore2 += s2;
+				totalScore3 += s3;
+				totalSqrScore -= rootScores[u] * rootScores[u];
+				if (rootScores[u] > 1e-9) gtCnt--;
+				rootScores[u] += s1 + s2 + s3;
+				totalSqrScore += rootScores[u] * rootScores[u];
+				if (rootScores[u] > 1e-9) gtCnt++;
 			}
 			color[i] = x;
 		}
 		
-		array<double, 3> score(){
-			return {(double) totalScore1, (double) totalScore2, (double) totalScore3};
+		array<score_t, 5> score(){
+			return {totalScore1, totalScore2, totalScore3, totalSqrScore, gtCnt};
 		}
 	};
 	
@@ -356,12 +332,19 @@ struct Quadrupartition{
 		res[0] = 0;
 		res[1] = 0;
 		res[2] = 0;
+		double sqrsum = 0;
+		double cnt = 0;
 		for (int p = 0; p < parts.size(); p++){
 			auto t = parts[p].score();
 			res[0] += t[0];
 			res[1] += t[1];
 			res[2] += t[2];
+			sqrsum += t[3];
+			cnt += t[4];
 		}
+		res[0] = (cnt < 0.5) ? 0 : res[0] * sqrt(cnt / sqrsum);
+		res[1] = (cnt < 0.5) ? 0 : res[1] * sqrt(cnt / sqrsum);
+		res[2] = (cnt < 0.5) ? 0 : res[2] * sqrt(cnt / sqrsum);
 		return res;
 	}
 };
