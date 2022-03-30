@@ -1731,6 +1731,7 @@ struct MetaAlgorithm{
 		#ifdef DRIVER_VERSION
 			version = version + "." + DRIVER_VERSION;
 		#endif
+		cerr << ARG.getFullName() << endl;
 		cerr << "Version: " << version << endl;
 		
 	#ifdef ARG_PARSER

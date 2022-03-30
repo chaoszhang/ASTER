@@ -20,6 +20,7 @@ class ArgParser{
     unordered_map<string,string> stringValue;
     unordered_map<string,function<void()> > func;
     string programName = "ASTER";
+    string fullName = "Accurate Species Tree EstimatoR";
 
     void addArg(char sName, string lName, string description, bool priority = false){
         if (sName == 0) longName.insert(lName);
@@ -65,8 +66,13 @@ public:
         return stringValue[name];
     }
 
-    void setProgramName(string name){
+    void setProgramName(string name, string fname = "Accurate Species Tree EstimatoR"){
         programName = name;
+        fullName = fname;
+    }
+
+    string getFullName(){
+        return fullName;
     }
 
     void printHelp(string name){

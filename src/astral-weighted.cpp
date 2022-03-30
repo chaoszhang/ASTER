@@ -153,7 +153,7 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	ARG.setProgramName("astral-weighted");
+	ARG.setProgramName("astral-weighted", "Weighted ASTRAL by Support");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	ARG.addDoubleArg('x', "max", 100, "Max possible support value in weight scale");
 	ARG.addDoubleArg('n', "min", 0, "Min possible support value in weight scale");
@@ -209,6 +209,6 @@ int main(int argc, char** argv){
 	cerr << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << (double) score << endl;
+	fprintf(stderr, "Score: %.10lg\n", (double) score);
 	return 0;
 }
