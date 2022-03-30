@@ -1741,6 +1741,12 @@ struct MetaAlgorithm{
 		ARG.addIntArg('s', "subsample", 4, "Number of rounds of subsampling per exploration step");
 		ARG.addDoubleArg('p', "proportion", 0.5, "Proportion of taxa in the subsample in naive algorithm");
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
+		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&](){
+			ARG.getDoubleArg("round") = 1; ARG.getDoubleArg("subsample") = 0;
+		}, true);
+		ARG.addFlag('R', "moreround", "More rounds of placements and subsampling (`-r 16 -s 16`)", [&](){
+			ARG.getDoubleArg("round") = 16; ARG.getDoubleArg("subsample") = 16;
+		}, true);
 		#ifdef SUPPORT
 		ARG.addDoubleArg('l', "lambda", 0.5, " Rate lambda of Yule process under which the species tree is modeled");
 		ARG.addIntArg('u', "support", 1, "output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
