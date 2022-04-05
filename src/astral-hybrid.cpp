@@ -182,7 +182,7 @@ int main(int argc, char** argv){
 	ARG.addFlag('B', "bayes", "Probability (abayes) support value mode (`-x 1 -n 0.333 -d 0.333`)", [&](){
 		ARG.getDoubleArg("max") = 1; ARG.getDoubleArg("min") = 0.333; ARG.getDoubleArg("default") = 0.333;
 	}, true);
-	ARG.addDoubleArg('l', "length", -1, "Weight factor of total terminal branch lengths");
+	ARG.addDoubleArg('w', "weight", -1, "Weight factor of total terminal branch lengths");
 
 	int dupType = 1;
 	string mappingFile;
@@ -191,8 +191,8 @@ int main(int argc, char** argv){
 	maxv = ARG.getDoubleArg("max");
 	minv = ARG.getDoubleArg("min");
 	defaultv = ARG.getDoubleArg("default");
-	lengthFactor = ARG.getDoubleArg("length");
-
+	lengthFactor = ARG.getDoubleArg("weight");
+	
 	/*
 	for (int i = 1; i < argc - 1; i += 2){
 		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
