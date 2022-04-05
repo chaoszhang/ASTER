@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
 
 #include<iostream>
 #include<fstream>
@@ -23,6 +23,7 @@ typedef int count_t;
 
 #define ERROR_TOLERANCE 0.001
 
+#include "argparser.hpp"
 //#define USE_CUDA
 #ifdef USE_CUDA
 #include "biallelic-cuda.hpp"
@@ -295,22 +296,23 @@ Gene files must be in FASTA format. The header line should be ">Species_Name".
 )V0G0N";
 
 int main(int argc, char** argv){
-	vector<string> files;
-	bool phylip = false;
+	ARG.setProgramName("asterisk-biallelic", "Accurate Species Tree EstimatoR from Independent Site Kernals");
+	ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: a txt file containing a list of FASTA gene files; phylip: a phylip file with all genes");
+	ARG.addFlag('F', "formatphylip", "Indicating input file as a PHYLIP file containing all genes (`-f phylip`)", [&](){
+		ARG.getStringArg("format") = "phylip";
+	}, true);
 	string mappingFile;
 	meta.initialize(argc, argv, " -y", HELP_TEXT);
 	tripInit.numThreads = meta.nThreads;
 
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
-	}
+	bool phylip = ARG.getStringArg("format").compare("fasta");
 	
 	if (phylip) {
-		ifstream fin(argv[argc - 1]);
+		ifstream fin(ARG.getStringArg("input"));
 		readPhilip(fin);
 	}
 	else {
-		ifstream listIn(argv[argc - 1]);
+		ifstream listIn(ARG.getStringArg("input"));
 		vector<thread> thrds;
 		for (string file; getline(listIn, file);){
 			thrds.emplace_back(readFasta, file);

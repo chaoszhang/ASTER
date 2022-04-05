@@ -145,7 +145,7 @@ int main(int argc, char** argv){
 		batchInit[i].roots.emplace_back();
 		batchInit[i].parentChild.emplace_back();
 	}
-	readInputTrees(argv[argc - 1], mappingFile);
+	readInputTrees(ARG.getStringArg("input"), mappingFile);
 	
 	cerr << "#Genetrees: " << K << endl;
 	

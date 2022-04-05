@@ -194,7 +194,7 @@ int main(int argc, char** argv){
 		batchInit[i].nodes.emplace_back();
 		batchInit[i].leafParent.emplace_back();
 	}
-	readInputTrees(argv[argc - 1], mappingFile);
+	readInputTrees(ARG.getStringArg("input"), mappingFile);
 	
 	if (dupType == 2){
 		for (string s: names){

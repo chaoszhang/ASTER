@@ -397,7 +397,7 @@ int main(int argc, char** argv){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}
-	annotate(argv[argc - 1], mappingFile);
+	annotate(ARG.getStringArg("input"), mappingFile);
 	
 	cerr << "#Genetrees: " << K << endl;
 	cerr << "#Duploss: " << duploss << endl;
