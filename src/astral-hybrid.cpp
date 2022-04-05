@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "2"
+#define DRIVER_VERSION "3"
 
 #include<iostream>
 #include<fstream>
@@ -49,6 +49,7 @@ vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
 vector<int> &nameCnts = meta.tripInit.nameCnts;
 score_t maxv = 100, minv = 0, defaultv = 0;
+double lengthFactor = -1;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -83,7 +84,7 @@ score_t WEIGHT_L(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 1;
-	else return exp(-from_string(TEXT.substr(i + 1, end - i - 1)));
+	else return exp(lengthFactor * from_string(TEXT.substr(i + 1, end - i - 1)));
 }
 
 void parse(int parent = -1, bool isLeft = true){
@@ -181,7 +182,8 @@ int main(int argc, char** argv){
 	ARG.addFlag('B', "bayes", "Probability (abayes) support value mode (`-x 1 -n 0.333 -d 0.333`)", [&](){
 		ARG.getDoubleArg("max") = 1; ARG.getDoubleArg("min") = 0.333; ARG.getDoubleArg("default") = 0.333;
 	}, true);
-	
+	ARG.addDoubleArg('l', "length", -1, "Weight factor of total terminal branch lengths");
+
 	int dupType = 1;
 	string mappingFile;
 	meta.initialize(argc, argv, HELP, HELP_TEXT);
@@ -189,6 +191,7 @@ int main(int argc, char** argv){
 	maxv = ARG.getDoubleArg("max");
 	minv = ARG.getDoubleArg("min");
 	defaultv = ARG.getDoubleArg("default");
+	lengthFactor = ARG.getDoubleArg("length");
 
 	/*
 	for (int i = 1; i < argc - 1; i += 2){
