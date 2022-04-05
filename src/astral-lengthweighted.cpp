@@ -155,7 +155,7 @@ int main(int argc, char** argv){
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	ARG.addDoubleArg('w', "weight", -1, "Weight factor of total terminal branch lengths");
 	ARG.addFlag('H', "hgt", "Use this preset when you are sure that horizontal gene transfer is the main source of discordance. (`-w 1`)", [&](){
-		ARG.getDoubleArg("round") = 1;
+		ARG.getDoubleArg("weight") = 1;
 	}, true);
 	int dupType = 1;
 	string mappingFile;
