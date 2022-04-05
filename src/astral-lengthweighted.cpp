@@ -47,6 +47,7 @@ int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
 vector<int> &nameCnts = meta.tripInit.nameCnts;
+double weightFactor = -1;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -74,7 +75,7 @@ score_t WEIGHT(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 1;
-	else return exp(-from_string(TEXT.substr(i + 1, end - i - 1)));
+	else return exp(weightFactor * from_string(TEXT.substr(i + 1, end - i - 1)));
 }
 
 void parse(int parent = -1, bool isLeft = true){
@@ -152,12 +153,16 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 int main(int argc, char** argv){
 	ARG.setProgramName("astral-lengthweighted", "Weighted ASTRAL by Branch Length");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
-	
+	ARG.addDoubleArg('w', "weight", -1, "Weight factor of total terminal branch lengths");
+	ARG.addFlag('H', "hgt", "Use this preset when you are sure that horizontal gene transfer is the main source of discordance. (`-w 1`)", [&](){
+		ARG.getDoubleArg("round") = 1;
+	}, true);
 	int dupType = 1;
 	string mappingFile;
 	meta.initialize(argc, argv, HELP, HELP_TEXT);
 	mappingFile = ARG.getStringArg("mapping");
-	
+	weightFactor = ARG.getDoubleArg("weight");
+
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
