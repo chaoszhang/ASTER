@@ -511,6 +511,31 @@ struct Tree{
         return subtree2string(root, children) + ";";
     }
 
+    string subtree2stringWithNames(int v, const vector<vector<int> > &children, const vector<string> &names, bool keepLength) const{
+        string str = "(";
+        bool first = true;
+        if (children[v].size() == 0){
+            if (!keepLength) return names[nodes[v].taxon];
+            else return names[nodes[v].taxon] + ":" + to_string(nodes[v].length);
+        }
+        for (int c: children[v]){
+            if (first) first = false;
+            else str += ",";
+            str += subtree2stringWithNames(c, children, names, keepLength);
+        }
+        if (!keepLength) return str + ")";
+        else return str + "):" + to_string(nodes[v].length);
+    }
+    
+    string stringWithNames(const vector<string> &names, bool keepLength = true) const{
+        vector<vector<int> > children(nodes.size());
+        for (int i = 0; i < nodes.size(); i++){
+            int p = nodes[i].parent;
+            if (p != -1) children[p].push_back(i); 
+        }
+        return subtree2stringWithNames(root, children, names, keepLength) + ";";
+    }
+
     void minDistRecursion(int v, const vector<vector<int> > &children, vector<double> &minDist) const{
         if (children[v].size() != 2) {
             minDist[v] = nodes[v].length;

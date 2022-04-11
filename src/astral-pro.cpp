@@ -42,8 +42,9 @@ int nodecnt = 0;
 int pos = 0;
 int K = 0;
 vector<string> &id2name = meta.names;
+string rootNtagTrees;
 unordered_map<string, int> &name2id = meta.name2id;
-bool resolvePolytomies = false;
+bool resolvePolytomies = false, rootNtag = false;
 	
 class DynamicBitset{
 	int size = 0;
@@ -330,6 +331,12 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 	}
 }
 
+string convert2string(const unordered_map<long long, string> &leafname, const unordered_map<long long, pair<long long, long long> > &children, long long node){
+	if (leafname.count(node)) return leafname.at(node);
+	const pair<long long, long long> &e = children.at(node);
+	return string("(") + convert2string(leafname, children, e.first) + "," + convert2string(leafname, children, e.second) + ")";
+}
+
 void annotate(string input, string mapping){
 	if (mapping != ""){
 		ifstream fmap(mapping);
@@ -358,9 +365,12 @@ void annotate(string input, string mapping){
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, pair<long long, long long> > children;
 			long long root = parse(leafname, children);
-			GenetreeAnnotator ga;
-			int iroot = ga.annotateTree(leafname, children, root);
-			ga.buildTree(iroot, K % tripInit.nodes.size());
+			if (rootNtag) rootNtagTrees += convert2string(leafname, children, root) + ";\n";
+			else {
+				GenetreeAnnotator ga;
+				int iroot = ga.annotateTree(leafname, children, root);
+				ga.buildTree(iroot, K % tripInit.nodes.size());
+			}
 			K++;
 			if (VERBOSE && (K & 511) == 0) cerr << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
 		}
@@ -375,16 +385,18 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 int main(int argc, char** argv){
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
-	ARG.addIntArg('e', "exit", 0, "0: terminating when input contains polytomies; 1: resolving polytomies (no theoretical guarentees)");
+	ARG.addIntArg('e', "exit", 0, "0: terminating when input contains polytomies; 1: resolving polytomies (no theoretical guarentees); 2: printing rooted and tagged gene trees and exit");
 	ARG.addFlag('E', "noexit", "No termination when input contains polytomies (`-e 1`)", [&](){
 			ARG.getIntArg("exit") = 1;
 	}, true);
-	
+	ARG.addFlag('T', "tagging", "Just printing rooted and tagged gene trees (`-e 2`)", [&](){
+			ARG.getIntArg("exit") = 2;
+	});
 	string mappingFile;
 	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
 	mappingFile = ARG.getStringArg("mapping");
-	resolvePolytomies = ARG.getIntArg("exit");
-
+	resolvePolytomies = (ARG.getIntArg("exit") != 0);
+	rootNtag = (ARG.getIntArg("exit") == 2);
 	/*
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
@@ -402,6 +414,12 @@ int main(int argc, char** argv){
 	cerr << "#Genetrees: " << K << endl;
 	cerr << "#Duploss: " << duploss << endl;
 	
+	if (rootNtag){
+		if (ARG.getStringArg("output") == "<standard output>") cout << rootNtagTrees;
+		else ofstream(ARG.getStringArg("output")) << rootNtagTrees;
+		exit(0);
+	}
+
 	score_t score = meta.run().first;
 	cerr << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
 	cerr << "Score: " << score << endl;
