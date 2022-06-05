@@ -149,6 +149,7 @@ private:
 		bool isLeaf = false;
 		int score = -1;
 		int leafId = -1;
+		string name;
 	};
 	
 	vector<Node> node;
@@ -159,15 +160,17 @@ private:
 			node.emplace_back();
 			node[curId].isLeaf = true;
 			node[curId].score = 0;
-			if (name2id.count(leafname.at(cur)) == 0){
-				name2id[leafname.at(cur)] = id2name.size();
-				id2name.push_back(leafname.at(cur));
+			node[curId].name = leafname.at(cur);
+			string name = leafname_mapping.count(leafname.at(cur)) ? leafname_mapping[leafname.at(cur)] : leafname.at(cur);
+			if (name2id.count(name) == 0){
+				name2id[name] = id2name.size();
+				id2name.push_back(name);
 				for (int p = 0; p < tripInit.nodes.size(); p++){
 					tripInit.leafParent[p].emplace_back();
 				}
 			}
-			node[curId].leafId = name2id[leafname.at(cur)];
-			node[curId].label.set(name2id[leafname.at(cur)]);
+			node[curId].leafId = name2id[name];
+			node[curId].label.set(name2id[name]);
 			return make_tuple(curId, -1, -1);
 		}
 		
@@ -288,8 +291,8 @@ public:
 
 	string printTree(int cur, bool isRoot = true) const{
 		if (node[cur].isLeaf){
-			if (isRoot) return id2name[node[cur].leafId] + ";";
-			return id2name[node[cur].leafId];
+			if (isRoot) return node[cur].name + ";";
+			return node[cur].name;
 		}
 		int left = node[cur].leftChildId, right = node[cur].rightChildId;
 		string res = string("(") + printTree(left, false) + "," + printTree(right, false) + ")";
@@ -308,13 +311,21 @@ string MAPPING(int begin, int end){
 	else return s;
 }
 
+string GET_NAME(int begin, int end){
+	string s;
+	for (int i = begin; i < end && TEXT[i] != ':'; i++){
+		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
+	}
+	return s;
+}
+
 long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, pair<long long, long long> > &children){
 	int i = pos;
 	long long cur;
 	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
 	if (TEXT[pos] != '(') {
 		cur = nodecnt++;
-		leafname[cur] = MAPPING(i, pos);
+		leafname[cur] = GET_NAME(i, pos);
 		return cur;
 	}
 	else {
