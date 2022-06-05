@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
 
 #include<iostream>
 #include<fstream>
@@ -285,6 +285,18 @@ public:
 		}
 		return w;
 	}
+
+	string printTree(int cur, bool isRoot = true) const{
+		if (node[cur].isLeaf){
+			if (isRoot) return id2name[node[cur].leafId] + ";";
+			return id2name[node[cur].leafId];
+		}
+		int left = node[cur].leftChildId, right = node[cur].rightChildId;
+		string res = string("(") + printTree(left, false) + "," + printTree(right, false) + ")";
+		if (node[cur].isDuplication) res += "D";
+		if (isRoot) res += ";";
+		return res;
+	}
 };
 
 string MAPPING(int begin, int end){
@@ -365,12 +377,10 @@ void annotate(string input, string mapping){
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, pair<long long, long long> > children;
 			long long root = parse(leafname, children);
-			if (rootNtag) rootNtagTrees += convert2string(leafname, children, root) + ";\n";
-			else {
-				GenetreeAnnotator ga;
-				int iroot = ga.annotateTree(leafname, children, root);
-				ga.buildTree(iroot, K % tripInit.nodes.size());
-			}
+			GenetreeAnnotator ga;
+			int iroot = ga.annotateTree(leafname, children, root);
+			if (rootNtag) rootNtagTrees += ga.printTree(iroot) + "\n";
+			else ga.buildTree(iroot, K % tripInit.nodes.size());
 			K++;
 			if (VERBOSE && (K & 511) == 0) cerr << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
 		}
