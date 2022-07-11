@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "1"
+#define DRIVER_VERSION "2"
 
 #include<iostream>
 #include<fstream>
@@ -146,6 +146,7 @@ private:
 		int leftChildId = -1, rightChildId = -1;
 		DynamicBitset label;
 		bool isDuplication = false;
+		bool isPolytomy = false;
 		bool isLeaf = false;
 		int score = -1;
 		int leafId = -1;
@@ -154,7 +155,7 @@ private:
 	
 	vector<Node> node;
 	
-	tuple<int, int, int> createSubtree(const unordered_map<long long, string> &leafname, const unordered_map<long long, pair<long long, long long> > &children, const long long cur, vector<int> &rootId){
+	tuple<int, int, int> createSubtree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const long long cur, vector<int> &rootId){
 		if (children.count(cur) == 0){
 			int curId = node.size();
 			node.emplace_back();
@@ -174,7 +175,7 @@ private:
 			return make_tuple(curId, -1, -1);
 		}
 		
-		tuple<int, int, int> left = createSubtree(leafname, children, children.at(cur).first, rootId), right = createSubtree(leafname, children, children.at(cur).second, rootId);
+		tuple<int, int, int> left = createSubtree(leafname, children, get<0>(children.at(cur)), rootId), right = createSubtree(leafname, children, get<1>(children.at(cur)), rootId);
 		int cur0 = node.size();
 		node.emplace_back();
 		int cur1 = node.size();
@@ -191,6 +192,8 @@ private:
 		if (get<1>(right) != -1) node[get<1>(right)].rightChildId = cur1;
 		if (get<2>(right) != -1) node[get<2>(right)].rightChildId = cur1;
 		
+		node[cur0].isPolytomy = node[cur1].isPolytomy = node[cur2].isPolytomy = get<2>(children.at(cur));
+
 		int root1 = node.size();
 		node.emplace_back();
 		node[root1].leftChildId = get<0>(left);
@@ -209,7 +212,8 @@ private:
 		if (node[cur].score != -1) return node[cur].score;
 		node[cur].score = scoreSubtree(node[cur].leftChildId) + scoreSubtree(node[cur].rightChildId);
 		node[cur].label = node[node[cur].leftChildId].label | node[node[cur].rightChildId].label;
-		if (!node[node[cur].leftChildId].label.isDisjointTo(node[node[cur].rightChildId].label)){
+		if (node[cur].isPolytomy) node[cur].isDuplication = true;
+		else if (!node[node[cur].leftChildId].label.isDisjointTo(node[node[cur].rightChildId].label)){
 			node[cur].score++;
 			node[cur].isDuplication = true;
 			if (node[cur].label != node[node[cur].leftChildId].label) node[cur].score++;
@@ -223,9 +227,9 @@ public:
 		return id2name;
 	}
 	
-	int annotateTree(const unordered_map<long long, string> &leafname, const unordered_map<long long, pair<long long, long long> > &children, const long long root){
+	int annotateTree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const long long root){
 		vector<int> rootId;
-		tuple<int, int, int> left = createSubtree(leafname, children, children.at(root).first, rootId), right = createSubtree(leafname, children, children.at(root).second, rootId);
+		tuple<int, int, int> left = createSubtree(leafname, children, get<0>(children.at(root)), rootId), right = createSubtree(leafname, children, get<1>(children.at(root)), rootId);
 		if (get<1>(left) != -1) node[get<1>(left)].rightChildId = get<0>(right);
 		if (get<2>(left) != -1) node[get<2>(left)].rightChildId = get<0>(right);
 		if (get<1>(right) != -1) node[get<1>(right)].rightChildId = get<0>(left);
@@ -237,12 +241,17 @@ public:
 		node[curId].rightChildId = get<0>(right);
 		rootId.push_back(curId);
 		
-		int bestscore = 999999, bestroot = -1;
+		int bestscore = 999999, bestroot = -1, bestcnt = 0;
 		for (int root: rootId){
 			int score = scoreSubtree(root);
+			if (score == bestscore){
+				bestcnt++;
+				if (rand() % bestcnt == 0) bestroot = root;
+			}
 			if (score < bestscore){
 				bestscore = score;
 				bestroot = root;
+				bestcnt = 1;
 			}
 		}
 		duploss += bestscore;
@@ -319,7 +328,7 @@ string GET_NAME(int begin, int end){
 	return s;
 }
 
-long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, pair<long long, long long> > &children){
+long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, tuple<long long, long long, bool> > &children, bool isRoot = false){
 	int i = pos;
 	long long cur;
 	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
@@ -332,7 +341,7 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 		pos++; // (
 		cur = parse(leafname, children);
 		while (TEXT[pos] != ',') pos++;
-		vector<long long> lst;
+		vector<long long> lst, plst;
 		lst.push_back(cur);
 		while (TEXT[pos] != ')'){
 			pos++; // ,
@@ -343,9 +352,13 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 				leafname.erase(temp);
 			}
 			else children[left] = children[temp];
-			children[temp] = {left, right};
+			children[temp] = {left, right, true};
+			plst.push_back(temp);
 			lst.push_back(left);
 			lst.push_back(right);
+		}
+		if ( (lst.size() == 5 && isRoot) || lst.size() == 3){
+			for (long long temp: plst) get<2>(children[temp]) = false;
 		}
 		while (TEXT[pos] != ')') pos++;
 		pos++; // )
@@ -354,13 +367,15 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 	}
 }
 
-string convert2string(const unordered_map<long long, string> &leafname, const unordered_map<long long, pair<long long, long long> > &children, long long node){
+string convert2string(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, long long node){
 	if (leafname.count(node)) return leafname.at(node);
-	const pair<long long, long long> &e = children.at(node);
-	return string("(") + convert2string(leafname, children, e.first) + "," + convert2string(leafname, children, e.second) + ")";
+	const tuple<long long, long long, bool> &e = children.at(node);
+	return string("(") + convert2string(leafname, children, get<0>(e)) + "," + convert2string(leafname, children, get<1>(e)) + ")"
+		+ (get<2>(children.at(node)) ? "P" : "");
 }
 
 void annotate(string input, string mapping){
+	bool hasPolytomy = false;
 	if (mapping != ""){
 		ifstream fmap(mapping);
 		string gname, sname;
@@ -380,15 +395,16 @@ void annotate(string input, string mapping){
 				if (TEXT[i] == '(') internalCnt++;
 				if (TEXT[i] == ',') leafCnt++;
 			}
-			if (internalCnt < leafCnt - 2 && !resolvePolytomies) {
-				cerr << "Non-binary input tree(s) detected!\nCurrently ASTRAL-Pro does not guarentee correct output if input trees contain polytomies!\n Please add \"-e 1\" to randomly resolve polytomies.";
-				exit(0);
+			if (internalCnt < leafCnt - 2 && !resolvePolytomies && !hasPolytomy) {
+				cerr << "Warning: Non-binary input tree(s) detected! ASTRAL-Pro will treat all polytomies as duplication events. Please ignore this warning if all polytomies are parents of leaves (eg. output of Fasttree).\n";
+				hasPolytomy = true;
 			}
 			
 			unordered_map<long long, string> leafname;
-			unordered_map<long long, pair<long long, long long> > children;
-			long long root = parse(leafname, children);
+			unordered_map<long long, tuple<long long, long long, bool> > children;
+			long long root = parse(leafname, children, true);
 			GenetreeAnnotator ga;
+			//cerr << convert2string(leafname, children, root) << endl;
 			int iroot = ga.annotateTree(leafname, children, root);
 			if (rootNtag) rootNtagTrees += ga.printTree(iroot) + "\n";
 			else ga.buildTree(iroot, K % tripInit.nodes.size());
@@ -406,7 +422,7 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 int main(int argc, char** argv){
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
-	ARG.addIntArg('e', "exit", 0, "0: terminating when input contains polytomies; 1: resolving polytomies (no theoretical guarentees); 2: printing rooted and tagged gene trees and exit");
+	ARG.addIntArg('e', "exit", 0, "0: print warning when input contains polytomies; 1: resolving polytomies; 2: printing rooted and tagged gene trees and exit");
 	ARG.addFlag('E', "noexit", "No termination when input contains polytomies (`-e 1`)", [&](){
 			ARG.getIntArg("exit") = 1;
 	}, true);
