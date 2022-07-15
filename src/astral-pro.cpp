@@ -352,7 +352,7 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 				leafname.erase(temp);
 			}
 			else children[left] = children[temp];
-			children[temp] = {left, right, true};
+			children[temp] = make_tuple<long long, long long, bool>((long long) left, (long long) right, true);
 			plst.push_back(temp);
 			lst.push_back(left);
 			lst.push_back(right);
