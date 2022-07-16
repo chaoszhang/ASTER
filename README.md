@@ -92,8 +92,6 @@ ASTER algorithm first performs `R` (4 by default) rounds of search and then repe
 ./PROGRAM_NAME -t T -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
-For ASTRAL(-Pro) and wASTRAL seriers, when `T>min(R,S)` and the number of gene is small may **increase** running time due to parallel overheads. 
-
 If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
