@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#include "tutorial.hpp"
+
 class ArgParser{
     unordered_set<string> longName;
     unordered_map<char,string> shortName;
@@ -108,6 +110,7 @@ public:
         bool inputLast = true;
         if (argc == 1) func["help"]();
         for (int i = 1; i < argc; i++){
+            if (strcmp(argv[i], "-H") == 0) {MDGenerator temp(programName); func["help"]();}
             if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) func["help"]();
             if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--input") == 0) inputLast = false;
         }

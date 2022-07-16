@@ -423,9 +423,9 @@ int main(int argc, char** argv){
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
 	ARG.addIntArg('e', "exit", 0, "0: print warning when input contains polytomies; 1: resolving polytomies; 2: printing rooted and tagged gene trees and exit");
-	ARG.addFlag('E', "noexit", "No termination when input contains polytomies (`-e 1`)", [&](){
+	ARG.addFlag('E', "noexit", "No warning when input contains polytomies (`-e 1`)", [&](){
 			ARG.getIntArg("exit") = 1;
-	}, true);
+	});
 	ARG.addFlag('T', "tagging", "Just printing rooted and tagged gene trees (`-e 2`)", [&](){
 			ARG.getIntArg("exit") = 2;
 	});
