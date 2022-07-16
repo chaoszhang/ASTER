@@ -79,41 +79,41 @@ The ASTRAL-Pro tree leaves the branch length of terminal branches empty. Some to
 ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to the directory (location) where you have downloaded ASTER and issue the following command:
 
 ```
-bin/PROGRAM_NAME
+bin/astral-pro
 ```
 
-This will give you a list of options available. If you are using Windows, please replace `bin/PROGRAM_NAME` with `.\exe\PROGRAM_NAME.exe`.
+This will give you a list of options available. If you are using Windows, please replace `bin/astral-pro` with `.\exe\astral-pro.exe`.
 
 To find the species tree with input from in a file called `INPUT_FILE`, use:
 
 ```
-bin/PROGRAM_NAME INPUT_FILE
+bin/astral-pro INPUT_FILE
 ```
 or
 ```
-bin/PROGRAM_NAME -i INPUT_FILE
+bin/astral-pro -i INPUT_FILE
 ```
 
 In the first case, INPUT_FILE is ***hard-coded*** to be the ***last argument*** for backward compatibility. 
 
-For example if you want to run `PROGRAM_NAME` with input `example/EXAMPLE_INPUT`, then run
+For example if you want to run `astral-pro` with input `example/multitree.nw`, then run
 
 ```
-bin/PROGRAM_NAME example/EXAMPLE_INPUT
+bin/astral-pro example/multitree.nw
 ```
 or
 ```
-bin/PROGRAM_NAME -i example/EXAMPLE_INPUT
+bin/astral-pro -i example/multitree.nw
 ```
 
 The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
 ```
-bin/PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE
+bin/astral-pro -o OUTPUT_FILE INPUT_FILE
 ```
 or
 ```
-bin/PROGRAM_NAME -i INPUT_FILE -o OUTPUT_FILE
+bin/astral-pro -i INPUT_FILE -o OUTPUT_FILE
 ```
 
 With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, from here on we will not demonstrate `-i INPUT_FILE` cases.
@@ -121,19 +121,19 @@ With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, fro
 To save the logs (**also recommended**), run:
 
 ```
-bin/PROGRAM_NAME -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-pro -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 For example, you can run
 
 ```
-bin/PROGRAM_NAME -o example/EXAMPLE_INPUT.stree example/EXAMPLE_INPUT 2>example/EXAMPLE_INPUT.log
+bin/astral-pro -o example/multitree.nw.stree example/multitree.nw 2>example/multitree.nw.log
 ```
 
 ASTER supports multi-threading. To run program with 4 threads, add `-t 4` before `INPUT_FILE`:
 
 ```
-bin/PROGRAM_NAME -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-pro -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 ASTER has very good parrallel efficiency up to 64 cores when input data is large. In fact, it often experiences super-linear speedup with 16 cores or more. So feel free to use as many cores as you want.
@@ -149,27 +149,46 @@ bin/astral-pro -a example/multitree_genename.map example/multitree_genename.nw
 ASTER algorithm first performs `R` (4 by default) rounds of search and then repeatedly performs `S` (4 by default) rounds of subsampling and exploration until no improvement found.
 
 ```
-bin/PROGRAM_NAME -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-pro -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/PROGRAM_NAME -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-pro -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 Specifically, you can score and annotate a ***fully resolved*** species tree containing all taxa with `-c SPECIES_TREE_IN_NEWICK_FORMAT`. If want to score a species tree or you want to place only ***one*** taxon onto the tree, you can use
 
 ```
-bin/PROGRAM_NAME -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-pro -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 or simply,
 ```
-bin/PROGRAM_NAME -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-pro -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
+
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+
+```
+bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
+```
+
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/astral-pro -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/astral-pro -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
+If you do not want to compute optimal species tree but instead just want to root and tag gene trees, you can use the following command:
+
+```
+bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 ```
