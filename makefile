@@ -42,3 +42,6 @@ aaa-gpu:
 	nvcc -dlink -o bin/biallelic-cuda_link.o bin/biallelic-cuda.o -lcudadevrt -lcudart
 	g++ -std=gnu++11 -march=native -Ofast -pthread -D"USE_CUDA" bin/biallelic-cuda.o bin/biallelic-cuda_link.o src/asterisk-biallelic.cpp -o bin/asterisk-biallelic-cuda -L/usr/local/cuda/lib64 -lcudart -lcudadevrt
 	rm bin/*.o
+	
+tutorial: all
+	bin/astral-pro -H
