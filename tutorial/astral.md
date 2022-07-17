@@ -61,6 +61,7 @@ individual_B1 species_name_B
 individual_B2 species_name_B
 individual_B3 species_name_B
 ...
+```
 
 # OUTPUT
 The output in is Newick format and gives:
