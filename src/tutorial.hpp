@@ -15,6 +15,16 @@ ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equa
 Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 )V0G0N";
 
+const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (ASTRAL)
+ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
+ASTER re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a complementary to the original ASTRAL on datasets for which the original ASTRAL is not suitable (e.g. large datasets, multi-individual, and super-tree construction).
+Warning: ASTER implementation may be **slower** and even **less accurate** than ASTRAL-III when input gene trees has fewer than 50 species and 500 genes. Please choose wisely!
+
+## Publication
+
+Zhang, Chao, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+)V0G0N";
+
 const string SHARED_INTRO = R"V0G0N(
 ## Bug Reports
 
@@ -62,7 +72,7 @@ Download using one of two approaches:
 const string APRO_IO = R"V0G0N(
 # INPUT
 * The input gene trees are in the Newick format
-* The input trees can have missing taxa and multi-copy genes.
+* The input trees can have missing taxa, polytomies (unresolved branches), and multi-copy genes.
 * When multiple genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
   1. You can give multiple genes from the same species the same name in the input gene trees (e.g., `((species_name_A,species_name_B),(species_name_A,species_name_C));`).
   2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats (e.g., for gene trees like `((gene_A1,gene_B1),(gene_A2,gene_C1));`):
@@ -85,6 +95,31 @@ The output in is Newick format and gives:
 * It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 
 The ASTRAL-Pro tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
+)V0G0N";
+
+const string ASTRAL_IO = R"V0G0N(
+# INPUT
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.
+* When individuals genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals from the same species the same name in the input gene trees (e.g., `((species_name_A,species_name_B),(species_name_A,species_name_C));`).
+  2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats (e.g., for gene trees like `((individual_A1,individual_B1),(individual_A2,individual_C1));`):
+```
+individual_A1 species_name_A
+individual_A2 species_name_A
+individual_B1 species_name_B
+individual_B2 species_name_B
+individual_B3 species_name_B
+...
+
+# OUTPUT
+The output in is Newick format and gives:
+
+* the species tree topology
+* branch lengths in coalescent units (only for internal branches)
+* branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
+* It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
+
+The ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 )V0G0N";
 
 const string SHARED_EXE = R"V0G0N(
@@ -160,6 +195,16 @@ bin/astral-pro -a example/multitree_genename.map example/multitree_genename.nw
 ```
 )V0G0N";
 
+const string ASTRAL_UNIQUE_EXE = R"V0G0N(
+By default, ASTRAL assumes multiple individuals from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+
+```
+bin/astral -a example/genetree.map example/genetree.nw
+```
+
+When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
+)V0G0N";
+
 const string SHARED_ADV = R"V0G0N(
 ## Advanced Options
 
@@ -167,6 +212,15 @@ ASTER algorithm first performs `R` (4 by default) rounds of search and then repe
 
 ```
 bin/PROGRAM_NAME -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
+
+If you want to run with more rounds of placement for ensured optimality, then you can run with
+```
+bin/PROGRAM_NAME -r 16 -s 16 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+```
+or simply
+```
+bin/PROGRAM_NAME -R -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
@@ -213,7 +267,23 @@ bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 ```
 )V0G0N";
 
+const string ASTRAL_UNIQUE_ADV = R"V0G0N(
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+
+```
+bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
+```
+
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/astral -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/astral -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+)V0G0N";
+
     const string APRO = "astral-pro";
+    const string ASTRAL = "astral";
 
     string replace(string txt, string from, string to){
         return regex_replace(txt, regex(from), to);
@@ -221,6 +291,7 @@ bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 
     string uniqueIntro(){
         if (programName == APRO) return APRO_UNIQUE_INTRO;
+        if (programName == ASTRAL) return ASTRAL_UNIQUE_INTRO;
 
         return "# Accurate Species Tree EstimatoR (ASTER❋)";
     }
@@ -231,30 +302,35 @@ bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 
     string inputOutput(){
         if (programName == APRO) return APRO_IO;
+        if (programName == ASTRAL) return ASTRAL_IO;
 
         return "";
     }
 
     string sharedExe(){
         if (programName == APRO) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
+        if (programName == ASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
 
         return SHARED_EXE;
     }
 
     string uniqueExe(){
         if (programName == APRO) return APRO_UNIQUE_EXE;
-        
+        if (programName == ASTRAL) return ASTRAL_UNIQUE_EXE;
+
         return "";
     }
 
     string sharedAdv(){
         if (programName == APRO) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
+        if (programName == ASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
 
         return SHARED_ADV;
     }
 
     string uniqueAdv(){
         if (programName == APRO) return APRO_UNIQUE_ADV;
+        if (programName == ASTRAL) return ASTRAL_UNIQUE_ADV;
 
         return "";
     }

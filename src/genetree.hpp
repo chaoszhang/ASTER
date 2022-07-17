@@ -1,6 +1,7 @@
 #include <vector>
 #include <array>
 #include <thread>
+#include "threadpool.hpp"
 
 using namespace std;
 
@@ -1009,6 +1010,10 @@ struct Tripartition{
 		for (int p = 0; p < init.roots.size(); p++) parts.emplace_back(init, p);
 	}
 	
+	void updatePart(int part, int x, int i){
+		parts[part].update(x, i);
+	}
+
 	void update(int x, int i){
 		vector<thread> thrds;
 		for (int p = 1; p < parts.size(); p++) thrds.emplace_back(&Partition::update, &parts[p], x, i);
@@ -1016,6 +1021,10 @@ struct Tripartition{
 		for (thread &t: thrds) t.join();
 	}
 	
+	score_t scorePart(int part){
+		return parts[part].score();
+	}
+
 	score_t score(){
 		score_t res = 0;
 		for (int p = 0; p < parts.size(); p++) res += parts[p].score();
