@@ -44,4 +44,5 @@ aaa-gpu:
 	rm bin/*.o
 	
 tutorial: all
+	bin/astral -H
 	bin/astral-pro -H
