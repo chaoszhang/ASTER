@@ -1,7 +1,9 @@
 # Accurate Species Tree ALgorithm (ASTRAL)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
 ASTER re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a complementary to the original ASTRAL on datasets for which the original ASTRAL is not suitable (e.g. large datasets, multi-individual, and super-tree construction).
+
 Warning: ASTER implementation may be **slower** and even **less accurate** than ASTRAL-III when input gene trees has fewer than 50 species and 500 genes. Please choose wisely!
+As a supplementary to ASTRAL-III, ASTER lacks of many features of ASTRAL-III (e.g. computing support). You can work around by first computing optimal tree with ASTER and use the ASTER output tree as `-q` option to ASTRAL-III for annotation. 
 
 ## Publication
 
@@ -187,11 +189,4 @@ Species tree with more than **5000** taxa may cause **overflow**. Use the follow
 
 ```
 bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
-```
-
-Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
-
-```
-bin/astral -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
