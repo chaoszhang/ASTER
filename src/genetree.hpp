@@ -1,3 +1,9 @@
+#define OBJECTIVE_VERSION "1"
+
+/* CHANGE LOG
+ * 1. using thread pool for better parallelism
+ */
+
 #include <vector>
 #include <array>
 #include <thread>

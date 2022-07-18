@@ -1,3 +1,8 @@
+#define DRIVER_VERSION "0"
+
+/* CHANGE LOG
+ */
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>

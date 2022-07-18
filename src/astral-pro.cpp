@@ -1,4 +1,8 @@
-#define DRIVER_VERSION "2"
+#define DRIVER_VERSION "3"
+
+/* CHANGE LOG
+ * 3: Add support for polytomies
+ */
 
 #include<iostream>
 #include<fstream>

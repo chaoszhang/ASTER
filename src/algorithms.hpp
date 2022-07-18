@@ -1,5 +1,8 @@
 #define ALG_VERSION "v1.4"
 
+/* CHANGE LOG
+ */
+
 typedef unsigned __int128 hash_t;
 
 #include<vector>
