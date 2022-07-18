@@ -214,6 +214,7 @@ class Ui_MainWindow(object):
             
             print(cmd)
             subprocess.run(cmd)
+            print(" *** Finished! *** ")
 
 if __name__ == "__main__":
     import sys
