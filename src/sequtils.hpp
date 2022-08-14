@@ -5,6 +5,62 @@
 #include<tuple>
 #include<algorithm>
 #include<random>
+#include<string>
+
+namespace SeqUtils{
+    string PARSE_LEAFNAME(const string& TEXT){
+        string s;
+        for (int i = 0; i < TEXT.size(); i++){
+            if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
+        }
+        return s;
+    }
+
+    long long choose4(long long n){
+        return n * (n - 1) * (n - 2) * (n - 3) / 24;
+    }
+
+    score_t from_string(const string s){
+    	return stod(s);
+    }
+}
+
+struct TreeTokenizer{
+    static const string KEYWORDS, SPACES;
+    
+    const string TEXT;
+    int i = 0, j;
+
+    TreeTokenizer(const string& TEXT): TEXT(TEXT){}
+
+    string operator()(){
+        string res = preview();
+        i = j;
+        return res;
+    }
+
+    string preview(){
+        while (i < TEXT.size() && SPACES.find(TEXT[i]) != string::npos) i++;
+        if (i == TEXT.size()) return "";
+        string res;
+        if (KEYWORDS.find(TEXT[i]) != string::npos){
+            j = i+1;
+            return TEXT.substr(i, 1);
+        }
+        else{
+            bool singleQ = false, doubleQ = false;
+            for (j = i; j < TEXT.size(); j++){
+                if (TEXT[j] == '\'') singleQ = !singleQ;
+                if (TEXT[j] == '\"') doubleQ = !doubleQ;
+                if (!singleQ && !doubleQ && KEYWORDS.find(TEXT[j]) != string::npos) break;
+            }
+            int k = j - 1;
+            while (k >= i && SPACES.find(TEXT[k]) != string::npos) k--;
+            return TEXT.substr(i, k-i+1);
+        }
+    }
+};
+const string TreeTokenizer::KEYWORDS = "(),:;", TreeTokenizer::SPACES = " \t\n\r";
 
 struct SeqHot{
     vector<bool> b;
@@ -379,11 +435,12 @@ struct DistanceMatrix{
     }
 };
 
-
 struct Tree{
     struct Node
     {
+        bool isleaf = false;
         int parent = -1, taxon = -1;
+        string label;
         double length = 0;
     };
     
@@ -391,6 +448,17 @@ struct Tree{
     int root = -1;
     
     Tree(){}
+
+    Tree(const string& TEXT){
+        TreeTokenizer tk(TEXT);
+        root = readSubtree(tk);
+    }
+
+    Tree(const string& TEXT, const unordered_map<string, int>& name2id): Tree(TEXT){
+        for (Node &node: nodes){
+            if (name2id.count(node.label)) node.taxon = name2id.at(node.label);
+        }
+    }
 
     Tree(DistanceMatrix dm){
         int n = dm.nTaxa(), m = n;
@@ -453,6 +521,86 @@ struct Tree{
         for (Node &node: nodes){
             if (node.taxon != -1) node.taxon = renumber[node.taxon];
         }
+    }
+
+    int readSubtree(TreeTokenizer& tk){
+        int v = nodes.size();
+        nodes.emplace_back();
+        string s = tk();
+        if (s != "(") {
+            nodes[v].isleaf = true;
+            nodes[v].label = SeqUtils::PARSE_LEAFNAME(s);
+            s = tk.preview();
+            if (s == ":"){
+                tk();
+                s = tk();
+                nodes[v].length = SeqUtils::from_string(s);
+            }
+        }
+        else{
+            do{
+                int c = readSubtree(tk);
+                nodes[c].parent = v;
+            } while(tk() != ")");
+            s = tk.preview();
+            if (TreeTokenizer::KEYWORDS.find(s[0]) == string::npos) {
+                nodes[v].label = tk();
+                s = tk.preview();
+            }
+            if (s == ":"){
+                tk();
+                s = tk();
+                nodes[v].length = SeqUtils::from_string(s);
+            }
+        }
+        return v;
+    }
+
+    void diskCoveringNBinRecursion(int v, vector<int> &curbin, vector<vector<int> > &bins,
+            const unordered_set<int> &breakpoints, const unordered_map<int, vector<int> > &children){
+        if (breakpoints.count(v)){
+            vector<int> newbin;
+            if (nodes[v].isleaf){
+                newbin.push_back(nodes[v].taxon);
+            }
+            else{
+                for (int c: children.at(v)) diskCoveringNBinRecursion(c, newbin, bins, breakpoints, children);
+            }
+            bins.push_back(newbin);
+        }
+        else{
+            if (nodes[v].isleaf){
+                curbin.push_back(nodes[v].taxon);
+            }
+            else{
+                for (int c: children.at(v)) diskCoveringNBinRecursion(c, curbin, bins, breakpoints, children);
+            }
+        }
+    }
+
+    vector<vector<int> > diskCoveringNBin(int nBin, mt19937 &eng){
+        unordered_map<int, vector<int> > children;
+        vector<int> branches;
+        unordered_set<int> breakpoints;
+        vector<vector<int> > bins;
+        vector<int> lastBin;
+        for (int i = 0; i < nodes.size(); i++){
+            if (i != root) children[nodes[i].parent].push_back(i);
+        }
+        for (auto const &e: children){
+            if (e.first == root && e.second.size() == 2){
+                branches.push_back(e.second[0]);
+            }
+            else{
+                for (int i: e.second) branches.push_back(i);
+            }
+        }
+        shuffle(branches.begin(), branches.end(), eng);
+        branches.resize(nBin - 1);
+        for (int i: branches) breakpoints.insert(i);
+        diskCoveringNBinRecursion(root, lastBin, bins, breakpoints, children);
+        bins.push_back(lastBin);
+        return bins;
     }
 
     int diskCoveringRecursion(int id, vector<vector<int> > &result, vector<int> &cluster,

@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.4"
+#define ALG_VERSION "v1.5"
 
 /* CHANGE LOG
+ * 1.5: improving parallelization
  */
 
 typedef unsigned __int128 hash_t;
@@ -1451,8 +1452,9 @@ struct ConstrainedOptimizationAlgorithm{
 			return true;
 		}
 		else {
-			//pAlg.trip.rmvTotal(i);
-			pAlg.trip.update(-1, i);
+			//pAlg.trip.update(-1, i);
+			pAlg.tripUpdateSet(-1, i);
+			pAlg.tripUpdateGet(-1, i);
 			return false;
 		}
 	}
@@ -1481,7 +1483,9 @@ struct ConstrainedOptimizationAlgorithm{
 				{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
 				pAlg.run();
 				alg.addTripartitions(pAlg.tripHash);
-				for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]); //pAlg.trip.rmvTotal(order[i]);
+				//for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]);
+				for (int i = 0; i < n; i++) pAlg.tripUpdateSet(-1, order[i]);
+				for (int i = 0; i < n; i++) pAlg.tripUpdateGet(-1, order[i]);
 				pAlg.tripHash.clear();
 				pAlg.order.clear();
 				pAlg.nodes.clear();
@@ -1530,11 +1534,11 @@ struct ConstrainedOptimizationAlgorithm{
 						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
 						else abnormalOrder.push_back(i);
 					}
-					for (int i: added) pAlg.trip.update(-1, i); //pAlg.trip.rmvTotal(i);
+					//for (int i: added) pAlg.trip.update(-1, i);
+					for (int i: added) pAlg.tripUpdateSet(-1, i);
+					for (int i: added) pAlg.tripUpdateGet(-1, i);
 				}
 			}
-			//for (int i = n; i < N; i++) pAlg.trip.addTotal(order[i]);
-			//for (int i: abnormalOrder) pAlg.trip.rmvTotal(i);
 			pAlg.order = abnormalOrder;
 			pAlg.nodes = pNodes;
 			pAlg.rootNodeId = rootNodeId;
