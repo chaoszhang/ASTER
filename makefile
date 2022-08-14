@@ -1,4 +1,4 @@
-all: astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk
+all: astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky
 	echo "*** Installation complete! ***"
 
 astral:
@@ -31,8 +31,11 @@ astral-hybrid:
 astral-hybrid_precise:
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
 	
-asterisk:
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk.cpp -o bin/asterisk
+#asterisk:
+#	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk.cpp -o bin/asterisk
+
+asterisk-hky:
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-hky.cpp -o bin/asterisk-hky
 	
 clean:
 	rm bin/*
