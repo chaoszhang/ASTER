@@ -9,11 +9,14 @@ A family of optimatization algorithms for species tree inference:
 
 ## GUI for Windows users (NEW)
 
-Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. GUI for other plantforms is also available at `src/aster-gui.py` with dependencies:
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
+<!--
+GUI for other plantforms is also available at `src/aster-gui.py` with dependencies:
 ```
 pip3 install pyqt5 pyqt5-tools
 ```
-
+-->
+ 
 ## Bug Reports:
 
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
