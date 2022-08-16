@@ -6,6 +6,8 @@
 #include<algorithm>
 #include<random>
 #include<string>
+#include<fstream>
+#include<sstream>
 
 namespace SeqUtils{
     string PARSE_LEAFNAME(const string& TEXT){
@@ -22,6 +24,35 @@ namespace SeqUtils{
 
     score_t from_string(const string s){
     	return stod(s);
+    }
+
+    string fastaFormatName(const string &name){
+        string res;
+        for (char c: name){
+            if (c != '>' && c != ' ' && c != '\t') res += c;
+        }
+        return res;
+    }
+
+    vector<vector<pair<double, int> > > iqtreeRateParser(const string &filename){
+        vector<vector<pair<double, int> > > result;
+        string line;
+        ifstream fin(filename);
+        while (getline(fin, line)){
+            if (line[0] == '#') continue;
+            if (line.substr(0,4) == "Site"){
+                result.emplace_back();
+                while (getline(fin, line)){
+                    if (line[0] == '#') break;
+                    stringstream ss(line);
+                    double r;
+                    int i;
+                    ss >> i >> r;
+                    result.back().push_back({r, i - 1});
+                }
+            }
+        }
+        return result;
     }
 }
 

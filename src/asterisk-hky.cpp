@@ -41,29 +41,19 @@ void addName(const string &name){
     }
 }
 
-string formatName(const string &name){
-	string res;
-	for (char c: name){
-		if (c != '>' && c != ' ' && c != '\t') res += c;
-	}
-	return res;
-}
-
 void addBin(const vector<int> &geneTaxa, const vector<vector<char> > &seqs,
         const vector<array<score_t, 4> > &freq, const vector<array<int, 4> > &cnt){
-    {
-        for (int j = 0; j < freq.size(); j++){
-            if (cnt[j][0] + cnt[j][2] < 2 || cnt[j][1] + cnt[j][3] < 2) continue;
-            for (int i = 0; i < seqs.size(); i++){
-                int id = geneTaxa[i];
-                tripInit.seq[id].push_back(seqs[i][j]);
-            }
-            tripInit.pi.push_back(freq[j]);
-            tripInit.npos++;
+    for (int j = 0; j < freq.size(); j++){
+        if (cnt[j][0] + cnt[j][2] < 2 || cnt[j][1] + cnt[j][3] < 2) continue;
+        for (int i = 0; i < seqs.size(); i++){
+            int id = geneTaxa[i];
+            tripInit.seq[id].push_back(seqs[i][j]);
         }
-        for (int i = 0; i < tripInit.seq.size(); i++){
-            while (tripInit.seq[i].size() < tripInit.npos) tripInit.seq[i].push_back(-1); 
-        }
+        tripInit.pi.push_back(freq[j]);
+        tripInit.npos++;
+    }
+    for (int i = 0; i < tripInit.seq.size(); i++){
+        while (tripInit.seq[i].size() < tripInit.npos) tripInit.seq[i].push_back(-1); 
     }
 }
 
@@ -164,7 +154,7 @@ int main(int argc, char** argv){
             ifstream fin(file);
             string line;
             while (getline(fin, line)){
-                if (line[0] == '>') addName(formatName(line));
+                if (line[0] == '>') addName(SeqUtils::fastaFormatName(line));
             }
 		}
 	}
