@@ -9,5 +9,5 @@ g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astra
 g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-lengthweighted.cpp -o exe/astral-lengthweighted_precise.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid.exe
 g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid_precise.exe
-REM g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/asterisk.cpp -o exe/asterisk.exe
+g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/asterisk.cpp -o exe/asterisk.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/asterisk-hky.cpp -o exe/asterisk-hky.exe
