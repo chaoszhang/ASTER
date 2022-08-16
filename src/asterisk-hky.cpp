@@ -109,10 +109,10 @@ void readFasta(string file){
 	string line;
 	while (getline(fin, line)){
 		if (line[0] == '>'){
-			geneTaxa.push_back(name2id[formatName(line)]);
+			geneTaxa.push_back(name2id[SeqUtils::fastaFormatName(line)]);
 			geneSeqs.emplace_back();
 		}
-		else geneSeqs.back() += formatName(line);
+		else geneSeqs.back() += SeqUtils::fastaFormatName(line);
 	}
 	formatGene(geneTaxa, geneSeqs);
 }
