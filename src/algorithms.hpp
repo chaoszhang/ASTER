@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.5"
+#define ALG_VERSION "v1.6"
 
 /* CHANGE LOG
+ * 1.6: adding -w option for gene tree replications
  * 1.5: improving parallelization
  */
 
@@ -1587,7 +1588,7 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 
 	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda,
-			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo){
+			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo, double weight){
 		if (nodes[v].leafId != -1) {
 			array<double, 3> t;
 			if (support == 3) qInfo[v] = make_tuple(t, t, names[nodes[v].leafId]);
@@ -1599,11 +1600,11 @@ struct ConstrainedOptimizationAlgorithm{
 		//ru|c1|c0|-
 		switchSubtree(quad, u, 1, 0);
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo) + ",";
+		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight) + ",";
 		//ru|c0|c1|-
 		switchSubtree(quad, get<0>(c), 2, 1);
 		switchSubtree(quad, get<1>(c), 1, 2);
-		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo) + ")";
+		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight) + ")";
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
@@ -1614,6 +1615,7 @@ struct ConstrainedOptimizationAlgorithm{
 			if (support == 1) return res + to_string(1.0 / 3.0);
 			else return res + "'[pp1=0.333333;pp2=0.333333;pp3=0.333333;f1=0;f2=0;f3=0]'"; 
 		}
+		score[0] /= weight; score[1] /= weight; score[2] /= weight;
 		double tscore = score[0] + score[1] + score[2];
 		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
 		double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
@@ -1650,7 +1652,7 @@ struct ConstrainedOptimizationAlgorithm{
 		
 	}
 	
-	string printOptimalTreeWithSupport(int support, double lambda){
+	string printOptimalTreeWithSupport(int support, double lambda, double weight){
 		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > qInfo;
 		string res;
 		Quadrupartition quad(tripInit);
@@ -1660,11 +1662,11 @@ struct ConstrainedOptimizationAlgorithm{
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo);
+		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight);
 		//0|c0|c1|-
 		switchSubtree(quad, get<1>(c), 1, 2);
 		switchSubtree(quad, get<0>(c), 2, 1);
-		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo);
+		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight);
 		if (support == 3) {
 			ofstream fcsv("freqQuad.csv");
 			printFreqQuadCSV(get<0>(c), get<1>(c), names[0], fcsv, qInfo);
@@ -1756,7 +1758,8 @@ struct MetaAlgorithm{
 			ARG.getIntArg("round") = 16; ARG.getIntArg("subsample") = 16;
 		}, true);
 		#ifdef SUPPORT
-		ARG.addDoubleArg('l', "lambda", 0.5, " Rate lambda of Yule process under which the species tree is modeled");
+		ARG.addDoubleArg('l', "lambda", 0.5, "Rate lambda of Yule process under which the species tree is modeled");
+		ARG.addDoubleArg('w', "downweightrepeat", 1, "the number of trees sampled for each locus");
 		ARG.addIntArg('u', "support", 1, "output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
 		#endif
 		
@@ -1893,7 +1896,7 @@ struct MetaAlgorithm{
 		string output = res.second;
 		cerr << "Final Tree: " << output << endl;
 		#ifdef SUPPORT
-		if (support) output = alg.printOptimalTreeWithSupport(support, lambda);
+		if (support) output = alg.printOptimalTreeWithSupport(support, lambda, ARG.getDoubleArg("downweightrepeat"));
 		#endif
 		fout << output << endl;
 		

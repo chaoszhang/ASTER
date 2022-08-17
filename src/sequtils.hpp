@@ -42,6 +42,7 @@ namespace SeqUtils{
             if (line[0] == '#') continue;
             if (line.substr(0,4) == "Site"){
                 result.emplace_back();
+                double total = 0;
                 while (getline(fin, line)){
                     if (line[0] == '#') break;
                     stringstream ss(line);
@@ -49,7 +50,9 @@ namespace SeqUtils{
                     int i;
                     ss >> i >> r;
                     result.back().push_back({r, i - 1});
+                    total += r;
                 }
+                for (auto& e: result.back()) e.first /= total / result.back().size();
             }
         }
         return result;

@@ -49,7 +49,7 @@ void addName(const string &name){
 }
 
 void addBin(const vector<int> &geneTaxa, const AlignmentHot &a, const AlignmentHot &b,
-        int goodLen, int geneID, const vector<double> &rates){
+        int goodLen, int geneID, const vector<double> &rates, double multiplier){
     vector<int> cntA(a.nSites()), cntB(b.nSites());
     for (int i = 0; i < a.nTaxa(); i++){
         for (int j = 0; j < a.nSites(); j++){
@@ -87,7 +87,7 @@ void addBin(const vector<int> &geneTaxa, const AlignmentHot &a, const AlignmentH
     int binID = 0;
     double rateNextBin = MIN_MUTATION_RATE * MUTATION_RATE_BIN_RATIO;
     for (int j = 0; j < goodLen; j++){
-        while (useDC && binID != NUM_MUTATION_RATE_BINS - 1 && rates[j] > rateNextBin){
+        while (useDC && binID != NUM_MUTATION_RATE_BINS - 1 && rates[j] * multiplier > rateNextBin){
             binID++;
             rateNextBin *= MUTATION_RATE_BIN_RATIO;
         }
@@ -156,7 +156,8 @@ void formatGene(const vector<int> geneTaxa, const vector<string> geneSeqs,
     a[5] = msa.A() + msa.G(); b[5] = msa.C() + msa.T();
     a[6] = msa.A() + msa.T(); b[6] = msa.C() + msa.G();
     for (int r = 0; r < 7; r++){
-        addBin(geneTaxa, a[r], b[r], goodSites.size(), geneID, rates);
+        double multiplier = (r == 4 || r == 6) ? 0.75 : 0.5;
+        addBin(geneTaxa, a[r], b[r], goodSites.size(), geneID, rates, multiplier);
     }
 }
 
@@ -249,7 +250,7 @@ int main(int argc, char** argv){
         for (int i = 0; i < k; i++){
             getline(fin, s);
             Tree dcTree(s, name2id);
-            double rate = MIN_MUTATION_RATE;
+            double rate = MIN_MUTATION_RATE * sqrt(MUTATION_RATE_BIN_RATIO);
             for (int j = 0; j < NUM_MUTATION_RATE_BINS; j++){
                 vector<vector<int> > bins = dcTree.diskCovering(eng, rate, nFold);
                 for (const vector<int> &bin: bins){
