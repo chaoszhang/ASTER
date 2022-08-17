@@ -1617,23 +1617,30 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		score[0] /= weight; score[1] /= weight; score[2] /= weight;
 		double tscore = score[0] + score[1] + score[2];
-		double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
-		double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
-		double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
-		double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
-		double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
-		double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
-		if (support == 1) res += to_string(i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0)));
+		double support0, support1, support2;
+		if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)){
+			support0 = 1; support1 = 0; support2 = 0;
+		}
 		else {
-			array<double, 3> p;
-			p[0] = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
-			p[1] = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
-			p[2] = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
+			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
+			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
+			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
+			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+			support0 = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
+			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
+			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
+		}
+
+		if (support == 1) res += to_string(support0);
+		else {
+			array<double, 3> p = {support0, support1, support2};
 			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) + "]'";
 			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
-		else res += ":0";
+		else res += ":" +  to_string(0.0);
 		return res;
 	}
 	
