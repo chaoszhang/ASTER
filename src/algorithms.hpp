@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.6"
+#define ALG_VERSION "v1.7"
 
 /* CHANGE LOG
+ * 1.7: adding Grubbs's test based support
  * 1.6: adding -w option for gene tree replications
  * 1.5: improving parallelization
  */
@@ -18,10 +19,10 @@ typedef unsigned __int128 hash_t;
 #include<string>
 #include<thread>
 #include<mutex>
+#include<cmath>
 
 #ifdef SUPPORT
 #include "incbeta.c"
-#include <cmath>
 #endif
 
 #ifndef ERROR_TOLERANCE
@@ -1575,7 +1576,21 @@ struct ConstrainedOptimizationAlgorithm{
 		return {computeOptimalTree(), printOptimalTree()};
 	}
 
-#ifdef SUPPORT
+	inline static double gTest(double v1, double v2, double v3){
+		if (v1 < max(v2, v3) - 1e-10) return 0;
+		if (abs(v2 - v3) < 1e-10) {
+			if (v1 - max(v2, v3) < 1e-10) return 0.5;
+			else return 1;
+		}
+		double avg = (v1 + v2 + v3) / 3;
+		double sd = sqrt((v1 * v1 + v2 * v2 + v3 * v3 - 3 * avg * avg) / 2);
+		double G = (v1 - avg) / sd;
+		double t = sqrt((3 * G * G) / (4 - 3 * G * G));
+		double p = 0.5 - atan(t) / 3.14159265;
+		return 1 - p * 3;
+	}
+
+#if defined(SUPPORT) || defined(G_SUPPORT)
 	void switchSubtree(Quadrupartition &quad, int v, int s, int t){
 		if (nodes[v].leafId != -1) {
 			quad.update(t, nodes[v].leafId);
@@ -1611,14 +1626,15 @@ struct ConstrainedOptimizationAlgorithm{
 		array<double, 3> score = quad.score();
 		//r|u|c0c1|-
 		switchSubtree(quad, get<0>(c), 3, 2);
-		if (score[0] + score[1] + score[2] < 1e-8) {
-			if (support == 1) return res + to_string(1.0 / 3.0);
-			else return res + "'[pp1=0.333333;pp2=0.333333;pp3=0.333333;f1=0;f2=0;f3=0]'"; 
-		}
 		score[0] /= weight; score[1] /= weight; score[2] /= weight;
 		double tscore = score[0] + score[1] + score[2];
 		double support0, support1, support2;
-		if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)){
+		
+		#ifdef SUPPORT
+		if (tscore < 1e-8){
+			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
+		}
+		else if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)){
 			support0 = 1; support1 = 0; support2 = 0;
 		}
 		else {
@@ -1632,15 +1648,31 @@ struct ConstrainedOptimizationAlgorithm{
 			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
 			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
 		}
-
 		if (support == 1) res += to_string(support0);
 		else {
 			array<double, 3> p = {support0, support1, support2};
 			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) + "]'";
 			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
+		#endif
+
+		#ifdef G_SUPPORT
+		double p0 = gTest(score[0], score[1], score[2]);
+		double p1 = gTest(score[1], score[2], score[0]);
+		double p2 = gTest(score[2], score[0], score[1]);
+		if (support == 1) res += to_string(p0);
+		else {
+			array<double, 3> p = {p0, p1, p2};
+			res += "'[p=" + to_string(p0) + ";p2=" + to_string(p1) + ";p3=" + to_string(p2)
+				+ ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
+			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
+		}
+		#endif
+
+		#if defined(SUPPORT)
 		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
-		else res += ":" +  to_string(0.0);
+		else res += ":" + to_string(0.0);
+		#endif
 		return res;
 	}
 	
@@ -1766,8 +1798,11 @@ struct MetaAlgorithm{
 		}, true);
 		#ifdef SUPPORT
 		ARG.addDoubleArg('l', "lambda", 0.5, "Rate lambda of Yule process under which the species tree is modeled");
-		ARG.addDoubleArg('w', "downweightrepeat", 1, "the number of trees sampled for each locus");
-		ARG.addIntArg('u', "support", 1, "output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
+		ARG.addDoubleArg('w', "downweightrepeat", 1, "The number of trees sampled for each locus");
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
+		#endif
+		#ifdef G_SUPPORT
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: Grubbs's test p-value, 2: detailed, 3: freqQuad.csv)");
 		#endif
 		
 		ARG.parse(argc, argv);
@@ -1902,8 +1937,12 @@ struct MetaAlgorithm{
 		
 		string output = res.second;
 		cerr << "Final Tree: " << output << endl;
+		#if defined(SUPPORT) || defined(G_SUPPORT)
+		double w = 1;
 		#ifdef SUPPORT
-		if (support) output = alg.printOptimalTreeWithSupport(support, lambda, ARG.getDoubleArg("downweightrepeat"));
+		w = ARG.getDoubleArg("downweightrepeat");
+		#endif
+		if (support) output = alg.printOptimalTreeWithSupport(support, lambda, w);
 		#endif
 		fout << output << endl;
 		
