@@ -70,8 +70,8 @@ void formatGene(const vector<int> geneTaxa, const vector<string> geneSeqs){
             else if (geneSeqs[i][j] == 'C' || geneSeqs[i][j] == 'c') x = 1;
             else if (geneSeqs[i][j] == 'G' || geneSeqs[i][j] == 'g') x = 2;
             else if (geneSeqs[i][j] == 'T' || geneSeqs[i][j] == 't') x = 3;
-            else continue;
             seqs[i].push_back(x);
+            if (x == -1) continue;
             cnt[j][x]++;
             sum[x]++;
         }
@@ -112,7 +112,7 @@ void readFasta(string file){
 			geneTaxa.push_back(name2id[SeqUtils::fastaFormatName(line)]);
 			geneSeqs.emplace_back();
 		}
-		else geneSeqs.back() += SeqUtils::fastaFormatName(line);
+		else geneSeqs.back() += line;
 	}
 	formatGene(geneTaxa, geneSeqs);
 }
