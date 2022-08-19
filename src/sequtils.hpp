@@ -395,7 +395,7 @@ struct DistanceMatrix{
         }
         for (int i = 0; i < n; i++){
             for (int j = i + 1; j < n; j++){
-                order.push_back({d[i][j], i, j});
+                order.push_back({(double) d[i][j], i, j});
             }
         }
         sort(order.begin(), order.end());
