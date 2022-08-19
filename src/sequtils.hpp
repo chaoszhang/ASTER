@@ -34,6 +34,14 @@ namespace SeqUtils{
         return res;
     }
 
+    string fastaFormatRead(const string &name){
+        string res;
+        for (char c: name){
+            if (('a' <= c && 'z' >= c) || ('A' <= c && 'Z' >= c) || c == '-') res += c;
+        }
+        return res;
+    }
+
     vector<vector<pair<double, int> > > iqtreeRateParser(const string &filename){
         vector<vector<pair<double, int> > > result;
         string line;

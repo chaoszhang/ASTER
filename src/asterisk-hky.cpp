@@ -112,8 +112,9 @@ void readFasta(string file){
 			geneTaxa.push_back(name2id[SeqUtils::fastaFormatName(line)]);
 			geneSeqs.emplace_back();
 		}
-		else geneSeqs.back() += line;
+		else geneSeqs.back() += SeqUtils::fastaFormatRead(line);
 	}
+    //for (const auto& temp: geneSeqs) cerr << temp.size() << endl; 
 	formatGene(geneTaxa, geneSeqs);
 }
 
