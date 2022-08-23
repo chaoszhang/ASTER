@@ -51,6 +51,11 @@ Download using one of two approaches:
     - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
 2. Binary files should be in the `bin` folder.
 
+**Note:** some prebuild binaries are made available under 
+ * [bin](bin/): for linux
+ * [macOSx86bin](macOSx86bin/) : for x86 macOS 
+If you are lucky, these may just work as is and you may not need to build at all. We hope to provide more binaries in future. 
+
 ## For Windows users
 - Executables for x86-64 are available in `exe` folder and it is **very likely** that they already work.
 - [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
