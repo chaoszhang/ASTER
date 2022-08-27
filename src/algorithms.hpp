@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.7"
+#define ALG_VERSION "v1.8"
 
 /* CHANGE LOG
+ * 1.8: adding seed to pseudorandomness
  * 1.7: adding Grubbs's test based support
  * 1.6: adding -w option for gene tree replications
  * 1.5: improving parallelization
@@ -1115,7 +1116,8 @@ struct ConstrainedOptimizationAlgorithm{
 	int roundId = 0;
 	mutex mtx;
 	
-	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, const int seed = 2333): ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
+	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, const int seed = rand()): 
+			ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
 		taxonHash.push_back(0);
 		for (int i = 1; i < ntaxa; i++){
 			hash_t r = randomHash(generator);
@@ -1126,7 +1128,8 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 	}
 	
-	ConstrainedOptimizationAlgorithm(const ConstrainedOptimizationAlgorithm &alg): ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash){}
+	ConstrainedOptimizationAlgorithm(const ConstrainedOptimizationAlgorithm &alg): 
+			ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash), generator(rand()){}
 	
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
 		if (nodes[v].leafId != -1){
@@ -1668,7 +1671,12 @@ struct ConstrainedOptimizationAlgorithm{
 			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		#endif
-
+		#ifdef CUSTOMIZED_LENGTH
+		if (support != 0){
+			res += ":";
+			res += quad.length(score);
+		}
+		#endif
 		#if defined(SUPPORT)
 		if (3 * score[0] > tscore) res += ":" + to_string(max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2))));
 		else res += ":" + to_string(0.0);
@@ -1790,6 +1798,7 @@ struct MetaAlgorithm{
 		ARG.addIntArg('s', "subsample", 4, "Number of rounds of subsampling per exploration step");
 		ARG.addDoubleArg('p', "proportion", 0.5, "Proportion of taxa in the subsample in naive algorithm");
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
+		ARG.addIntArg(0, "seed", 233, "Seed for pseudorandomness");
 		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&](){
 			ARG.getIntArg("round") = 1; ARG.getIntArg("subsample") = 0;
 		}, true);
@@ -1815,6 +1824,7 @@ struct MetaAlgorithm{
 		nThreads = ARG.getIntArg("thread");
 		lambda = ARG.getDoubleArg("lambda");
 		support = ARG.getIntArg("support");
+		srand(ARG.getIntArg("seed"));
 	#else
 		cerr << "Version: " << version << endl;
 		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}

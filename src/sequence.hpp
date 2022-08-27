@@ -3,9 +3,10 @@
 #include<vector>
 #include<array>
 #include<thread>
+#include<future>
 #include "threadpool.hpp"
 
-#define G_SUPPORT
+//#define G_SUPPORT
 
 using namespace std;
 
@@ -14,7 +15,7 @@ inline long long XXYY(long long x0, long long x1, long long x2, long long y0, lo
 	     + y0 * (y0 - 1) * x1 * x2 + y1 * (y1 - 1) * x2 * x0 + y2 * (y2 - 1) * x0 * x1;
 }
 
-inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 4> pi){
+inline score_t scorePos(const array<array<unsigned short, 4>, 3> cnt, const array<float, 4> pi){
 //lst = simplify([sABCD(R, R, Y, Y); sABCD(A, A, Y, Y); sABCD(C, C, R, R); sABCD(A, A, C, C)])
 //sol = [Pa^2*Pc^2; -Pc^2*(Pa + Pg)^2; -Pa^2*(Pc + Pt)^2; (Pa + Pg)^2*(Pc + Pt)^2]
 //lst2 = simplify([sABCD(Y, Y, R, R); sABCD(Y, Y, A, A); sABCD(R, R, C, C); sABCD(C, C, A, A)])
@@ -46,65 +47,95 @@ inline score_t scorePos(const array<array<int, 4>, 3> cnt, const array<score_t, 
 }
 
 struct TripartitionInitializer{
-	int npos = 0, nThreads = 1;
-	vector<score_t> w;
-	vector<array<score_t, 4> > pi;
-	vector<vector<char> > seq;
-	vector<vector<int> > speciesMapper;
+	struct Tree{
+		int npos = 0, ntree = 0;
+		vector<array<float, 4> > pi; // pos * letter
+		vector<vector<char> > seq; // taxon * letter
+		vector<vector<unsigned short> > speciesMapper; // taxon * tree
+
+		Tree(){}
+		Tree(int n): seq(n), speciesMapper(n){}
+	};
+
+	int nThreads = 1;
+	vector<vector<Tree> > trees;
 };
 
 struct Tripartition{
+	struct Tree{
+		vector<vector<array<array<unsigned short, 4>, 3> > > cnt; // tree * pos * part * letter
+		vector<score_t> scores; // tree
+		vector<bool> valid; // tree
+		
+		Tree(){}
+		Tree(int ntree, int npos): scores(ntree), valid(ntree),
+			cnt(ntree, vector<array<array<unsigned short, 4>, 3> >(npos)){}
+	};
+
 	const TripartitionInitializer& TI;
-	vector<vector<int> > color;
-	vector<vector<array<array<int, 4>, 3> > > cnt; // tree * pos * part * letter
-	vector<vector<bool> > valid; // thread * tree
-	vector<vector<score_t> > scores; // thread * tree
+	vector<vector<char> > color;
+	vector<vector<Tree> > trees; // gene * bin
+	
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Tripartition(const TripartitionInitializer &init): TI(init), color(init.nThreads, vector<int>(init.seq.size(), -1)), 
-		cnt(init.w.size(), vector<array<array<int, 4>, 3> >(init.npos)),
-		valid(init.nThreads, vector<bool>(init.w.size())), scores(init.nThreads, vector<score_t>(init.w.size())){}
-	
+	Tripartition(const TripartitionInitializer &init): TI(init), trees(init.trees.size()),
+			color(init.nThreads, vector<char>(init.trees[0][0].seq.size(), -1)){
+		for (int i = 0; i < TI.trees.size(); i++){
+			for (int j = 0; j < TI.trees[i].size(); j++){
+				trees[i].emplace_back(TI.trees[i][j].ntree, TI.trees[i][j].npos);
+			}
+		}
+	}
+
 	void updatePart(int part, int x, int i){
+		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
 		int y = color[part][i];
-		int start = TI.npos * part / TI.nThreads, end = TI.npos * (1 + part) / TI.nThreads;
 		color[part][i] = x;
-		for (int t: TI.speciesMapper[i]){
-			valid[part][t] = false;
-			for (int p = start; p < end; p++){
-				int a = TI.seq[i][p];
-				if (y != -1 && a != -1) cnt[t][p][y][a]--;
-				if (x != -1 && a != -1) cnt[t][p][x][a]++;
+		for (int a = start; a < end; a++){
+			for (int b = 0; b < trees[a].size(); b++){
+				for (int t: TI.trees[a][b].speciesMapper[i]){
+					trees[a][b].valid[t] = false;
+					for (int p = 0; p < trees[a][b].cnt[t].size(); p++){
+						int c = TI.trees[a][b].seq[i][p];
+						if (c == -1) continue;
+						if (y != -1) trees[a][b].cnt[t][p][y][c]--;
+						if (x != -1) trees[a][b].cnt[t][p][x][c]++;
+					}
+				}
 			}
 		}
 	}
 	
 	score_t scorePart(int part){
-		int start = TI.npos * part / TI.nThreads, end = TI.npos * (1 + part) / TI.nThreads;
+		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
 		score_t result = 0;
-		for (int t = 0; t < TI.w.size(); t++){	
-			if (valid[part][t]){
-				result += scores[part][t];
-				continue;
+		for (int a = start; a < end; a++){
+			for (int b = 0; b < trees[a].size(); b++){
+				for (int t = 0; t < trees[a][b].scores.size(); t++){
+					if (trees[a][b].valid[t]){
+						result += trees[a][b].scores[t];
+						continue;
+					}
+					score_t temp = 0;
+					for (int p = 0; p < trees[a][b].cnt[t].size(); p++){
+						temp += scorePos(trees[a][b].cnt[t][p], TI.trees[a][b].pi[p]);
+					}
+					trees[a][b].scores[t] = temp;
+					trees[a][b].valid[t] = true;
+					result += trees[a][b].scores[t];
+				}
 			}
-			score_t temp = 0;
-			for (int p = start; p < end; p++){
-				temp += scorePos(cnt[t][p], TI.pi[p]);
-			}
-			scores[part][t] = temp * TI.w[t];
-			valid[part][t] = true;
-			result += scores[part][t];
 		}
 		return result;
 	}
 };
-
+/*
 inline long long supportXXYY(long long x0, long long x1, long long x2, long long x3,
 		long long y0, long long y1, long long y2, long long y3){
 	return x0 * x1 * y2 * y3 + y0 * y1 * x2 * x3;
 }
 
-inline score_t supportPos(const array<array<int, 4>, 4> cnt, const array<score_t, 4> pi){
+inline score_t supportPos(const array<array<unsigned short, 4>, 4> cnt, const array<score_t, 4> pi){
 //lst = simplify([sABCD(R, R, Y, Y); sABCD(A, A, Y, Y); sABCD(C, C, R, R); sABCD(A, A, C, C)])
 //sol = [Pa^2*Pc^2; -Pc^2*(Pa + Pg)^2; -Pa^2*(Pc + Pt)^2; (Pa + Pg)^2*(Pc + Pt)^2]
 //lst2 = simplify([sABCD(Y, Y, R, R); sABCD(Y, Y, A, A); sABCD(R, R, C, C); sABCD(C, C, A, A)])
@@ -138,14 +169,14 @@ inline score_t supportPos(const array<array<int, 4>, 4> cnt, const array<score_t
 
 struct Quadrupartition{
 	const TripartitionInitializer& TI;
-	vector<vector<int> > color;
-	vector<vector<array<array<int, 4>, 4> > > cnt; // tree * pos * part * letter
+	vector<vector<char> > color;
+	vector<vector<array<array<unsigned short, 4>, 4> > > cnt; // tree * pos * part * letter
 	vector<vector<bool> > valid; // thread * tree
 	vector<vector<score_t> > scores0, scores1, scores2; // thread * tree
 	// i, j, k -> taxon; p, q, r -> pos; x, y, z -> part; a, b, c -> letter
 	
-	Quadrupartition(const TripartitionInitializer &init): TI(init), color(init.nThreads, vector<int>(init.seq.size(), -1)), 
-		cnt(init.w.size(), vector<array<array<int, 4>, 4> >(init.npos)),
+	Quadrupartition(const TripartitionInitializer &init): TI(init), color(init.nThreads, vector<char>(init.seq.size(), -1)), 
+		cnt(init.w.size(), vector<array<array<unsigned short, 4>, 4> >(init.npos)),
 		valid(init.nThreads, vector<bool>(init.w.size())), scores0(init.nThreads, vector<score_t>(init.w.size())),
 		scores1(init.nThreads, vector<score_t>(init.w.size())), scores2(init.nThreads, vector<score_t>(init.w.size())){}
 
@@ -178,9 +209,9 @@ struct Quadrupartition{
 			}
 			score_t temp0 = 0, temp1 = 0, temp2 = 0;
 			for (int p = start; p < end; p++){
-				const array<array<int, 4>, 4> cnt0 = cnt[t][p];
-				const array<array<int, 4>, 4> cnt1 = {cnt0[0], cnt0[2], cnt0[1], cnt0[3]};
-				const array<array<int, 4>, 4> cnt2 = {cnt0[0], cnt0[3], cnt0[1], cnt0[2]};
+				const array<array<unsigned short, 4>, 4> cnt0 = cnt[t][p];
+				const array<array<unsigned short, 4>, 4> cnt1 = {cnt0[0], cnt0[2], cnt0[1], cnt0[3]};
+				const array<array<unsigned short, 4>, 4> cnt2 = {cnt0[0], cnt0[3], cnt0[1], cnt0[2]};
 				temp0 += supportPos(cnt0, TI.pi[p]);
 				temp1 += supportPos(cnt1, TI.pi[p]);
 				temp2 += supportPos(cnt2, TI.pi[p]);
@@ -198,22 +229,20 @@ struct Quadrupartition{
 
 	void update(int x, int i){
 		vector<thread> thrds;
-		for (int p = 1; p < TI.nThreads; p++) thrds.emplace_back([=](){ updatePart(p, x, i); });
+		for (int p = 1; p < TI.nThreads; p++) thrds.emplace_back(&Quadrupartition::updatePart, this, p, x, i);
 		updatePart(0, x, i);
 		for (thread &t: thrds) t.join();
 	}
 	
 	array<double, 3> score(){
 		vector<thread> thrds;
-		vector<array<double, 3> > temp(TI.nThreads);
+		vector<future<array<double, 3> > > temp(TI.nThreads);
 		for (int p = 1; p < TI.nThreads; p++){
-			array<double, 3>& t = temp[p];
-			thrds.emplace_back([=,&t](){ t = scorePart(p); });
+			temp[p] = async(launch::async, &Quadrupartition::scorePart, this, p);
 		}
 		array<double, 3> res = scorePart(0);
 		for (int p = 1; p < TI.nThreads; p++){
-			array<double, 3>& t = temp[p];
-			thrds[p - 1].join();
+			array<double, 3> t = temp[p].get();
 			res[0] += t[0];
 			res[1] += t[1];
 			res[2] += t[2];
@@ -221,3 +250,4 @@ struct Quadrupartition{
 		return res;
 	}
 };
+*/
