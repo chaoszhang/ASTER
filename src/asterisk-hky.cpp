@@ -59,7 +59,7 @@ void addBin(const vector<int> &geneTaxa, const vector<vector<char> > &seqs, cons
     }
     
     for (const auto &e: rate){
-        while (mutationRate.size() && binID != NUM_MUTATION_RATE_BINS - 1 && e.first * 2 > rateNextBin){
+        while (mutationRate.size() && binID != NUM_MUTATION_RATE_BINS - 1 && e.first > rateNextBin){ //* 0.125 > rateNextBin){
             binID++;
             rateNextBin *= MUTATION_RATE_BIN_RATIO;
         }
