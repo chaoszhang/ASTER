@@ -1,9 +1,3 @@
-#define DRIVER_VERSION "1"
-
-/* CHANGE LOG
- * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
- */
-
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -29,9 +23,9 @@ ostream& operator<<(ostream& cout, __int128 x){
 typedef long long score_t;
 #endif
 
-#include "argparser.hpp"
 #include "genetreewithbinaryweight.hpp"
 #include "algorithms.hpp"
+
 
 MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
@@ -82,7 +76,7 @@ void parse(int parent = -1, bool isLeft = true){
 			tripInit.nodes[part].emplace_back();
 			lst.push_back(up);
 			if (cur == left) cur = up;
-			tripInit.nodes[part][up].isGhostBranch = true;
+			tripInit.nodes[part][up].isGhostBranch = faltruese;
 			int g = tripInit.nodes[part][left].up;
 			if (g != -1){
 				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
@@ -128,17 +122,21 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
-string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
+string HELP = " -a taxonNameMaps -x maxWeight -n minWeight -d defaultWeight";
+string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab
+-x max possible weight in weight scale (default: 100)
+-n min possible weight in weight scale (default: 0)
+-d min default weight when weight not provided (default: 0)
 inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm");
-	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
-	
 	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
-	mappingFile = ARG.getStringArg("mapping");
+	meta.initialize(argc, argv, HELP, HELP_TEXT);
+	
+	for (int i = 1; i < argc; i += 2){
+		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
+	}
 	
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
@@ -148,7 +146,7 @@ int main(int argc, char** argv){
 		batchInit[i].nodes.emplace_back();
 		batchInit[i].leafParent.emplace_back();
 	}
-	readInputTrees(ARG.getStringArg("input"), mappingFile);
+	readInputTrees(argv[argc - 1], mappingFile);
 	
 	cerr << "#Genetrees: " << K << endl;
 	
