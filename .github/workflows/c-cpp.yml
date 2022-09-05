@@ -7,7 +7,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  build:
+  linux-build:
 
     runs-on: ubuntu-latest
 
@@ -21,3 +21,12 @@ jobs:
 #      run: make check
 #    - name: make distcheck
 #      run: make distcheck
+  windows-build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+#    - name: configure
+#      run: ./configure
+    - name: make
+      run: .\make.bat
