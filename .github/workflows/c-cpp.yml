@@ -30,13 +30,13 @@ jobs:
       run: |
             git config --local user.email "github-actions[bot]@github.com"
             git config --local user.name "github-actions[bot]"
-            git add bin/*
-            git commit -m "Add binaries"
+            git add *
+            git commit -m "Update to newest version"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: linux
+          branch: Linux
           force: true
   macos-build:
 
@@ -52,11 +52,23 @@ jobs:
 #      run: make check
 #    - name: make distcheck
 #      run: make distcheck
-    - name: upload binaries
-      uses: actions/upload-artifact@v3
+#    - name: upload binaries
+#      uses: actions/upload-artifact@v3
+#      with: 
+#          name: MacOS binaries
+#          path: bin
+    - name: commit
+      run: |
+            git config --local user.email "github-actions[bot]@github.com"
+            git config --local user.name "github-actions[bot]"
+            git add *
+            git commit -m "Update to newest version"
+    - name: push
+      uses: chaoszhang/github-push-action@master
       with: 
-          name: MacOS binaries
-          path: bin
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: MacOS
+          force: true
   windows-build:
     runs-on: windows-latest
 
@@ -68,8 +80,20 @@ jobs:
             choco install mingw --version=4.9.3 --force
     - name: make
       run: .\make.bat
-    - name: upload binaries
-      uses: actions/upload-artifact@v2
+ #   - name: upload binaries
+ #     uses: actions/upload-artifact@v2
+ #     with: 
+ #         name: Windows executables
+ #         path: exe
+    - name: commit
+      run: |
+            git config --local user.email "github-actions[bot]@github.com"
+            git config --local user.name "github-actions[bot]"
+            git add *
+            git commit -m "Update to newest version"
+    - name: push
+      uses: chaoszhang/github-push-action@master
       with: 
-          name: Windows executables
-          path: exe
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: Windows
+          force: true
