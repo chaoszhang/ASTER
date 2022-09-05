@@ -26,7 +26,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-#    - name: configure
-#      run: ./configure
+    - name: configure
+      run: choco install cygwin
     - name: make
       run: .\make.bat
