@@ -27,6 +27,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: configure
-      run: choco install mingw --version=4.9.3
+      run: choco install mingw --version=4.9.3 --force
     - name: make
       run: .\make.bat
