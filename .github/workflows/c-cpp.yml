@@ -21,11 +21,23 @@ jobs:
 #      run: make check
 #    - name: make distcheck
 #      run: make distcheck
-    - name: upload binaries
-      uses: actions/upload-artifact@v3
+#    - name: upload binaries
+#      uses: actions/upload-artifact@v3
+#      with: 
+#          name: Ubuntu binaries
+#          path: bin
+    - name: commit
+      run: |
+            git config --local user.email "github-actions[bot]@github.com"
+            git config --local user.name "github-actions[bot]"
+            git add bin/*
+            git commit -m "Add binaries"
+    - name: push
+      uses: chaoszhang/github-push-action@master
       with: 
-          name: Ubuntu binaries
-          path: bin
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: linux
+          force: true
   macos-build:
 
     runs-on: macos-latest
