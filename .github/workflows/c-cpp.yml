@@ -22,8 +22,8 @@ jobs:
 #    - name: make distcheck
 #      run: make distcheck
     - name: upload binaries
-        uses: actions/upload-artifact@v2
-        with: 
+      uses: actions/upload-artifact@v3
+      with: 
           name: Ubuntu binaries
           path: bin
   windows-build:
@@ -38,7 +38,7 @@ jobs:
     - name: make
       run: .\make.bat
     - name: upload binaries
-        uses: actions/upload-artifact@v2
-        with: 
+      uses: actions/upload-artifact@v2
+      with: 
           name: Windows executables
           path: exe
