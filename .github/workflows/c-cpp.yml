@@ -21,6 +21,11 @@ jobs:
 #      run: make check
 #    - name: make distcheck
 #      run: make distcheck
+    - name: upload binaries
+        uses: actions/upload-artifact@v2
+        with: 
+          name: Ubuntu binaries
+          path: bin
   windows-build:
     runs-on: windows-latest
 
@@ -32,3 +37,8 @@ jobs:
             choco install mingw --version=4.9.3 --force
     - name: make
       run: .\make.bat
+    - name: upload binaries
+        uses: actions/upload-artifact@v2
+        with: 
+          name: Windows executables
+          path: exe
