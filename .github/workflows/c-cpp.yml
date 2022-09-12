@@ -81,7 +81,7 @@ jobs:
     - name: make
       run: .\make.bat
     - name: sancheck
-      run: FOR %c IN (example\sancheck\*\sancheck.bat) DO %c; done
+      run: FOR %%c IN (example\sancheck\*\sancheck.bat) DO %%c
  #   - name: upload binaries
  #     uses: actions/upload-artifact@v2
  #     with: 
