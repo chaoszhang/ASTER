@@ -17,8 +17,8 @@ jobs:
 #      run: ./configure
     - name: make
       run: make
-#    - name: make check
-#      run: make check
+    - name: sancheck
+      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
 #    - name: make distcheck
 #      run: make distcheck
 #    - name: upload binaries
@@ -48,8 +48,8 @@ jobs:
 #      run: ./configure
     - name: make
       run: make
-#    - name: make check
-#      run: make check
+    - name: sancheck
+      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
 #    - name: make distcheck
 #      run: make distcheck
 #    - name: upload binaries
@@ -80,6 +80,8 @@ jobs:
             choco install mingw --version=4.9.3 --force
     - name: make
       run: .\make.bat
+    - name: sancheck
+      run: FOR %c IN (example\sancheck\*\sancheck.bat) DO %c; done
  #   - name: upload binaries
  #     uses: actions/upload-artifact@v2
  #     with: 
