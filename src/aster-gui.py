@@ -180,7 +180,7 @@ class Ui_MainWindow(object):
                     option = "-B"
             
             if platform.system() == "Windows":
-                cmd = [os.path.join(os.getcwd(), "..", "exe", program + ".exe")]
+                cmd = [os.path.join(os.getcwd(), program + ".exe")]
             else:
                 cmd = [os.path.join(os.getcwd(), "..", "bin", program)]
             if option != "":
