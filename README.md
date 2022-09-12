@@ -9,7 +9,7 @@ A family of optimatization algorithms for species tree inference:
 
 ## GUI for Windows users (NEW)
 
-Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 <!--
 GUI for other plantforms is also available at `src/aster-gui.py` with dependencies:
 ```
@@ -31,8 +31,10 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
 Download using one of two approaches:
-  - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
+  - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
   - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
+
+Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
 ## For Linux/Unix/WSL users
 1. In terminal, `cd` into the downloaded directory and run `make`.
@@ -50,12 +52,6 @@ Download using one of two approaches:
       ```
     - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
 2. Binary files should be in the `bin` folder.
-
-**Note:** some prebuild binaries are made available under 
- * [bin](bin/): for linux
- * [macOSx86bin](macOSx86bin/) : for x86 macOS 
- 
-If you are lucky, these may just work as is and you may not need to build at all. We hope to provide more binaries in future. 
 
 ## For Windows users
 - Executables for x86-64 are available in `exe` folder and it is **very likely** that they already work.
