@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.9"
+#define ALG_VERSION "v1.10"
 
 /* CHANGE LOG
+ * 1.10: fixing constraint/guide trees for rooting on nodes
  * 1.9: deleting obsolete code
  * 1.8: adding seed to pseudorandomness
  * 1.7: adding Grubbs's test based support
@@ -936,6 +937,22 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 			else {
 				int nodeL = guildSubtree(pAlg, tree, name2id, i, added);
+				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i, added);
+				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i, added);
+				else {
+					int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
+					if (nodeR == -1) ret = nodeL;
+					else {
+						pAlg.makeNode(nodeL, nodeR, true);
+						ret = nodeR;
+					}
+				}
+			}
+			while (tree[i] != ')' && tree[i] != ',' && tree[i] != ';') i++;
+			if (tree[i] == ',') {
+				cerr << "Warning: Polytomy detected! Resolving arbitrarily!\n";
+				i++;
+				int nodeL = ret;
 				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i, added);
 				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i, added);
 				else {
