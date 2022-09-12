@@ -1,4 +1,4 @@
-all: astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk asterisk-hky
+all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk asterisk-hky
 	echo "*** Installation complete! ***"
 
 astral:
@@ -37,6 +37,9 @@ asterisk:
 asterisk-hky:
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-hky.cpp -o bin/asterisk-hky
 	
+dir:
+	mkdir -p bin
+
 clean:
 	rm bin/*
 
