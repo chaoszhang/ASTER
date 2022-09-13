@@ -81,6 +81,6 @@ jobs:
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
           branch: master
           force: true
