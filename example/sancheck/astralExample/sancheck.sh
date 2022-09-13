@@ -1,0 +1,1 @@
+bin/astral -t 4 -a example/genetree.map example/genetree.nw

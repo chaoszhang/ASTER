@@ -1,0 +1,1 @@
+exe\astral.exe -C -c example\sancheck\ScoringNormal\astral-bs10-speices.tre example\sancheck\ScoringNormal\genetrees-bs10.tre
