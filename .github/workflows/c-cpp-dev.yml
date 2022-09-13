@@ -78,12 +78,6 @@ jobs:
     - name: Halt if windows-sancheck failed
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
-    - name: commit
-      run: |
-            git config --local user.email "github-actions[bot]@github.com"
-            git config --local user.name "github-actions[bot]"
-            git add *
-            git commit -m "Update to newest version"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
