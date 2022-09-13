@@ -905,7 +905,7 @@ struct ConstrainedOptimizationAlgorithm{
 		return pAlg;
 	}
 	
-	int guildSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i, unordered_set<int> &added){
+	int guideSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i, unordered_set<int> &added){
 		int ret;
 		if (tree[i] != '('){
 			string s;
@@ -927,8 +927,8 @@ struct ConstrainedOptimizationAlgorithm{
 		else {
 			i++;
 			if (pAlg.rootLeafId != -1){
-				int nodeL = guildSubtree(pAlg, tree, name2id, i, added);
-				int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
+				int nodeL = guideSubtree(pAlg, tree, name2id, i, added);
+				int nodeR = guideSubtree(pAlg, tree, name2id, i, added);
 				if (nodeL != -1){
 					if (nodeR != -1) ret = pAlg.makeNode(nodeL, nodeR, false);
 					else ret = nodeL;
@@ -936,11 +936,11 @@ struct ConstrainedOptimizationAlgorithm{
 				else ret = nodeR;
 			}
 			else {
-				int nodeL = guildSubtree(pAlg, tree, name2id, i, added);
-				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i, added);
-				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i, added);
+				int nodeL = guideSubtree(pAlg, tree, name2id, i, added);
+				if (pAlg.rootLeafId == -1) ret = guideSubtree(pAlg, tree, name2id, i, added);
+				else if (nodeL == -1) ret = pAlg.rootNodeId = guideSubtree(pAlg, tree, name2id, i, added);
 				else {
-					int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
+					int nodeR = guideSubtree(pAlg, tree, name2id, i, added);
 					if (nodeR == -1) ret = nodeL;
 					else {
 						pAlg.makeNode(nodeL, nodeR, true);
@@ -948,15 +948,15 @@ struct ConstrainedOptimizationAlgorithm{
 					}
 				}
 			}
-			while (tree[i] != ')' && tree[i] != ',' && tree[i] != ';') i++;
-			if (tree[i] == ',') {
+			//while (tree[i] != ')' && tree[i] != ',' && tree[i] != ';') i++;
+			if (tree[i-1] == ',') {
 				cerr << "Warning: Polytomy detected! Resolving arbitrarily!\n";
-				i++;
+				//i++;
 				int nodeL = ret;
-				if (pAlg.rootLeafId == -1) ret = guildSubtree(pAlg, tree, name2id, i, added);
-				else if (nodeL == -1) ret = pAlg.rootNodeId = guildSubtree(pAlg, tree, name2id, i, added);
+				if (pAlg.rootLeafId == -1) ret = guideSubtree(pAlg, tree, name2id, i, added);
+				else if (nodeL == -1) ret = pAlg.rootNodeId = guideSubtree(pAlg, tree, name2id, i, added);
 				else {
-					int nodeR = guildSubtree(pAlg, tree, name2id, i, added);
+					int nodeR = guideSubtree(pAlg, tree, name2id, i, added);
 					if (nodeR == -1) ret = nodeL;
 					else {
 						pAlg.makeNode(nodeL, nodeR, true);
@@ -974,7 +974,7 @@ struct ConstrainedOptimizationAlgorithm{
 		unordered_set<int> added;
 		PlacementAlgorithm pAlg(taxonHash, tripInit, rnn);
 		int i = 0;
-		guildSubtree(pAlg, tree, name2id, i, added);
+		guideSubtree(pAlg, tree, name2id, i, added);
 		for (int i = 0; i < ntaxa; i++){
 			if (added.count(i) == 0) pAlg.order.push_back(i);
 		}
