@@ -14,8 +14,8 @@ Zhang, Chao, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
-- The rest of this file
-- [README.md](../README.md)
+- The rest of this TUTORIAL file
+- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
 - Forums:
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
@@ -23,8 +23,10 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
 Download using one of two approaches:
-  - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
-  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
+  - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
+  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git) and checkout the branch named Windows/MacOS/Linux.
+
+Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
 ## For Linux/Unix/WSL users
 1. In terminal, `cd` into the downloaded directory and run `make`.
@@ -50,6 +52,10 @@ Download using one of two approaches:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
   2. Add path to `bin` folder of MinGW to [system environment variable `PATH`](https://www.google.com/search?q=Edit+the+system+environment+variables+windows)
   3. Double click `make.bat` inside the downloaded directory
+
+### GUI for Windows users (NEW)
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
 # INPUT
 * The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.

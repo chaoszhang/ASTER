@@ -5,6 +5,8 @@ ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equa
 
 ## Publication
 
+Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
+
 Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 
 ## Bug Reports
@@ -12,8 +14,8 @@ Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quar
 Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
-- The rest of this file
-- [README.md](../README.md)
+- The rest of this TUTORIAL file
+- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
 - Forums:
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
@@ -21,8 +23,10 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
 Download using one of two approaches:
-  - You simply need to download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/master.zip) and extract the contents to a folder of your choice.
-  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
+  - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
+  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git) and checkout the branch named Windows/MacOS/Linux.
+
+Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
 ## For Linux/Unix/WSL users
 1. In terminal, `cd` into the downloaded directory and run `make`.
@@ -48,6 +52,10 @@ Download using one of two approaches:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
   2. Add path to `bin` folder of MinGW to [system environment variable `PATH`](https://www.google.com/search?q=Edit+the+system+environment+variables+windows)
   3. Double click `make.bat` inside the downloaded directory
+
+### GUI for Windows users (NEW)
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
 # INPUT
 * The input gene trees are in the Newick format
