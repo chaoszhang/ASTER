@@ -45,6 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+          token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
     - name: Wait for linux-sancheck to succeed
       uses: fountainhead/action-wait-for-check@v1.0.0
       id: wait-for-linux-sancheck
@@ -79,8 +81,9 @@ jobs:
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
     - name: push
-      uses: chaoszhang/github-push-action@master
-      with: 
-          github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
-          branch: master
-          force: true
+      run: git push --force origin master
+      # uses: chaoszhang/github-push-action@master
+      # with: 
+          # github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
+          # branch: master
+          # force: true
