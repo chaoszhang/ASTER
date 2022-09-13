@@ -44,6 +44,7 @@ jobs:
   auto-push:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - name: Wait for linux-sancheck to succeed
       uses: fountainhead/action-wait-for-check@v1.0.0
       id: wait-for-linux-sancheck
