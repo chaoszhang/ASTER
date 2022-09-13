@@ -81,9 +81,8 @@ jobs:
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
     - name: push
-      run: git push --force origin master
-      # uses: chaoszhang/github-push-action@master
-      # with: 
-          # github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
-          # branch: master
-          # force: true
+      uses: chaoszhang/github-push-action@master
+      with: 
+          github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
+          branch: master
+          force: true
