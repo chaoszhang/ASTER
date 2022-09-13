@@ -32,7 +32,7 @@ Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://
 For most users, installing ASTER is ***very*** easy!
 Download using one of two approaches:
   - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
-  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git).
+  - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git) and checkout the branch named Windows/MacOS/Linux.
 
 Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
