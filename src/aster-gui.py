@@ -131,14 +131,15 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "ASTRAL-Pro / wASTRAL-h with GUI"))
-        self.ProgramComboBox.setItemText(0, _translate("MainWindow", "ASTRAL-Pro"))
-        self.ProgramComboBox.setItemText(1, _translate("MainWindow", "Weighted ASTRAL - Hybrid (bootstrap-like branch supports)"))
-        self.ProgramComboBox.setItemText(2, _translate("MainWindow", "Weighted ASTRAL - Hybrid (LRT/SH-like branch support)"))
-        self.ProgramComboBox.setItemText(3, _translate("MainWindow", "Weighted ASTRAL - Hybrid (local-Baysian-like branch support)"))
-        self.ProgramComboBox.setItemText(4, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0 and 100)"))
-        self.ProgramComboBox.setItemText(5, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0 and 1)"))
-        self.ProgramComboBox.setItemText(6, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0.333 and 1)"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "ASTRAL / ASTRAL-Pro / wASTRAL-h with GUI"))
+        self.ProgramComboBox.setItemText(0, _translate("MainWindow", "ASTRAL"))
+        self.ProgramComboBox.setItemText(1, _translate("MainWindow", "ASTRAL-Pro"))
+        self.ProgramComboBox.setItemText(2, _translate("MainWindow", "Weighted ASTRAL - Hybrid (bootstrap-like branch supports)"))
+        self.ProgramComboBox.setItemText(3, _translate("MainWindow", "Weighted ASTRAL - Hybrid (LRT/SH-like branch support)"))
+        self.ProgramComboBox.setItemText(4, _translate("MainWindow", "Weighted ASTRAL - Hybrid (local-Baysian-like branch support)"))
+        self.ProgramComboBox.setItemText(5, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0 and 100)"))
+        self.ProgramComboBox.setItemText(6, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0 and 1)"))
+        self.ProgramComboBox.setItemText(7, _translate("MainWindow", "Weighted ASTRAL - Hybrid (support values between 0.333 and 1)"))
         self.OutputLineEdit.setText(_translate("MainWindow", "inferred_species_tree.nw"))
         self.RunPushButton.setText(_translate("MainWindow", "Run"))
         self.label.setText(_translate("MainWindow", "Select program"))
@@ -167,7 +168,10 @@ class Ui_MainWindow(object):
         if self.InputPushButton.path == "":
             self.RunPushButton.setText("You need to select input file before running!")
         else:
-            if self.ProgramComboBox.currentText() == "ASTRAL-Pro":
+            if self.ProgramComboBox.currentText() == "ASTRAL":
+                program = "astral"
+                option = ""
+            elif self.ProgramComboBox.currentText() == "ASTRAL-Pro":
                 program = "astral-pro"
                 option = ""
             else:
