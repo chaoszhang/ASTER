@@ -80,6 +80,10 @@ jobs:
     - name: Halt if windows-sancheck failed
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
+    - name: Generate tutorial
+      run: |
+            make tutorial
+            rm -rf bin
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
