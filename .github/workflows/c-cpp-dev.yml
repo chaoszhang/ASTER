@@ -80,14 +80,6 @@ jobs:
     - name: Halt if windows-sancheck failed
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
-    - name: Generate tutorial
-      run: make tutorial
-    - name: commit
-      run: |
-            git config --local user.email "github-actions[bot]@github.com"
-            git config --local user.name "github-actions[bot]"
-            git add tutorial/*
-            git commit -m "Update tutorial"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
