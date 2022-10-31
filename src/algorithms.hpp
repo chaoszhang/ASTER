@@ -1441,6 +1441,9 @@ struct MetaAlgorithm{
 		#ifdef DRIVER_VERSION
 			version = version + "." + DRIVER_VERSION;
 		#endif
+		#ifdef TUTORIAL
+			MDGenerator::version = version;
+		#endif
 		
 	#ifdef ARG_PARSER
 		cerr << ARG.getFullName() << endl;

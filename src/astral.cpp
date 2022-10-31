@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "1"
+#define DRIVER_VERSION "2"
 
 /* CHANGE LOG
+ * 2: Officialize program name
  * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
  */
 
@@ -133,7 +134,7 @@ inputGeneTrees: the path to a file containing all gene trees in Newick format
 )V0G0N";
 
 int main(int argc, char** argv){
-	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm");
+	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	
 	string mappingFile;

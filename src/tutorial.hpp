@@ -5,30 +5,39 @@
 #include<fstream>
 
 class MDGenerator{
-const string APRO_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro)
+const string APRO_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro2)
 ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees and is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL-pro extends ASTRAL to allow multi-copy genes. ASTRAL-pro finds the species tree that has the maximum number of shared induced quartet tree equivalent classes with the set of gene trees, subject to the constraint that the set of bipartitions in the species tree comes from a predefined set of bipartitions. Please see the paper below for the definition of the PL-quartet scores, which is what ASTRAL-Pro optimizes. We refer to the tool both as A-Pro and ASTRAL-Pro. 
 
-ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
+`ASTRAL-Pro2` re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
 
 ## Publication
 
 Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
 
 Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
+
+### Example of usage
+
+We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 VERSION [1] by optimizing ASTRAL-Pro's objective function [2].
+
 )V0G0N";
 
-const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (ASTRAL)
+const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (wASTRAL-unweighted)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
-ASTER re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a complementary to the original ASTRAL on datasets for which the original ASTRAL is not suitable (e.g. large datasets, multi-individual, and super-tree construction).
+`wASTRAL-unweighted` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
 
-Warning: ASTER implementation may be **slower** and even **less accurate** than ASTRAL-III when input gene trees has fewer than 50 species and 500 genes. Please choose wisely!
-As a supplementary to ASTRAL-III, ASTER lacks of many features of ASTRAL-III (e.g. computing support). You can work around by first computing optimal tree with ASTER and use the ASTER output tree as `-q` option to ASTRAL-III for annotation. 
+As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with wASTRAL-unweighted and use the wASTRAL-unweighted output tree as `-q` option to ASTRAL-III. 
 
 ## Publication
 
-Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
+[1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
 
-Zhang, Chao, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+[2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+
+### Example of usage
+
+We obtained the species tree from gene trees using wASTRAL-unweighted VERSION [1] by optimizing ASTRAL's objective function [2].
+
 )V0G0N";
 
 const string SHARED_INTRO = R"V0G0N(
@@ -296,10 +305,10 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
     }
 
     string uniqueIntro(){
-        if (programName == APRO) return APRO_UNIQUE_INTRO;
-        if (programName == ASTRAL) return ASTRAL_UNIQUE_INTRO;
-
-        return "# Accurate Species Tree EstimatoR (ASTER❋)";
+        string rawtext = "# Accurate Species Tree EstimatoR (ASTER❋)";
+        if (programName == APRO) rawtext = APRO_UNIQUE_INTRO;
+        if (programName == ASTRAL) rawtext = ASTRAL_UNIQUE_INTRO;
+        return replace(rawtext, "VERSION", version);
     }
 
     string sharedIntro(){
@@ -345,6 +354,8 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
 
 public:
     
+    static string version;
+
     MDGenerator(string programName): programName(programName){
         string ui = uniqueIntro();
         string si = sharedIntro();
@@ -358,5 +369,7 @@ public:
     }
 
 };
+
+string MDGenerator::version;
 
 #endif
