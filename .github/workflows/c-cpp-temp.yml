@@ -1,0 +1,88 @@
+name: C/C++ CI development branch sancheck
+
+on:
+  push:
+    branches: [ "temp" ]
+
+jobs:
+  linux-sancheck:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: make
+    - name: sancheck
+      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
+      
+  macos-sancheck:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: make
+      run: make
+    - name: sancheck
+      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
+      
+  windows-sancheck:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: configure
+      run: |
+            choco uninstall mingw
+            choco install mingw --version=4.9.3 --force
+    - name: make
+      run: .\make.bat
+    - name: sancheck
+      run: foreach ($c in Get-ChildItem example\sancheck\*\sancheck.bat) {cmd.exe /c $c}
+      
+  auto-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
+    - name: Wait for linux-sancheck to succeed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-linux-sancheck
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: linux-sancheck
+          timeoutSeconds: 1800
+          intervalSeconds: 30
+    - name: Halt if linux-sancheck failed
+      if: steps.wait-for-linux-sancheck.outputs.conclusion != 'success'
+      run: exit 1
+    - name: Wait for macos-sancheck to succeed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-macos-sancheck
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: macos-sancheck
+          timeoutSeconds: 1800
+          intervalSeconds: 30
+    - name: Halt if windows-sancheck failed
+      if: steps.wait-for-macos-sancheck.outputs.conclusion != 'success'
+      run: exit 1
+    - name: Wait for windows-sancheck to succeed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-windows-sancheck
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: windows-sancheck
+          timeoutSeconds: 1800
+          intervalSeconds: 30
+    - name: Halt if windows-sancheck failed
+      if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
+      run: exit 1
+    - name: push
+      uses: chaoszhang/github-push-action@master
+      with: 
+          github_token: ${{ secrets.MY_GITHUB_ACTION_TOKEN }}
+          branch: master
+          force: true

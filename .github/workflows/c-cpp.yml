@@ -13,25 +13,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-#    - name: configure
-#      run: ./configure
     - name: make
       run: make
-    - name: sancheck
-      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
-#    - name: make distcheck
-#      run: make distcheck
-#    - name: upload binaries
-#      uses: actions/upload-artifact@v3
-#      with: 
-#          name: Ubuntu binaries
-#          path: bin
     - name: commit
       run: |
             git config --local user.email "github-actions[bot]@github.com"
             git config --local user.name "github-actions[bot]"
             git add *
-            git commit -m "Update to newest version"
+            git commit -m "Update to newest version with binaries"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
@@ -44,25 +33,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-#    - name: configure
-#      run: ./configure
     - name: make
       run: make
-    - name: sancheck
-      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
-#    - name: make distcheck
-#      run: make distcheck
-#    - name: upload binaries
-#      uses: actions/upload-artifact@v3
-#      with: 
-#          name: MacOS binaries
-#          path: bin
     - name: commit
       run: |
             git config --local user.email "github-actions[bot]@github.com"
             git config --local user.name "github-actions[bot]"
             git add *
-            git commit -m "Update to newest version"
+            git commit -m "Update to newest version with binaries"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
@@ -80,19 +58,12 @@ jobs:
             choco install mingw --version=4.9.3 --force
     - name: make
       run: .\make.bat
-    - name: sancheck
-      run: foreach ($c in Get-ChildItem example\sancheck\*\sancheck.bat) {cmd.exe /c $c}
- #   - name: upload binaries
- #     uses: actions/upload-artifact@v2
- #     with: 
- #         name: Windows executables
- #         path: exe
     - name: commit
       run: |
             git config --local user.email "github-actions[bot]@github.com"
             git config --local user.name "github-actions[bot]"
             git add *
-            git commit -m "Update to newest version"
+            git commit -m "Update to newest version with binaries"
     - name: push
       uses: chaoszhang/github-push-action@master
       with: 
