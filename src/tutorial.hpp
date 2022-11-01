@@ -12,18 +12,19 @@ ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for es
 
 ## Publication
 
-Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
+[1] Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
 
-Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
+[2] Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 
 ### Example of usage
 
-We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 VERSION [1] by optimizing ASTRAL-Pro's objective function [2].
+We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 VERSION [1] by optimizing the objective function of ASTRAL-Pro [2].
 
 )V0G0N";
 
 const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (wASTRAL-unweighted)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
+
 `wASTRAL-unweighted` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
 
 As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with wASTRAL-unweighted and use the wASTRAL-unweighted output tree as `-q` option to ASTRAL-III. 
@@ -36,7 +37,7 @@ As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some featur
 
 ### Example of usage
 
-We obtained the species tree from gene trees using wASTRAL-unweighted VERSION [1] by optimizing ASTRAL's objective function [2].
+We obtained the species tree from gene trees using wASTRAL-unweighted VERSION [1] by optimizing the objective function of ASTRAL [2].
 
 )V0G0N";
 
