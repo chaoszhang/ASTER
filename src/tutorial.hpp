@@ -42,16 +42,21 @@ We obtained the species tree from gene trees using wASTRAL-unweighted VERSION [1
 )V0G0N";
 
 const string SHARED_INTRO = R"V0G0N(
+## GUI for Windows users (NEW)
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
+
 ## Bug Reports
 
-Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
+Contact ``chaozhang@berkeley.edu``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
 - The rest of this TUTORIAL file
 - [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
-- Forums:
+- Forums (feel free to ask questions or ask for help running ASTER):
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
+  - QQ group: 130635706
 
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
