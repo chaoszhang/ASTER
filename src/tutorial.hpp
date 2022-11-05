@@ -41,6 +41,26 @@ We obtained the species tree from gene trees using wASTRAL-unweighted VERSION [1
 
 )V0G0N";
 
+const string WASTRAL_UNIQUE_INTRO = R"V0G0N(# Weighted ASTRAL Series (wASTRAL)
+1. Weighted ASTRAL by Branch Support (astral-weighted)
+2. Weighted ASTRAL by Branch Length (astral-lengthweighted)
+3. Weighted ASTRAL - Hybrid (astral-hybrid)
+
+Weighted ASTRAL series introduce threshold-free weighting schemes for the quartet-based species tree inference, the metric used in the popular method ASTRAL. By reducing the impact of quartets with low support or long terminal branches (or both), weighting provides stronger theoretical guarantees and better empirical performance than the unweighted ASTRAL. Our results show that weighted ASTRAL improves the utility of summary methods and can reduce the incongruence often observed across analytical pipelines.
+
+## Publication
+
+[1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
+
+(OPTIONAL) [2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+
+### Example of usage
+
+We obtained the species tree from gene trees using wASTRAL-hybird VERSION [1]. 
+(OPTIONAL) This method reimplements ASTRAL-III [2] and takes into account phylogenetic uncertainty by intergrating signals from branch length and branch support in gene trees.
+
+)V0G0N";
+
 const string SHARED_INTRO = R"V0G0N(
 ## GUI for Windows users (NEW)
 
@@ -150,6 +170,46 @@ The output in is Newick format and gives:
 The ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 )V0G0N";
 
+const string WASTRAL_IO = R"V0G0N(
+# INPUT
+* The input gene trees are in the Newick format
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals/genes per species.
+* When individuals/genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals/genes from the same species the same name in the input gene trees.
+  2. OR, a mapping file needs to be provided using the `-a` option.
+```
+individual_A1 species_name_A
+individual_A2 species_name_A
+individual_B1 species_name_B
+individual_B2 species_name_B
+individual_B3 species_name_B
+...
+```
+  Or
+```
+gene_A1 species_name_A
+gene_A2 species_name_A
+gene_B1 species_name_B
+gene_B2 species_name_B
+gene_B3 species_name_B
+...
+```
+
+1. **Weighted ASTRAL by Branch Support (astral-weighted)**: Non-root interal node labels must be a non-negative number being support. Eg. `((A,B)100,(C,D)0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+2. **Weighted ASTRAL by Branch Length (astral-lengthweighted)**: Non-root labels must have branch lengths after `:`. Eg. `((A,B):1,(C,D):0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+3. **Weighted ASTRAL - Hybrid (astral-hybrid)**: Non-root interal node labels must be a non-negative number being support before `:` and non-root labels must have branch lengths after `:`. Eg. `((A:1,B:1)100:1,(C:1,D:1)0:0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+
+# OUTPUT
+The output in is Newick format and gives:
+
+* the species tree topology
+* branch lengths in coalescent units for astral-weighted and in **combined (coalensecent + 2 * substitution) units** (only for internal branches)
+* branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
+* It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
+
+The weighted ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
+)V0G0N";
+
 const string SHARED_EXE = R"V0G0N(
 # EXECUTION
 ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to the directory (location) where you have downloaded ASTER and issue the following command:
@@ -233,6 +293,50 @@ bin/astral -a example/genetree.map example/genetree.nw
 When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
 )V0G0N";
 
+const string WASTRAL_UNIQUE_EXE = R"V0G0N(
+***Notice:*** For `astral-weighted` (support) and `astral-hybrid` (hybrid), you ***must*** provide max (`-x`) and min (`-n`) of support value to the program; otherwise it will default to `max=100, min=0`. Please ensure that you provide the correct max and min; otherwise, the output of the program ***may not be meaningful***.
+
+```
+bin/astral-hybrid -x MAX_SUPPORT -n MIN_SUPPORT INPUT_FILE
+```
+
+For **Bootstrap** support, the default value should be fine (any of the following commands works):
+
+```
+bin/astral-hybrid INPUT_FILE
+bin/astral-hybrid -S INPUT_FILE
+bin/astral-hybrid -x 100 -n 0 INPUT_FILE
+```
+
+For **local Baysian** support, `-x 1 -n 0.333` is recommended or `-B` for short:
+
+```
+bin/astral-hybrid -B INPUT_FILE
+```
+or
+```
+bin/astral-hybrid -x 1 -n 0.333 INPUT_FILE
+```
+
+For other **probability & likelihood** support, `-x 1 -n 0` may be more reasonable or `-L` for short:
+
+```
+bin/astral-hybrid -L INPUT_FILE
+```
+or
+```
+bin/astral-hybrid -x 1 -n 0 INPUT_FILE
+```
+
+By default, wASTRAL assumes multiple individuals/alleles from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+
+```
+bin/astral-hybrid -a example/genetree.map example/genetree.nw
+```
+
+When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
+)V0G0N";
+
 const string SHARED_ADV = R"V0G0N(
 ## Advanced Options
 
@@ -272,6 +376,13 @@ If you want to give hints by providing candidate species trees or trees similar 
 ```
 bin/PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
+
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
+```
 )V0G0N";
 
 const string APRO_UNIQUE_ADV = R"V0G0N(
@@ -279,13 +390,6 @@ Species tree with more than **5000** taxa may cause **overflow**. Use the follow
 
 ```
 bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
-```
-
-Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
-
-```
-bin/astral-pro -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral-pro -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
 If you do not want to compute optimal species tree but instead just want to root and tag gene trees, you can use the following command:
@@ -303,8 +407,16 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
 ```
 )V0G0N";
 
+const string WASTRAL_UNIQUE_ADV = R"V0G0N(
+Species tree with more than **2000** taxa may cause **floating point underflow or precision issue**. Use the following command instead:
+
+```
+bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
+```
+)V0G0N";
     const string APRO = "astral-pro";
     const string ASTRAL = "astral";
+    const string WASTRAL = "astral-hybrid";
 
     string replace(string txt, string from, string to){
         return regex_replace(txt, regex(from), to);
@@ -314,6 +426,7 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
         string rawtext = "# Accurate Species Tree EstimatoR (ASTER❋)";
         if (programName == APRO) rawtext = APRO_UNIQUE_INTRO;
         if (programName == ASTRAL) rawtext = ASTRAL_UNIQUE_INTRO;
+        if (programName == WASTRAL) rawtext = WASTRAL_UNIQUE_INTRO;
         return replace(rawtext, "VERSION", version);
     }
 
@@ -324,35 +437,35 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
     string inputOutput(){
         if (programName == APRO) return APRO_IO;
         if (programName == ASTRAL) return ASTRAL_IO;
-
+        if (programName == WASTRAL) return WASTRAL_IO;
         return "";
     }
 
     string sharedExe(){
         if (programName == APRO) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
         if (programName == ASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
-
+        if (programName == WASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
         return SHARED_EXE;
     }
 
     string uniqueExe(){
         if (programName == APRO) return APRO_UNIQUE_EXE;
         if (programName == ASTRAL) return ASTRAL_UNIQUE_EXE;
-
+        if (programName == WASTRAL) return WASTRAL_UNIQUE_EXE;
         return "";
     }
 
     string sharedAdv(){
         if (programName == APRO) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
         if (programName == ASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
-
+        if (programName == WASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
         return SHARED_ADV;
     }
 
     string uniqueAdv(){
         if (programName == APRO) return APRO_UNIQUE_ADV;
         if (programName == ASTRAL) return ASTRAL_UNIQUE_ADV;
-
+        if (programName == WASTRAL) return WASTRAL_UNIQUE_ADV;
         return "";
     }
 
