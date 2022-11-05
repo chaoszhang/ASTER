@@ -52,3 +52,4 @@ aaa-gpu:
 tutorial: all
 	bin/astral -H
 	bin/astral-pro -H
+	bin/astral-hybrid -H
