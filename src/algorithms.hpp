@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.10"
+#define ALG_VERSION "v1.11"
 
 /* CHANGE LOG
+ * 1.11: fixing incomplete class bug in threadpool for some compilers
  * 1.10: fixing constraint/guide trees for rooting on nodes
  * 1.9: deleting obsolete code
  * 1.8: adding seed to pseudorandomness

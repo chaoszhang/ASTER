@@ -11,10 +11,16 @@ using namespace std;
 
 class ThreadPool{
 	struct TaskBlock{
-		TaskBlock(): isTermination(true){}
+		TaskBlock(){}
+
+		TaskBlock(TaskBlock &&task): isTermination(task.isTermination), pFuncs(task.pFuncs), results(move(task.results)), next(move(task.next)){}
+
+		TaskBlock(bool termination): isTermination(termination){}
+
 		TaskBlock(const shared_ptr<const vector<function<score_t(const int)> > > &pFuncs, promise<vector<score_t> > results, future<TaskBlock> next):
 			isTermination(false), pFuncs(pFuncs), results(move(results)), next(move(next)){}
-		
+		~TaskBlock(){}
+
 		bool isTermination;
 		const shared_ptr<const vector<function<score_t(const int)> > > pFuncs;
 		promise<vector<score_t> > results;
@@ -96,7 +102,7 @@ public:
 	
 	~ThreadPool(){
 		for (promise<TaskBlock> &task: tasks){
-			task.set_value(TaskBlock());
+			task.set_value(TaskBlock(true));
 		}
 	}
 	
