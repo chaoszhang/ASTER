@@ -13,35 +13,29 @@ class ThreadPool{
 	struct TaskBlock{
 		TaskBlock(){}
 
-		TaskBlock(TaskBlock &&task): isTermination(task.isTermination), pFuncs(task.pFuncs), results(move(task.results)), next(move(task.next)){}
+		TaskBlock(const shared_ptr<const vector<function<score_t(const int)> > > &pFuncs, promise<vector<score_t> > results, future<shared_ptr<TaskBlock> > next):
+			pFuncs(pFuncs), results(move(results)), next(move(next)){}
 
-		TaskBlock(bool termination): isTermination(termination){}
-
-		TaskBlock(const shared_ptr<const vector<function<score_t(const int)> > > &pFuncs, promise<vector<score_t> > results, future<TaskBlock> next):
-			isTermination(false), pFuncs(pFuncs), results(move(results)), next(move(next)){}
-		~TaskBlock(){}
-
-		bool isTermination;
 		const shared_ptr<const vector<function<score_t(const int)> > > pFuncs;
 		promise<vector<score_t> > results;
-		future<TaskBlock> next;
+		future<shared_ptr<TaskBlock> > next;
 	};
 	
 	int nThreads;
-	vector<promise<TaskBlock> > tasks;
+	vector<promise<shared_ptr<TaskBlock> > > tasks;
 	vector<function<score_t(const int)> > funcs;
 	queue<score_t> sums;
 
-	static void worker(future<TaskBlock> next, const int id){
+	static void worker(future<shared_ptr<TaskBlock> > next, const int id){
 		while (true){
-			TaskBlock task = next.get();
-			if (task.isTermination) break;
+			shared_ptr<TaskBlock> task = next.get();
+			if (task.get() == nullptr) break;
 			vector<score_t> results;
-			for (const function<score_t(const int)> &f: *(task.pFuncs)){
+			for (const function<score_t(const int)> &f: *(task->pFuncs)){
 				results.push_back(f(id));
 			}
-			task.results.set_value(move(results));
-			next = move(task.next);
+			task->results.set_value(move(results));
+			next = move(task->next);
 		}
 	}
 	
@@ -56,12 +50,12 @@ class ThreadPool{
 		const shared_ptr<const vector<function<score_t(const int)> > > pFuncs(new const vector<function<score_t(const int)> >(move(funcs)));
 		funcs = vector<function<score_t(const int)> >();
 		vector<future<vector<score_t> > > results;
-		for (promise<TaskBlock> &task: tasks){
-			promise<TaskBlock> curTask = move(task);
-			task = promise<TaskBlock>();
+		for (promise<shared_ptr<TaskBlock> > &task: tasks){
+			promise<shared_ptr<TaskBlock> > curTask = move(task);
+			task = promise<shared_ptr<TaskBlock> >();
 			promise<vector<score_t> > res;
 			results.push_back(move(res.get_future()));
-			curTask.set_value(TaskBlock(pFuncs, move(res), task.get_future()));
+			curTask.set_value(make_shared<TaskBlock>(pFuncs, move(res), task.get_future()));
 		}
 		vector<vector<score_t> > resultValues;
 		resultValues.emplace_back();
@@ -86,10 +80,8 @@ public:
 
 	ThreadPool(){}
 
-	ThreadPool(int n): nThreads(n - 1), tasks(n - 1){
-		for (int id = 1; id < n; id++){
-			thread(worker, tasks[id - 1].get_future(), id).detach();
-		}
+	ThreadPool(int n){
+		initialize(n);
 	}
 
 	void initialize(int n){
@@ -101,8 +93,8 @@ public:
 	}
 	
 	~ThreadPool(){
-		for (promise<TaskBlock> &task: tasks){
-			task.set_value(TaskBlock(true));
+		for (promise<shared_ptr<TaskBlock> > &task: tasks){
+			task.set_value(nullptr);
 		}
 	}
 	
