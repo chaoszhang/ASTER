@@ -5,9 +5,9 @@
 A family of optimatization algorithms for species tree inference:
 1. [ASTRAL](tutorial/astral.md) (re-implemented in C++, suitable for large data, multi-individual, and super-tree)
 2. [ASTRAL-Pro](tutorial/astral-pro.md) (re-implemented in C++ for better running time, memory consumption, and usability)
-3. [Weighted ASTRAL by Branch Support](tutorial/wastral.md)
-4. [Weighted ASTRAL by Branch Length](tutorial/wastral.md)
-5. [Weighted ASTRAL - Hybrid](tutorial/wastral.md)
+3. [Weighted ASTRAL by Branch Support](tutorial/astral-hybrid.md)
+4. [Weighted ASTRAL by Branch Length](tutorial/astral-hybrid.md)
+5. [Weighted ASTRAL - Hybrid](tutorial/astral-hybrid.md)
 6. [ASTERISK](README/asterisk.md)
 
 ## GUI for Windows users (NEW)
@@ -69,9 +69,9 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 Please click the link below:
 1. [ASTRAL](tutorial/astral.md)
 2. [ASTRAL-Pro](tutorial/astral-pro.md)
-3. [Weighted ASTRAL by Branch Support](tutorial/wastral.md)
-4. [Weighted ASTRAL by Branch Length](tutorial/wastral.md)
-5. [Weighted ASTRAL - Hybrid](tutorial/wastral.md)
+3. [Weighted ASTRAL by Branch Support](tutorial/astral-hybrid.md)
+4. [Weighted ASTRAL by Branch Length](tutorial/astral-hybrid.md)
+5. [Weighted ASTRAL - Hybrid](tutorial/astral-hybrid.md)
 6. [ASTERISK](README/asterisk.md)
 
 # ACKNOWLEGEMENT
