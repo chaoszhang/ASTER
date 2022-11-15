@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.11"
+#define ALG_VERSION "v1.12"
 
 /* CHANGE LOG
+ * 1.12: significantly refactoring the code for reduced memory
  * 1.11: fixing incomplete class bug in threadpool for some compilers
  * 1.10: fixing constraint/guide trees for rooting on nodes
  * 1.9: deleting obsolete code
@@ -25,24 +26,20 @@ typedef unsigned __int128 hash_t;
 #include<mutex>
 #include<cmath>
 
-#ifdef SUPPORT
 #include "incbeta.c"
-#endif
+#include "argparser.hpp"
+#include "threadpool.hpp"
 
 #ifndef ERROR_TOLERANCE
 #define ERROR_TOLERANCE 0
 #endif
 using namespace std;
 
-ThreadPool TP;
-
 struct Hasher{
 	size_t operator()(const hash_t h) const{
 		return (size_t) h;
 	}
 };
-
-int ROUND_NN = -1;
 
 struct PlacementAlgorithm{
 	
@@ -62,9 +59,12 @@ struct PlacementAlgorithm{
 	int rootNodeId = -1, rootLeafId = -1, orderId = 0;
 	int rNN;
 	
+	const int ROUND_NN = -1;
 	Tripartition trip;
+	ThreadPool &TP;
 	
-	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit, int rNN = ROUND_NN): taxonHash(taxonHash), trip(tripInit), rNN(rNN){}
+	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit, ThreadPool& TP, int ROUND_NN):
+		taxonHash(taxonHash), trip(tripInit), rNN(ROUND_NN), ROUND_NN(ROUND_NN), TP(TP) {}
 	
 	int& heavy(int v){
 		return nodes[v].heavy;
@@ -702,7 +702,6 @@ struct PlacementAlgorithm{
 	void run(){
 		defaultInitializer();
 		for (; orderId < order.size(); orderId++){
-			if (orderId & 15 == 0) cerr << "Placing " << orderId << "/" << order.size() << endl;
 			place(order[orderId]);
 		}
 		nnMove();
@@ -754,9 +753,11 @@ struct ConstrainedOptimizationAlgorithm{
 	const int ntaxa;
 	int roundId = 0;
 	mutex mtx;
-	
-	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, const int seed = rand()): 
-			ntaxa(ntaxa), tripInit(tripInit), names(names), generator(seed){
+	ThreadPool &TP;
+	int ROUND_NN = -1;
+
+	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, ThreadPool &TP, int ROUND_NN, const int seed = rand()):
+			ntaxa(ntaxa), tripInit(tripInit), names(names), TP(TP), generator(seed), ROUND_NN(ROUND_NN) {
 		taxonHash.push_back(0);
 		for (int i = 1; i < ntaxa; i++){
 			hash_t r = randomHash(generator);
@@ -768,12 +769,11 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	ConstrainedOptimizationAlgorithm(const ConstrainedOptimizationAlgorithm &alg): 
-			ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash), generator(rand()){}
+			ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash), generator(rand()), TP(alg.TP), ROUND_NN(alg.ROUND_NN) {}
 	
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
 		if (nodes[v].leafId != -1){
 			if (selected.count(nodes[v].leafId)){
-				//pAlg.trip.addTotal(nodes[v].leafId);
 				if (pAlg.rootLeafId == -1){
 					pAlg.rootLeafId = nodes[v].leafId;
 					return -1;
@@ -819,7 +819,6 @@ struct ConstrainedOptimizationAlgorithm{
 		if (roundId != 0){
 			if (selected.count(0)){
 				pAlg.rootLeafId = 0;
-				//pAlg.trip.addTotal(0);
 				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, selected);
 			}
 			else {
@@ -838,7 +837,6 @@ struct ConstrainedOptimizationAlgorithm{
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, double subsampleRate){
 		if (nodes[v].leafId != -1){
 			if (randP(generator) < subsampleRate){
-				//pAlg.trip.addTotal(nodes[v].leafId);
 				if (pAlg.rootLeafId == -1){
 					pAlg.rootLeafId = nodes[v].leafId;
 					return -1;
@@ -898,12 +896,6 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 		}
 		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
-	}
-	
-	PlacementAlgorithm createPlacementAlgorithm(double subsampleRate){
-		PlacementAlgorithm pAlg(taxonHash, tripInit);
-		createPlacementAlgorithm(pAlg, subsampleRate);
-		return pAlg;
 	}
 	
 	int guideSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i, unordered_set<int> &added){
@@ -970,19 +962,19 @@ struct ConstrainedOptimizationAlgorithm{
 		i++;
 		return ret;
 	}
-	
-	void addGuideTree(const string tree, const unordered_map<string, int> &name2id, int rnn = ROUND_NN){
+
+	void addGuideTree(const string &tree, const unordered_map<string, int> &name2id, int rnn){
 		unordered_set<int> added;
-		PlacementAlgorithm pAlg(taxonHash, tripInit, rnn);
+		PlacementAlgorithm pAlg(taxonHash, tripInit, TP, rnn);
 		int i = 0;
 		guideSubtree(pAlg, tree, name2id, i, added);
 		for (int i = 0; i < ntaxa; i++){
 			if (added.count(i) == 0) pAlg.order.push_back(i);
 		}
-		{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
+		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
 		pAlg.run();
 		cerr << pAlg.printTree(names) << endl;
-		{ const lock_guard<mutex> lock(mtx); addTripartitions(pAlg.tripHash); }
+		addTripartitions(pAlg.tripHash);
 	}
 	
 	int hash2node(hash_t h){
@@ -1041,51 +1033,23 @@ struct ConstrainedOptimizationAlgorithm{
 		return string("(") + printOptimalSubtreeWithScore(hash[-taxonHash[0]]) + "," + names[0] + ");";
 	}
 	
-	void batchWork(vector<PlacementAlgorithm> &jobs, int start, int end){
-		for (int i = start; i < end; i++){
-			jobs[i].run();
-			cerr << jobs[i].printTree(names) << endl;
-		}
-	}
-	
 	pair<score_t, string> run(int nJobs = 1, int nThrds = 1, double subsampleRate = 0, bool allowTwoStepRun = true){
 		if (nJobs == 0) return {computeOptimalTree(), printOptimalTree()};
-		if (allowTwoStepRun && ntaxa >= 100) return twoStepRun(nJobs, nThrds);
-		vector<PlacementAlgorithm> jobs;
-		vector<thread> thrds;
-		for (int i = 0; i < nJobs; i++){
-			jobs.emplace_back(move(createPlacementAlgorithm(subsampleRate)));
+		if (allowTwoStepRun && ntaxa >= 100) return twoStepRun(nJobs);
+		for (int i = 0; i < nJobs; i++) {
+			PlacementAlgorithm pAlg(taxonHash, tripInit, TP, ROUND_NN);
+			createPlacementAlgorithm(pAlg, subsampleRate);
+			pAlg.run();
+			cerr << pAlg.printTree(names) << endl;
+			addTripartitions(pAlg.tripHash);
 		}
-		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::batchWork, this, ref(jobs), i * nJobs / nThrds, (i + 1) * nJobs / nThrds);
-		}
-		batchWork(jobs, 0, nJobs / nThrds);
-		for (int i = 1; i < nThrds; i++){
-			thrds[i - 1].join();
-		}
-		for (int i = 0; i < nJobs; i++){
-			addTripartitions(jobs[i].tripHash);
-		}
-		
 		return {computeOptimalTree(), printOptimalTree()};
 	}
-	
-	void batchConstrainedWork(int start, int end, const string tree, const unordered_map<string, int> &name2id){
-		for (int i = start; i < end; i++){
+
+	pair<score_t, string> constrainedRun(int nJobs, const string tree, const unordered_map<string, int> &name2id){
+		for (int i = 0; i < nJobs; i++) {
 			addGuideTree(tree, name2id, -1);
 		}
-	}
-	
-	pair<score_t, string> constrainedRun(int nJobs, int nThrds, const string tree, const unordered_map<string, int> &name2id){
-		vector<thread> thrds;
-		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::batchConstrainedWork, this, i * nJobs / nThrds, (i + 1) * nJobs / nThrds, tree, ref(name2id));
-		}
-		batchConstrainedWork(0, nJobs / nThrds, tree, name2id);
-		for (int i = 1; i < nThrds; i++){
-			thrds[i - 1].join();
-		}
-		
 		return {computeOptimalTree(), printOptimalTree()};
 	}
 	
@@ -1120,12 +1084,10 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	void twoStepWorkflow(PlacementAlgorithm &pAlg){
-		int N, rId;
-		{ const lock_guard<mutex> lock(mtx); N = ntaxa; rId = roundId; }
+		int N = ntaxa, rId = roundId;
 		int n = sqrt(N) * log2(names.size()) / 4;
 		vector<int> order;
 		if (rId == 0){
-			mtx.lock();
 			ConstrainedOptimizationAlgorithm alg(*this);
 			for (int i = 1; i < N; i++) order.push_back(i);
 			shuffle(order.begin(), order.end(), generator);
@@ -1133,7 +1095,6 @@ struct ConstrainedOptimizationAlgorithm{
 			order[0] = 0;
 			hash_t hashsum = 0;
 			for (int i = 1; i < n; i++) hashsum += taxonHash[order[i]];
-			mtx.unlock();
 			
 			pAlg.taxonHash[0] = -hashsum;
 			alg.taxonHash[0] = -hashsum;
@@ -1157,14 +1118,14 @@ struct ConstrainedOptimizationAlgorithm{
 			alg.computeOptimalTree();
 			//cerr << alg.printOptimalTree() << endl;
 			alg.createPlacementAlgorithm(pAlg, 1);
-			{ const lock_guard<mutex> lock(mtx); pAlg.taxonHash[0] = taxonHash[0]; }
+			pAlg.taxonHash[0] = taxonHash[0];
 		}
 		else{
 			for (int i = 0; i < N; i++) order.push_back(i);
-			{ const lock_guard<mutex> lock(mtx); shuffle(order.begin(), order.end(), generator); }
+			shuffle(order.begin(), order.end(), generator);
 			unordered_set<int> selected;
 			for (int i = 0; i < n; i++) selected.insert(order[i]);
-			{ const lock_guard<mutex> lock(mtx); createPlacementAlgorithm(pAlg, selected); }
+			createPlacementAlgorithm(pAlg, selected);
 			pAlg.nnMove();
 		}
 		{
@@ -1178,7 +1139,6 @@ struct ConstrainedOptimizationAlgorithm{
 				vector<vector<int> > nodeBranch(pNodes.size());
 				
 				for (int i = n; i < N; i++) {
-					if ((i - n) & 127 == 0) cerr << "Binning " << i - n << "/" << N - n << endl; 
 					nodeBranch[pAlg.locateBranch(order[i])].push_back(order[i]);
 				}
 				int cnt = 0;
@@ -1190,7 +1150,6 @@ struct ConstrainedOptimizationAlgorithm{
 					unordered_map<int, int> nodeRemap;
 					nodeRemap[b] = b;
 					for (int i: nodeBranch[b]) {
-						if (cnt & 127 == 0) cerr << "Placement " << cnt++ << "/" << N - n << endl;
 						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
 						else abnormalOrder.push_back(i);
 					}
@@ -1210,25 +1169,14 @@ struct ConstrainedOptimizationAlgorithm{
 		pAlg.run();
 	}
 	
-	void twoStepBatchWork(int nJobs){
-		for (int i = 0; i < nJobs; i++){
-			PlacementAlgorithm job(taxonHash, tripInit);
+	pair<score_t, string> twoStepRun(int nJobs){
+		cerr << "Use two-step algorithm!\n";
+		
+		for (int i = 0; i < nJobs; i++) {
+			PlacementAlgorithm job(taxonHash, tripInit, TP, ROUND_NN);
 			twoStepWorkflow(job);
 			cerr << job.printTree(names) << endl;
-			{ const lock_guard<mutex> lock(mtx); addTripartitions(job.tripHash); }
-		}
-	}
-	
-	pair<score_t, string> twoStepRun(int nJobs, int nThrds){
-		cerr << "Use two-step algorithm!\n";
-		vector<thread> thrds;
-		
-		for (int i = 1; i < nThrds; i++){
-			thrds.emplace_back(&ConstrainedOptimizationAlgorithm::twoStepBatchWork, this, (i + 1) * nJobs / nThrds - i * nJobs / nThrds);
-		}
-		twoStepBatchWork(nJobs / nThrds);
-		for (int i = 1; i < nThrds; i++){
-			thrds[i - 1].join();
+			addTripartitions(job.tripHash);
 		}
 		
 		return {computeOptimalTree(), printOptimalTree()};
@@ -1379,74 +1327,27 @@ struct ConstrainedOptimizationAlgorithm{
 #endif
 };
 
-#ifdef SUPPORT
-const string HELP_TEXT_1 = "binary_path [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread -u supportLevel";
-const string HELP_TEXT_2 = R"V0G0N(] inputList
--c  path to constraint subtree file
--g  path to guide tree file
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
--l  rate lambda of Yule process under which the species tree is modeled (default: 0.5)
--u  output support level (0: no output support value, 1<default>: branch local posterior probability, 2: detailed, 3: freqQuad.csv)
-)V0G0N";
-#else
-const string HELP_TEXT_1 = "binary_path [-c constraintSubtreeFilePath -g guideTreeFilePath -o oFilePath -r nRound -s nSample -p probability -t nThread";
-const string HELP_TEXT_2 = R"V0G0N(] inputList
--c  path to constraint subtree file
--g  path to guide tree file
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
-)V0G0N";
-#endif
-
 struct MetaAlgorithm{
-	struct Option{
-		unordered_set<string> options;
-		bool check(const char* c1, const char* c2){
-			options.insert(c2);
-			return strcmp(c1, c2) == 0;
-		}
-		bool isValid(char* c2){
-			return options.count(c2);
-		}
-	};
-
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1, nThread2 = 1, support = 1;
+	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1 = 1, nThread2 = 1, support = 1;
 	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
-	Option opt;
 	
 	TripartitionInitializer tripInit;
 	vector<TripartitionInitializer> batchInit;
 	
 	MetaAlgorithm(){}
 	
-	MetaAlgorithm(int argc, char** argv, string helpTextS1, string helpTextS2){
-		initialize(argc, argv, helpTextS1, helpTextS2);
+	MetaAlgorithm(int argc, char** argv) {
+		initialize(argc, argv);
 	}
 	
-	void initialize(int argc, char** argv, string helpTextS1, string helpTextS2){
-		string version = ALG_VERSION;
-		#ifdef OBJECTIVE_VERSION
-			version = version + "." + OBJECTIVE_VERSION;
-		#endif
-		#ifdef DRIVER_VERSION
-			version = version + "." + DRIVER_VERSION;
-		#endif
-		#ifdef TUTORIAL
-			MDGenerator::version = version;
-		#endif
+	void initialize(int argc, char** argv, string dummy1 = "", string dummy2 = "") {
+		string version = string(ALG_VERSION) + "." + OBJECTIVE_VERSION + "." + DRIVER_VERSION;
+		MDGenerator::version = version;
 		
-	#ifdef ARG_PARSER
 		cerr << ARG.getFullName() << endl;
 		cerr << "Version: " << version << endl;
 		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
@@ -1454,7 +1355,7 @@ struct MetaAlgorithm{
 		ARG.addStringArg('o', "output", "<standard output>", "File name for the output species tree", true);
 		ARG.addIntArg('r', "round", 4, "Number of initial rounds of placements");
 		ARG.addIntArg('s', "subsample", 4, "Number of rounds of subsampling per exploration step");
-		ARG.addDoubleArg('p', "proportion", 0.5, "Proportion of taxa in the subsample in naive algorithm");
+		ARG.addDoubleArg(0, "proportion", 0.25, "Proportion of taxa in the subsample in naive algorithm");
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
 		ARG.addIntArg(0, "seed", 233, "Seed for pseudorandomness");
 		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&](){
@@ -1483,86 +1384,23 @@ struct MetaAlgorithm{
 		lambda = ARG.getDoubleArg("lambda");
 		support = ARG.getIntArg("support");
 		srand(ARG.getIntArg("seed"));
-	#else
-		cerr << "Version: " << version << endl;
-		if (argc == 1) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
-		for (int i = 1; i < argc; i += 2){
-			if (opt.check(argv[i], "-y")) {i--; continue;}
-			
-			if (opt.check(argv[i], "-c")) constraintFile = argv[i + 1];
-			if (opt.check(argv[i], "-g")) guideFile = argv[i + 1];
-			if (opt.check(argv[i], "-o")) outputFile = argv[i + 1];
-			if (opt.check(argv[i], "-r")) sscanf(argv[i + 1], "%d", &nRounds);
-			if (opt.check(argv[i], "-s")) sscanf(argv[i + 1], "%d", &nSample);
-			if (opt.check(argv[i], "-p")) sscanf(argv[i + 1], "%lf", &p);
-			if (opt.check(argv[i], "-t")) sscanf(argv[i + 1], "%d", &nThreads);
-			if (opt.check(argv[i], "-l")) sscanf(argv[i + 1], "%lf", &lambda);
-			if (opt.check(argv[i], "-u")) sscanf(argv[i + 1], "%d", &support);
-			if (opt.check(argv[i], "-h")) {cerr << HELP_TEXT_1 << helpTextS1 << HELP_TEXT_2 << helpTextS2; exit(0);}
-		}
-	#endif
-		#ifdef USE_CUDA
-		nThread2 = 1;
-		nThread1 = 1;
-		#else
+
 		nThread2 = nThreads;
-		nThread1 = 1;
-		#endif
-		TP.initialize(nThreads);
 		batchInit.resize(nBatch);
 	}
 	
-	void searchSpace(ConstrainedOptimizationAlgorithm &alg, const vector<int> &batchId, const vector<int> &seeds){
-		for (int i = 0; i < batchId.size(); i++){
-			ConstrainedOptimizationAlgorithm batchAlg(names.size(), batchInit[batchId[i]], names, seeds[i]);
-			string tree = batchAlg.run(1, 1).second;
-			alg.addGuideTree(tree, name2id);
-		}
-	}
-	
-	pair<score_t, string> generateSearchSpace(ConstrainedOptimizationAlgorithm &alg){
-		if (nRounds > 0){
-			vector<vector<int> > batchId(nThreads), seeds(nThreads);
-			vector<thread> thrds;
-			
-			for (int i = 0; i < nRounds * fold; i++){
-				batchId[i % nThreads].push_back(i % nBatch);
-				seeds[i % nThreads].push_back(rand());
-			}
-			
-			for (int i = 1; i < nThreads; i++){
-				thrds.emplace_back(&MetaAlgorithm::searchSpace, this, ref(alg), ref(batchId[i]), ref(seeds[i]));
-			}
-			
-			searchSpace(alg, batchId[0], seeds[0]);
-			
-			for (int i = 0; i < nThreads - 1; i++){
-				thrds[i].join();
-			}
-			cerr << "*** End of Batching ***" << endl;
-		}
-		return alg.run(nRounds, nThread1);
-	}
-	
 	pair<score_t, string> run(){
+		ThreadPool TP;
+		TP.initialize(nThreads);
+		int ROUND_NN = -1;
+
 		ostream &fout = (outputFile == "" || outputFile == "<standard output>") ? cout : fileOut;
 		if (outputFile != "" && outputFile != "<standard output>") fileOut.open(outputFile);
 		
 		cerr << "#Species: " << names.size() << endl;
 		cerr << "#Rounds: " << nRounds << endl;
 		cerr << "#Samples: " << nSample << endl;
-		cerr << "#Threads: " << nThread1 << "x" << nThread2 << endl;
-		cerr << "p = " << p << endl;
-		
-		ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
-		
-		if (guideFile != ""){
-			ifstream fin(guideFile);
-			string tree;
-			while (getline(fin, tree)){
-				if (tree.size()) alg.addGuideTree(tree, name2id);
-			}
-		}
+		cerr << "#Threads: " << nThreads << endl;
 		
 		if (constraintFile != ""){
 			ifstream fin(constraintFile);
@@ -1572,7 +1410,17 @@ struct MetaAlgorithm{
 			ROUND_NN = 20 + 2 * sqrt(names.size()) * log2(names.size());
 		}
 		
-		auto res = (constraintTree == "") ? generateSearchSpace(alg) : alg.constrainedRun(nRounds, nThreads, constraintTree, name2id);
+		ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names, TP, ROUND_NN);
+		
+		if (guideFile != ""){
+			ifstream fin(guideFile);
+			string tree;
+			while (getline(fin, tree)){
+				if (tree.size()) alg.addGuideTree(tree, name2id, ROUND_NN);
+			}
+		}
+		
+		auto res = (constraintTree == "") ? alg.run(nRounds) : alg.constrainedRun(nRounds, constraintTree, name2id);
 		cerr << "Initial score: " << (double) res.first << endl;
 		cerr << "Initial tree: " << res.second << endl;
 		if (constraintTree == "") {
