@@ -23,7 +23,6 @@ typedef unsigned __int128 hash_t;
 #include<tuple>
 #include<string>
 #include<thread>
-#include<mutex>
 #include<cmath>
 
 #include "incbeta.c"
@@ -752,7 +751,6 @@ struct ConstrainedOptimizationAlgorithm{
 	const TripartitionInitializer &tripInit;
 	const int ntaxa;
 	int roundId = 0;
-	mutex mtx;
 	ThreadPool &TP;
 	int ROUND_NN = -1;
 
@@ -1101,7 +1099,7 @@ struct ConstrainedOptimizationAlgorithm{
 			for (int r = 0; r < n; r++){
 				cerr << "Guide Tree " << r << "/" << n << endl;
 				for (int i = 0; i < n; i++) pAlg.order.push_back(order[i]);
-				{ const lock_guard<mutex> lock(mtx); shuffle(pAlg.order.begin(), pAlg.order.end(), generator); }
+				shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
 				pAlg.run();
 				alg.addTripartitions(pAlg.tripHash);
 				//for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]);
@@ -1328,6 +1326,8 @@ struct ConstrainedOptimizationAlgorithm{
 };
 
 struct MetaAlgorithm{
+	static bool STATIC_INITIALIZED;
+
 	vector<string> files, names;
 	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1 = 1, nThread2 = 1, support = 1;
 	double p = 0.5, lambda = 0.5;
@@ -1338,16 +1338,22 @@ struct MetaAlgorithm{
 	TripartitionInitializer tripInit;
 	vector<TripartitionInitializer> batchInit;
 	
-	MetaAlgorithm(){}
-	
-	MetaAlgorithm(int argc, char** argv) {
-		initialize(argc, argv);
+	MetaAlgorithm(){
+		initialize();
 	}
 	
-	void initialize(int argc, char** argv, string dummy1 = "", string dummy2 = "") {
+	MetaAlgorithm(int argc, char** argv) {
+		staticInitialize(argc, argv);
+		initialize();
+	}
+	
+	static void staticInitialize(int argc, char** argv) {
+		if (STATIC_INITIALIZED) return;
+		STATIC_INITIALIZED = true;
+
 		string version = string(ALG_VERSION) + "." + OBJECTIVE_VERSION + "." + DRIVER_VERSION;
 		MDGenerator::version = version;
-		
+
 		cerr << ARG.getFullName() << endl;
 		cerr << "Version: " << version << endl;
 		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
@@ -1358,22 +1364,29 @@ struct MetaAlgorithm{
 		ARG.addDoubleArg(0, "proportion", 0.25, "Proportion of taxa in the subsample in naive algorithm");
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
 		ARG.addIntArg(0, "seed", 233, "Seed for pseudorandomness");
-		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&](){
+		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&]() {
 			ARG.getIntArg("round") = 1; ARG.getIntArg("subsample") = 0;
-		}, true);
-		ARG.addFlag('R', "moreround", "More rounds of placements and subsampling (`-r 16 -s 16`)", [&](){
+			}, true);
+		ARG.addFlag('R', "moreround", "More rounds of placements and subsampling (`-r 16 -s 16`)", [&]() {
 			ARG.getIntArg("round") = 16; ARG.getIntArg("subsample") = 16;
-		}, true);
-		#ifdef SUPPORT
+			}, true);
+	#ifdef SUPPORT
 		ARG.addDoubleArg('l', "lambda", 0.5, "Rate lambda of Yule process under which the species tree is modeled");
 		ARG.addDoubleArg('w', "downweightrepeat", 1, "The number of trees sampled for each locus");
 		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
-		#endif
-		#ifdef G_SUPPORT
+	#endif
+	#ifdef G_SUPPORT
 		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: Grubbs's test p-value, 2: detailed, 3: freqQuad.csv)");
-		#endif
-		
+	#endif
 		ARG.parse(argc, argv);
+	}
+
+	void initialize(int argc, char** argv, string dummy1 = "", string dummy2 = "") {
+		staticInitialize(argc, argv);
+		initialize();
+	}
+
+	void initialize(){
 		constraintFile = ARG.getStringArg("constraint");
 		guideFile = ARG.getStringArg("guide");
 		outputFile = ARG.getStringArg("output");
@@ -1452,3 +1465,5 @@ struct MetaAlgorithm{
 		return res;
 	}
 };
+
+bool MetaAlgorithm::STATIC_INITIALIZED = false;
