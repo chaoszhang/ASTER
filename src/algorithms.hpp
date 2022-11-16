@@ -1347,8 +1347,8 @@ struct MetaAlgorithm{
 	static bool STATIC_INITIALIZED;
 
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, support = 1;
-	double p = 0.5, lambda = 0.5;
+	int nThreads = 1, nRounds = 4, nSample = 4, support = 1;
+	double p = 0.25, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
@@ -1358,7 +1358,7 @@ struct MetaAlgorithm{
 	// deprecated
 	vector<TripartitionInitializer> batchInit;
 	int& nThread2 = nThreads;
-	const static int nThread1 = 1;
+	const static int nThread1 = 1, nBatch = 1;
 	
 	MetaAlgorithm(){
 		initialize();
@@ -1425,7 +1425,7 @@ struct MetaAlgorithm{
 		LOG.enabled = (loglevel >= 2);
 
 		// deprecated
-		batchInit.resize(nThreads);
+		batchInit.resize(nBatch);
 	}
 	
 	pair<score_t, string> run(){
