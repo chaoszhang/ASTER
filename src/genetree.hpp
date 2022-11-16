@@ -849,7 +849,7 @@ struct Tripartition{
 			nodeY.Y = 1;
 			nodeZ.Z = 1;
 			
-			//cerr << "here1!" << endl;
+			//LOG << "here1!" << endl;
 			for (int i = 0; i < init.roots[k].size(); i++){
 				int nInternal = 0;
 				for (const pair<int, int> pc: init.parentChild[k][i]){
@@ -861,13 +861,13 @@ struct Tripartition{
 					if (pc.second < init.nTaxa) leafParent[i][pc.second] = pc.first - init.nTaxa;
 					else children[pc.first - init.nTaxa].push_back(pc.second - init.nTaxa);
 				}
-				//cerr << init.roots[i] - init.nTaxa << endl;
+				//LOG << init.roots[i] - init.nTaxa << endl;
 				/*for (int i = 0; i < children.size(); i++){
 					for (int j: children[i]){
-						cerr << i << " " << j << endl;
+						LOG << i << " " << j << endl;
 					}
 				}*/
-				//for (int j = 0; j < init.nTaxa; j++) cerr << j << "->" << leafParent[i][j] << endl;
+				//for (int j = 0; j < init.nTaxa; j++) LOG << j << "->" << leafParent[i][j] << endl;
 				roots.push_back(buildTree(init.roots[k][i] - init.nTaxa, iNodes, children));
 				for (int j = 0; j < nInternal; j++){
 					nodes[i].emplace_back();
@@ -876,14 +876,14 @@ struct Tripartition{
 					nodesTotal[i].emplace_back();
 					nodesTotal[i][j].up = iNodes[j].up;
 					nodesTotal[i][j].down = iNodes[j].down;
-					//cerr << j << " " << nodes[i][j].up << " " << nodes[i][j].down << endl;
+					//LOG << j << " " << nodes[i][j].up << " " << nodes[i][j].down << endl;
 				}
 			}
-			//cerr << "Init finished\n";
+			//LOG << "Init finished\n";
 		}
 		
 		void add(int x, int i){
-			//cerr << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
+			//LOG << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
 			totalScore = 0;
 			for (int k = 0; k < leafParent.size(); k++){
 				int u = leafParent[k][i], v = -2;
@@ -900,7 +900,7 @@ struct Tripartition{
 						else if (x == 1) doXspecial(*pu, *pv, vOld);//{undoXspecial(*pu, vOld); doXspecial(*pu, *pv);}
 						else doYspecial(*pu, *pv, vOld);//{undoYspecial(*pu, vOld); doYspecial(*pu, *pv);}
 						
-						//if (pu->verify(*pv)) cerr << "ERROR!";
+						//if (pu->verify(*pv)) LOG << "ERROR!";
 					}
 					else {
 						Node &w = (pu->down == -1) ? dummy : nodes[k][pu->down];
@@ -908,7 +908,7 @@ struct Tripartition{
 						else if (x == 1) doXnormal(*pu, *pv, vOld, w);//{undoXnormal(*pu, vOld, w); doXnormal(*pu, *pv, w);}
 						else doYnormal(*pu, *pv, vOld, w);//{undoYnormal(*pu, vOld, w); doYnormal(*pu, *pv, w);}
 						
-						//if (pu->verify(w)) cerr << "ERROR!";
+						//if (pu->verify(w)) LOG << "ERROR!";
 					}
 					vOld = uOld;
 					v = u;
@@ -917,7 +917,7 @@ struct Tripartition{
 				}
 				totalScore += pv->Q;
 			}
-			//cerr << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
+			//LOG << nodes[0][0].X << " " << nodes[0][0].Y << " " << nodes[0][0].Z << ":" << nodes[0][0].Q << "|" << nodes[0][1].X << " " << nodes[0][1].Y << " " << nodes[0][1].Z << ":" << nodes[0][1].Q << "|" << nodes[0][2].X << " " << nodes[0][2].Y << " " << nodes[0][2].Z << ":" << nodes[0][2].Q << "|" << nodes[0][3].X << " " << nodes[0][3].Y << " " << nodes[0][3].Z << ":" << nodes[0][3].Q << endl << endl;
 		}
 		
 		void rmv(int x, int i){

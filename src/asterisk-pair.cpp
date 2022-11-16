@@ -104,7 +104,7 @@ void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, co
 		}
 		score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
 		while (tripInit.pi.size() < npos) tripInit.pi.push_back((cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum));
-		//cerr << cntsum << "\t" << (cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum) << "\t" << cnt[0] * cnt[3] / (1.0 * cnt[1] * cnt[2]) << endl;
+		//LOG << cntsum << "\t" << (cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum) << "\t" << cnt[0] * cnt[3] / (1.0 * cnt[1] * cnt[2]) << endl;
 		for (int p = oldNpos; p < npos; p++){
 			int pcnt[4] = {};
 			for (int id = 0; id < tripInit.seq.size(); id++){
@@ -134,7 +134,7 @@ int main(int argc, char** argv){
 	double p = 0.5;
 	string outputFile;
 	ofstream fileOut;
-	if (argc == 1) {cerr << helpText; return 0;}
+	if (argc == 1) {LOG << helpText; return 0;}
 	for (int i = 1; i < argc; i += 2){
 		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
 		
@@ -143,7 +143,7 @@ int main(int argc, char** argv){
 		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
 		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
 		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-		if (strcmp(argv[i], "-h") == 0) {cerr << helpText; return 0;}
+		if (strcmp(argv[i], "-h") == 0) {LOG << helpText; return 0;}
 	}
 	ostream &fout = (outputFile == "") ? cout : fileOut;
 	if (outputFile != "") fileOut.open(outputFile);
@@ -216,20 +216,20 @@ int main(int argc, char** argv){
 	tripInit.weightHelper.push_back(0);
 	
 	tripInit.npos = npos;
-	cerr << "#Species: " << names.size() << endl;
-	cerr << "#Bases: " << npos << endl;
-	cerr << "#Rounds: " << nRounds << endl;
-	cerr << "#Samples: " << nSample << endl;
-	cerr << "#Threads: " << nThreads << "x" << tripInit.nThreads << endl;
-	cerr << "p = " << p << endl;
+	LOG << "#Species: " << names.size() << endl;
+	LOG << "#Bases: " << npos << endl;
+	LOG << "#Rounds: " << nRounds << endl;
+	LOG << "#Samples: " << nSample << endl;
+	LOG << "#Threads: " << nThreads << "x" << tripInit.nThreads << endl;
+	LOG << "p = " << p << endl;
 	
 	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
 	auto res = alg.run(nRounds, nThreads);
-	cerr << "Score: " << (double) res.first << endl;
-	cerr << res.second << endl;
+	LOG << "Score: " << (double) res.first << endl;
+	LOG << res.second << endl;
 	
 	res = alg.run(nSample, nThreads, p);
-	cerr << "Score: " << (double) res.first << endl;
+	LOG << "Score: " << (double) res.first << endl;
 	fout << res.second << endl;
 	return 0;
 }

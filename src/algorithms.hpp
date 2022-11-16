@@ -13,6 +13,7 @@
 
 typedef unsigned __int128 hash_t;
 
+#include<iostream>
 #include<vector>
 #include<array>
 #include<utility> 
@@ -33,6 +34,23 @@ typedef unsigned __int128 hash_t;
 #define ERROR_TOLERANCE 0
 #endif
 using namespace std;
+
+struct LogInfo {
+	ostream& fout;
+	bool enabled;
+
+	LogInfo(bool enabled = true, ostream& fout = cerr): fout(fout), enabled(enabled) {}
+
+	template<class T> LogInfo& operator<< (const T& v) {
+		if (enabled) fout << v;
+		return *this;
+	}
+	
+	LogInfo& operator<< (basic_ostream<char, std::char_traits<char> >& (*endl)(basic_ostream<char, std::char_traits<char> >&)) {
+		if (enabled) fout << endl;
+		return *this;
+	}
+} LOG;
 
 struct Hasher{
 	size_t operator()(const hash_t h) const{
@@ -649,7 +667,7 @@ struct PlacementAlgorithm{
 			tripUpdateGet(0, rootLeafId);
 			switchSubtreeGet(rootNodeId, -1, 0);
 			nnMove(rootNodeId);
-			cerr << "#NNI moves:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
+			LOG << "#NNI moves:" << ROUND_NN - rNN << "/" << ROUND_NN << endl;
 		}
 	}
 	
@@ -941,7 +959,7 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 			//while (tree[i] != ')' && tree[i] != ',' && tree[i] != ';') i++;
 			if (tree[i-1] == ',') {
-				cerr << "Warning: Polytomy detected! Resolving arbitrarily!\n";
+				LOG << "Warning: Polytomy detected! Resolving arbitrarily!\n";
 				//i++;
 				int nodeL = ret;
 				if (pAlg.rootLeafId == -1) ret = guideSubtree(pAlg, tree, name2id, i, added);
@@ -971,7 +989,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
 		pAlg.run();
-		cerr << pAlg.printTree(names) << endl;
+		LOG << pAlg.printTree(names) << endl;
 		addTripartitions(pAlg.tripHash);
 	}
 	
@@ -1038,7 +1056,7 @@ struct ConstrainedOptimizationAlgorithm{
 			PlacementAlgorithm pAlg(taxonHash, tripInit, TP, ROUND_NN);
 			createPlacementAlgorithm(pAlg, subsampleRate);
 			pAlg.run();
-			cerr << pAlg.printTree(names) << endl;
+			LOG << pAlg.printTree(names) << endl;
 			addTripartitions(pAlg.tripHash);
 		}
 		return {computeOptimalTree(), printOptimalTree()};
@@ -1097,7 +1115,7 @@ struct ConstrainedOptimizationAlgorithm{
 			pAlg.taxonHash[0] = -hashsum;
 			alg.taxonHash[0] = -hashsum;
 			for (int r = 0; r < n; r++){
-				cerr << "Guide Tree " << r << "/" << n << endl;
+				LOG << "Guide Tree " << r << "/" << n << endl;
 				for (int i = 0; i < n; i++) pAlg.order.push_back(order[i]);
 				shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
 				pAlg.run();
@@ -1114,7 +1132,7 @@ struct ConstrainedOptimizationAlgorithm{
 				pAlg.rNN = ROUND_NN;
 			}
 			alg.computeOptimalTree();
-			//cerr << alg.printOptimalTree() << endl;
+			//LOG << alg.printOptimalTree() << endl;
 			alg.createPlacementAlgorithm(pAlg, 1);
 			pAlg.taxonHash[0] = taxonHash[0];
 		}
@@ -1162,18 +1180,18 @@ struct ConstrainedOptimizationAlgorithm{
 			//pAlg.rootLeafId = rootLeafId;
 			pAlg.orderId = 0;
 		}
-		cerr << "Remaining: " << pAlg.order.size() << endl;
+		LOG << "Remaining: " << pAlg.order.size() << endl;
 		pAlg.nnMove();
 		pAlg.run();
 	}
 	
 	pair<score_t, string> twoStepRun(int nJobs){
-		cerr << "Use two-step algorithm!\n";
+		LOG << "Use two-step algorithm!\n";
 		
 		for (int i = 0; i < nJobs; i++) {
 			PlacementAlgorithm job(taxonHash, tripInit, TP, ROUND_NN);
 			twoStepWorkflow(job);
-			cerr << job.printTree(names) << endl;
+			LOG << job.printTree(names) << endl;
 			addTripartitions(job.tripHash);
 		}
 		
@@ -1329,14 +1347,18 @@ struct MetaAlgorithm{
 	static bool STATIC_INITIALIZED;
 
 	vector<string> files, names;
-	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, nThread1 = 1, nThread2 = 1, support = 1;
+	int nThreads = 1, nRounds = 4, nSample = 4, nBatch = 8, fold = 0, support = 1;
 	double p = 0.5, lambda = 0.5;
 	string outputFile, guideFile, constraintFile, constraintTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
 	
 	TripartitionInitializer tripInit;
+
+	// deprecated
 	vector<TripartitionInitializer> batchInit;
+	int& nThread2 = nThreads;
+	const static int nThread1 = 1;
 	
 	MetaAlgorithm(){
 		initialize();
@@ -1354,8 +1376,8 @@ struct MetaAlgorithm{
 		string version = string(ALG_VERSION) + "." + OBJECTIVE_VERSION + "." + DRIVER_VERSION;
 		MDGenerator::version = version;
 
-		cerr << ARG.getFullName() << endl;
-		cerr << "Version: " << version << endl;
+		LOG << ARG.getFullName() << endl;
+		LOG << "Version: " << version << endl;
 		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
 		ARG.addStringArg('g', "guide", "", "Newick file containing binary trees as guide trees");
 		ARG.addStringArg('o', "output", "<standard output>", "File name for the output species tree", true);
@@ -1364,6 +1386,7 @@ struct MetaAlgorithm{
 		ARG.addDoubleArg(0, "proportion", 0.25, "Proportion of taxa in the subsample in naive algorithm");
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
 		ARG.addIntArg(0, "seed", 233, "Seed for pseudorandomness");
+		ARG.addIntArg('v', "verbose", 2, "Level of logging (1: minimum, 2: normal)");
 		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&]() {
 			ARG.getIntArg("round") = 1; ARG.getIntArg("subsample") = 0;
 			}, true);
@@ -1398,8 +1421,11 @@ struct MetaAlgorithm{
 		support = ARG.getIntArg("support");
 		srand(ARG.getIntArg("seed"));
 
-		nThread2 = nThreads;
-		batchInit.resize(nBatch);
+		int loglevel = ARG.getIntArg("verbose");
+		LOG.enabled = (loglevel >= 2);
+
+		// deprecated
+		batchInit.resize(nThreads);
 	}
 	
 	pair<score_t, string> run(){
@@ -1410,10 +1436,10 @@ struct MetaAlgorithm{
 		ostream &fout = (outputFile == "" || outputFile == "<standard output>") ? cout : fileOut;
 		if (outputFile != "" && outputFile != "<standard output>") fileOut.open(outputFile);
 		
-		cerr << "#Species: " << names.size() << endl;
-		cerr << "#Rounds: " << nRounds << endl;
-		cerr << "#Samples: " << nSample << endl;
-		cerr << "#Threads: " << nThreads << endl;
+		LOG << "#Species: " << names.size() << endl;
+		LOG << "#Rounds: " << nRounds << endl;
+		LOG << "#Samples: " << nSample << endl;
+		LOG << "#Threads: " << nThreads << endl;
 		
 		if (constraintFile != ""){
 			ifstream fin(constraintFile);
@@ -1434,25 +1460,25 @@ struct MetaAlgorithm{
 		}
 		
 		auto res = (constraintTree == "") ? alg.run(nRounds) : alg.constrainedRun(nRounds, constraintTree, name2id);
-		cerr << "Initial score: " << (double) res.first << endl;
-		cerr << "Initial tree: " << res.second << endl;
+		LOG << "Initial score: " << (double) res.first << endl;
+		LOG << "Initial tree: " << res.second << endl;
 		if (constraintTree == "") {
-			cerr << "*** Subsample Process ***" << endl;
+			LOG << "*** Subsample Process ***" << endl;
 			score_t prevS;
 			int roundNum = 0;
 			do {
 				prevS = res.first;
 				res = alg.run(nSample, nThread1, p);
-				cerr << "Current score: " << (double) res.first << endl;
-				cerr << "Current tree: " << res.second << endl;
+				LOG << "Current score: " << (double) res.first << endl;
+				LOG << "Current tree: " << res.second << endl;
 				roundNum++;
 			}
 			while (prevS + ERROR_TOLERANCE < res.first && roundNum < 20);
-			if (prevS + ERROR_TOLERANCE < res.first) cerr << "Search stopped due to excessive rounds. Tree may not be optimal!" << endl;
+			if (prevS + ERROR_TOLERANCE < res.first) LOG << "Search stopped due to excessive rounds. Tree may not be optimal!" << endl;
 		}
 		
 		string output = res.second;
-		cerr << "Final Tree: " << output << endl;
+		LOG << "Final Tree: " << output << endl;
 		#if defined(SUPPORT) || defined(G_SUPPORT)
 		double w = 1;
 		#ifdef SUPPORT

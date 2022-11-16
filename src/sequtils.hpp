@@ -787,7 +787,7 @@ vector<vector<int> > diskCovering(const AlignmentHot &a, const AlignmentHot &b,
         vector<DistanceMatrix> p = dm.partition(c);
         for (int i = 0; i < c.size(); i++){
             const Tree t(p[i]);
-            //cerr << (string) t << endl;
+            //LOG << (string) t << endl;
             const vector<vector<int> > dc = t.diskCovering(eng, rate);
             for (const vector<int> &group: dc) {
                 result.emplace_back();

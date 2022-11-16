@@ -269,7 +269,7 @@ struct Quadrupartition{
 		}
 		
 		array<double, 3> score(){
-			//cerr << cnt[0] << " " << cnt[1] << " " << cnt[2] << " " << cnt[3] << "; " << totalScore1 << " " << totalScore2 << " " << totalScore3 << "\n";
+			//LOG << cnt[0] << " " << cnt[1] << " " << cnt[2] << " " << cnt[3] << "; " << totalScore1 << " " << totalScore2 << " " << totalScore3 << "\n";
 			double prod = cnt[0] * cnt[1] * cnt[2] * cnt[3];
 			return {totalScore1 / prod, totalScore2 / prod, totalScore3 / prod};
 		}

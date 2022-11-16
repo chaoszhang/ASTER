@@ -153,8 +153,8 @@ void addBin(const vector<int> &geneTaxa, const vector<vector<int> > &bins,
     temp.taxa2row.resize(n);
 	for (const vector<int> &bin: bins){
         const MSA msaBin = msa.sample(bin);
-        //cerr << (string) msaBin;
-        //cerr << msaBin.nSites() << endl;
+        //LOG << (string) msaBin;
+        //LOG << msaBin.nSites() << endl;
         if (msaBin.nSites() < 5) continue;
         AlignmentHot a[7], b[7];
         a[0] = msaBin.A(); b[0] = msaBin.C() + msaBin.G() + msaBin.T();
@@ -310,7 +310,7 @@ void formatGene(const vector<int> geneTaxa, const vector<string> geneSeqs){
     vector<int> nameInt;
     for (string nm: names) nameInt.push_back(stoi(nm));
     Tree T(DM, nameInt);
-    cerr << (string) T;
+    LOG << (string) T;
     exit(0); 
 
 	vector<int> triallelic, alleleCnt = msa.alleleCnt(), minorAlleleSum = msa.minorAlleleSum();
@@ -522,10 +522,10 @@ int main(int argc, char** argv){
 		for (thread &t: thrds) t.join();
 	}
 	
-    cerr << "rateModifier: " << rateModifier << endl;
-	cerr << "#Blocks: " << tripInit.block1.size() << endl;
+    LOG << "rateModifier: " << rateModifier << endl;
+	LOG << "#Blocks: " << tripInit.block1.size() << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << (double) score << endl;
+	LOG << "Score: " << (double) score << endl;
 	return 0;
 }

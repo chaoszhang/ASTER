@@ -183,10 +183,10 @@ int main(int argc, char** argv){
 			nameCnts.push_back(1);
 		}
 	}
-	cerr << "#Genetrees: " << K << endl;
+	LOG << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	//cerr << "Score: " << (double) score << endl;
+	//LOG << "Score: " << (double) score << endl;
 	fprintf(stderr, "Score: %.10lg\n", (double) score);
 	return 0;
 }

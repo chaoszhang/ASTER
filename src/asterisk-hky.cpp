@@ -65,7 +65,7 @@ void addBin(const vector<int> &geneTaxa, const vector<vector<char> > &seqs, cons
         }
         int j = e.second;
         if (cnt[j][0] + cnt[j][2] < 2 || cnt[j][1] + cnt[j][3] < 2) continue;
-        //cerr << e.first << " ";
+        //LOG << e.first << " ";
         for (int i = 0; i < seqs.size(); i++){
             int id = geneTaxa[i];
             tripInit.trees[geneID][binID].seq[id].push_back(seqs[i][j]);
@@ -271,7 +271,7 @@ int main(int argc, char** argv){
                 getline(listIn, file);
                 getline(rateIn, rfile);
                 readFasta(file, SeqUtils::iqtreeRateParser(rfile)[0], i);
-                cerr << file << endl;
+                LOG << file << endl;
             }
         }
         else {
@@ -280,16 +280,16 @@ int main(int argc, char** argv){
             vector<pair<double, int> > mutationRate;
             for (string file; getline(listIn, file);){
                 readFasta(file, mutationRate, i % t);
-                if (i % 100 == 0) cerr << file << endl;
+                if (i % 100 == 0) LOG << file << endl;
                 i++;
             }
         }
 	}
 	
-    //cerr << "rateModifier: " << rateModifier << endl;
-	cerr << "#Genes: " << tripInit.trees.size() << endl;
+    //LOG << "rateModifier: " << rateModifier << endl;
+	LOG << "#Genes: " << tripInit.trees.size() << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << (double) score << endl;
+	LOG << "Score: " << (double) score << endl;
 	return 0;
 }

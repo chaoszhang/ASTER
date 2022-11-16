@@ -135,7 +135,7 @@ vector<pair<int, double> > infoSort(vector<array<vector<bool>, 4> > &sites, vect
 		allPair.push_back({i, MI / juryCnt});
 	}
 	sort(allPair.begin(), allPair.end(), [](pair<int, double> a, pair<int, double> b){return a.second > b.second;});
-	//for (auto p:allPair) cerr << p.first << ":" << p.second << "\t";
+	//for (auto p:allPair) LOG << p.first << ":" << p.second << "\t";
 	return allPair;
 }
 
@@ -324,9 +324,9 @@ int main(int argc, char** argv){
 		for (thread &t: thrds) t.join();
 	}
 	
-	cerr << "#Bases: " << tripInit.breakPoints.back() << endl;
+	LOG << "#Bases: " << tripInit.breakPoints.back() << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << (double) score << endl;
+	LOG << "Score: " << (double) score << endl;
 	return 0;
 }

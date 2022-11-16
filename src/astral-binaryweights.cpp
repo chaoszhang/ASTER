@@ -148,9 +148,9 @@ int main(int argc, char** argv){
 	}
 	readInputTrees(argv[argc - 1], mappingFile);
 	
-	cerr << "#Genetrees: " << K << endl;
+	LOG << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
-	cerr << "Score: " << score << endl;
+	LOG << "Score: " << score << endl;
 	return 0;
 }

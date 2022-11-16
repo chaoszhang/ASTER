@@ -182,7 +182,7 @@ int main(int argc, char** argv){
 		else if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
 		else if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
 		else if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
-		else if (!meta.opt.isValid(argv[i])) {cerr << "Error: Failed to parse input arguments. Please try -h for correct formating.\n"; exit(0);}
+		else if (!meta.opt.isValid(argv[i])) {LOG << "Error: Failed to parse input arguments. Please try -h for correct formating.\n"; exit(0);}
 	}
 	*/
 	
@@ -206,7 +206,7 @@ int main(int argc, char** argv){
 			nameCnts.push_back(1);
 		}
 	}
-	cerr << "#Genetrees: " << K << endl;
+	LOG << "#Genetrees: " << K << endl;
 	
 	score_t score = meta.run().first;
 	fprintf(stderr, "Score: %.10lg\n", (double) score);

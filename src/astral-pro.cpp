@@ -268,7 +268,7 @@ public:
 		
 		if (node[cur].isLeaf){
 			tripInit.leafParent[p][node[cur].leafId].push_back(w);
-			//cerr << id2name[node[cur].leafId];
+			//LOG << id2name[node[cur].leafId];
 			return w;
 		}
 		int left = node[cur].leftChildId, right = node[cur].rightChildId;
@@ -281,11 +281,11 @@ public:
 			large = right;
 			small = left;
 		}
-		//cerr << "(";
+		//LOG << "(";
 		int u = buildTree(small, p);
-		//cerr << ",";
+		//LOG << ",";
 		int v = buildTree(large, p);
-		//cerr << ")";
+		//LOG << ")";
 		tripInit.nodes[p][w].small = u;
 		tripInit.nodes[p][w].large = v;
 		tripInit.nodes[p][u].up = w;
@@ -294,7 +294,7 @@ public:
 			tripInit.nodes[p][w].dup = true;
 			for (int i: (node[cur].label - node[large].label).setBits()){
 				tripInit.leafParent[p][i].push_back(w);
-			} //cerr << "+";
+			} //LOG << "+";
 		}
 		else {
 			tripInit.nodes[p][w].dup = false;
@@ -400,7 +400,7 @@ void annotate(string input, string mapping){
 				if (TEXT[i] == ',') leafCnt++;
 			}
 			if (internalCnt < leafCnt - 2 && !resolvePolytomies && !hasPolytomy) {
-				cerr << "Warning: Non-binary input tree(s) detected! ASTRAL-Pro will treat all polytomies as duplication events. Please ignore this warning if all polytomies are parents of leaves (eg. output of Fasttree).\n";
+				LOG << "Warning: Non-binary input tree(s) detected! ASTRAL-Pro will treat all polytomies as duplication events. Please ignore this warning if all polytomies are parents of leaves (eg. output of Fasttree).\n";
 				hasPolytomy = true;
 			}
 			
@@ -408,12 +408,12 @@ void annotate(string input, string mapping){
 			unordered_map<long long, tuple<long long, long long, bool> > children;
 			long long root = parse(leafname, children, true);
 			GenetreeAnnotator ga;
-			//cerr << convert2string(leafname, children, root) << endl;
+			//LOG << convert2string(leafname, children, root) << endl;
 			int iroot = ga.annotateTree(leafname, children, root);
 			if (rootNtag) rootNtagTrees += ga.printTree(iroot) + "\n";
 			else ga.buildTree(iroot, K % tripInit.nodes.size());
 			K++;
-			if (VERBOSE && (K & 511) == 0) cerr << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
+			if (VERBOSE && (K & 511) == 0) LOG << "Read " << K << " genetrees and found " << id2name.size() << " species.\n";
 		}
 	}
 }
@@ -452,8 +452,8 @@ int main(int argc, char** argv){
 	}
 	annotate(ARG.getStringArg("input"), mappingFile);
 	
-	cerr << "#Genetrees: " << K << endl;
-	cerr << "#Duploss: " << duploss << endl;
+	LOG << "#Genetrees: " << K << endl;
+	LOG << "#Duploss: " << duploss << endl;
 	
 	if (rootNtag){
 		if (ARG.getStringArg("output") == "<standard output>") cout << rootNtagTrees;
@@ -462,7 +462,7 @@ int main(int argc, char** argv){
 	}
 
 	score_t score = meta.run().first;
-	cerr << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
-	cerr << "Score: " << score << endl;
+	LOG << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
+	LOG << "Score: " << score << endl;
 	return 0;
 }
