@@ -100,11 +100,12 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum update
       sudo yum install gcc-c++
       ```
-    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
+    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`.
+  - If you see "error" when running `make`, please try `make PROGRAM_NAME` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
-- Executables for x86-64 are available in `exe` folder and it is **very likely** that they already work.
+- [Executables](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip) for x86-64 are available in `exe` folder and it is **very likely** that they already work.
 - [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
 - To compile windows excutables:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
@@ -431,6 +432,9 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
     }
 
     string sharedIntro(){
+        if (programName == APRO) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral-pro");
+        if (programName == ASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral");
+        if (programName == WASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral-hybrid");
         return SHARED_INTRO;
     }
 
