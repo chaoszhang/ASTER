@@ -1,0 +1,1 @@
+exe\astral.exe -t 2 example\sancheck\TwostepAlgorithm\estimatedgenetre.nw

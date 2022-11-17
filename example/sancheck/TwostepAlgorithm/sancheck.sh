@@ -1,0 +1,1 @@
+bin/astral -t 2 example/sancheck/TwostepAlgorithm/estimatedgenetre.nw
