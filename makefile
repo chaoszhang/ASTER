@@ -1,4 +1,4 @@
-all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk asterisk-hky
+all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky
 	echo "*** Installation complete! ***"
 
 astral:
