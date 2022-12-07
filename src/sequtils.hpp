@@ -477,6 +477,152 @@ struct DistanceMatrix{
     }
 };
 
+struct BinaryTree{
+    struct Node{
+        int parent = -1, taxon = -1, left = -1, right = -1; 
+        bool breaking = false;
+    };
+
+    vector<Node> nodes;
+    int root;
+    
+    int& parent(int i){
+        return nodes[i].parent;
+    }
+
+    int& taxon(int i){
+        return nodes[i].taxon;
+    } 
+
+    int& left(int i){
+        return nodes[i].left;
+    }
+
+    int& right(int i){
+        return nodes[i].right;
+    }
+
+    bool& breaking(int i){
+        return nodes[i].breaking;
+    }
+
+    BinaryTree(){}
+
+    BinaryTree(const string& TEXT, const unordered_map<string, int>& name2id){
+        TreeTokenizer tk(TEXT);
+        root = readSubtree(tk, name2id);
+    }
+    
+    int readSubtree(TreeTokenizer& tk, const unordered_map<string, int>& name2id){
+        int v = nodes.size();
+        nodes.emplace_back();
+        string s = tk();
+        if (s != "(") taxon(v) = name2id.at(SeqUtils::PARSE_LEAFNAME(s));
+        else{
+            int lc = readSubtree(tk, name2id);
+            left(v) = lc;
+            parent(lc) = v;
+            tk();
+            int rc = readSubtree(tk, name2id);
+            right(v) = rc;
+            parent(rc) = v;
+            tk();
+            s = tk.preview();
+            if (TreeTokenizer::KEYWORDS.find(s[0]) == string::npos) tk();
+        }
+        s = tk.preview();
+        if (s == ":"){
+            tk();
+            tk();
+        }
+        return v;
+    }
+
+    int subtreeSize(int cur){
+        if (taxon(cur) != -1) return 1;
+        else return subtreeSize(left(cur)) + subtreeSize(right(cur));
+    }
+
+    BinaryTree sample(){
+        BinaryTree result, base = *this;
+        result.nodes.emplace_back();
+        result.root = 0;
+        int threshold = sqrt(base.subtreeSize(base.root));
+        double m = sqrt((double) base.subtreeSize(base.root)) / log2((double) base.subtreeSize(base.root)) * 2;
+        m = 1;
+        result.buildSample(result.root, base, base.root, 1 - 1 / m, true);
+        return result;
+    }
+
+    void buildSample(int curNode, BinaryTree& base, int oldRoot, double q, bool bk){
+        if (base.taxon(oldRoot) != -1){
+            taxon(curNode) = base.taxon(oldRoot);
+            breaking(curNode) = false;
+            return;
+        }
+        int nEdges = base.subtreeSize(oldRoot) - 3;
+        if (nEdges <= 0) bk = false;
+        if (bk){
+            uniform_real_distribution<double> distribution;
+            if (distribution(RND_GENERATOR) < pow(q, nEdges)) bk = false;
+        }
+        pair<int, int> newRoot = base.sampleBreak(oldRoot);
+        breaking(curNode) = bk;
+        int lc = nodes.size();
+        nodes.emplace_back();
+        left(curNode) = lc;
+        parent(lc) = curNode;
+        buildSample(lc, base, newRoot.first, q, bk);
+        int rc = nodes.size();
+        nodes.emplace_back();
+        right(curNode) = rc;
+        parent(rc) = curNode;
+        buildSample(rc, base, newRoot.second, q, bk);
+    }
+
+    pair<int, int> sampleBreak(int oldRoot){
+        int totalSize = subtreeSize(oldRoot);
+        vector<int> edges;
+        int lc = left(oldRoot), rc = right(oldRoot);
+        sampleEdge(lc, edges, false);
+        sampleEdge(rc, edges, false);
+        if (edges.size() == 0 || (taxon(lc) != -1 && taxon(rc) != -1)) edges.push_back(oldRoot);
+        uniform_int_distribution<int> distribution(0, edges.size() - 1);
+        int cut = edges[distribution(RND_GENERATOR)];
+        if (cut == oldRoot){
+            pair<int, int> result = {left(cut), right(cut)};
+            parent(left(cut)) = -1;
+            parent(right(cut)) = -1;
+            return result;
+        }
+        else{
+            pair<int, int> result = {cut, oldRoot};
+            int p = parent(cut), g = parent(p);
+            int s = (left(p) == cut) ? right(p) : left(p);
+            parent(s) = g;
+            if (left(g) == p) left(g) = s;
+            else right(g) = s;
+            return result;
+        }
+    }
+
+    void sampleEdge(int cur, vector<int>& edges, bool countable){
+        if (nodes[cur].taxon != -1) return;
+        sampleEdge(nodes[cur].left, edges, true);
+        sampleEdge(nodes[cur].right, edges, true);
+        if (countable) edges.push_back(cur);
+    }
+
+    operator string() const{
+        return newick(root) + ";";
+    }
+
+    string newick(int cur) const{
+        if (nodes[cur].taxon != -1) return to_string(nodes[cur].taxon);
+        return string("(") + newick(nodes[cur].left) + "," + newick(nodes[cur].right) + ")";
+    }
+};
+
 struct Tree{
     struct Node
     {

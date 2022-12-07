@@ -52,6 +52,8 @@ struct LogInfo {
 	}
 } LOG;
 
+mt19937_64 RND_GENERATOR;
+
 struct Hasher{
 	size_t operator()(const hash_t h) const{
 		return (size_t) h;
@@ -80,7 +82,7 @@ struct PlacementAlgorithm{
 	Tripartition trip;
 	ThreadPool &TP;
 	
-	PlacementAlgorithm(const vector<hash_t> &taxonHash, const TripartitionInitializer &tripInit, ThreadPool& TP, int ROUND_NN):
+	PlacementAlgorithm(const vector<hash_t> &taxonHash, TripartitionInitializer &tripInit, ThreadPool& TP, int ROUND_NN):
 		taxonHash(taxonHash), trip(tripInit), rNN(ROUND_NN), ROUND_NN(ROUND_NN), TP(TP) {}
 	
 	int& heavy(int v){
@@ -763,20 +765,19 @@ struct ConstrainedOptimizationAlgorithm{
 	unordered_map<hash_t, int, Hasher> hash;
 	vector<hash_t> taxonHash;
 	const vector<string> names;
-	mt19937_64 generator;
 	uniform_int_distribution<hash_t> randomHash;
 	uniform_real_distribution<double> randP;
-	const TripartitionInitializer &tripInit;
+	TripartitionInitializer &tripInit;
 	const int ntaxa;
 	int roundId = 0;
 	ThreadPool &TP;
 	int ROUND_NN = -1;
 
-	ConstrainedOptimizationAlgorithm(const int ntaxa, const TripartitionInitializer &tripInit, const vector<string> &names, ThreadPool &TP, int ROUND_NN, const int seed = rand()):
-			ntaxa(ntaxa), tripInit(tripInit), names(names), TP(TP), generator(seed), ROUND_NN(ROUND_NN) {
+	ConstrainedOptimizationAlgorithm(const int ntaxa, TripartitionInitializer &tripInit, const vector<string> &names, ThreadPool &TP, int ROUND_NN, const int seed = rand()):
+			ntaxa(ntaxa), tripInit(tripInit), names(names), TP(TP), ROUND_NN(ROUND_NN) {
 		taxonHash.push_back(0);
 		for (int i = 1; i < ntaxa; i++){
-			hash_t r = randomHash(generator);
+			hash_t r = randomHash(RND_GENERATOR);
 			taxonHash.push_back(r);
 			hash[r] = nodes.size();
 			nodes.emplace_back(i, r);
@@ -785,7 +786,7 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	ConstrainedOptimizationAlgorithm(const ConstrainedOptimizationAlgorithm &alg): 
-			ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash), generator(rand()), TP(alg.TP), ROUND_NN(alg.ROUND_NN) {}
+			ntaxa(alg.ntaxa), tripInit(alg.tripInit), names(alg.names), nodes(alg.nodes), hash(alg.hash), taxonHash(alg.taxonHash), TP(alg.TP), ROUND_NN(alg.ROUND_NN) {}
 	
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, const unordered_set<int> &selected){
 		if (nodes[v].leafId != -1){
@@ -847,12 +848,12 @@ struct ConstrainedOptimizationAlgorithm{
 				pAlg.order.push_back(i);
 			}
 		}
-		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+		shuffle(pAlg.order.begin(), pAlg.order.end(), RND_GENERATOR);
 	}
 	
 	int subsampleSubtree(int v, PlacementAlgorithm &pAlg, double subsampleRate){
 		if (nodes[v].leafId != -1){
-			if (randP(generator) < subsampleRate){
+			if (randP(RND_GENERATOR) < subsampleRate){
 				if (pAlg.rootLeafId == -1){
 					pAlg.rootLeafId = nodes[v].leafId;
 					return -1;
@@ -896,7 +897,7 @@ struct ConstrainedOptimizationAlgorithm{
 	
 	void createPlacementAlgorithm(PlacementAlgorithm &pAlg, double subsampleRate){
 		if (roundId != 0){
-			if (randP(generator) < subsampleRate){
+			if (randP(RND_GENERATOR) < subsampleRate){
 				pAlg.rootLeafId = 0;
 				//pAlg.trip.addTotal(0);
 				pAlg.rootNodeId = subsampleSubtree(hash[-taxonHash[0]], pAlg, subsampleRate);
@@ -911,7 +912,7 @@ struct ConstrainedOptimizationAlgorithm{
 				pAlg.order.push_back(i);
 			}
 		}
-		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+		shuffle(pAlg.order.begin(), pAlg.order.end(), RND_GENERATOR);
 	}
 	
 	int guideSubtree(PlacementAlgorithm &pAlg, const string &tree, const unordered_map<string, int> &name2id, int &i, unordered_set<int> &added){
@@ -987,7 +988,7 @@ struct ConstrainedOptimizationAlgorithm{
 		for (int i = 0; i < ntaxa; i++){
 			if (added.count(i) == 0) pAlg.order.push_back(i);
 		}
-		shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+		shuffle(pAlg.order.begin(), pAlg.order.end(), RND_GENERATOR);
 		pAlg.run();
 		LOG << pAlg.printTree(names) << endl;
 		addTripartitions(pAlg.tripHash);
@@ -1106,7 +1107,7 @@ struct ConstrainedOptimizationAlgorithm{
 		if (rId == 0){
 			ConstrainedOptimizationAlgorithm alg(*this);
 			for (int i = 1; i < N; i++) order.push_back(i);
-			shuffle(order.begin(), order.end(), generator);
+			shuffle(order.begin(), order.end(), RND_GENERATOR);
 			order.push_back(order[0]);
 			order[0] = 0;
 			hash_t hashsum = 0;
@@ -1117,7 +1118,7 @@ struct ConstrainedOptimizationAlgorithm{
 			for (int r = 0; r < n; r++){
 				LOG << "Guide Tree " << r << "/" << n << endl;
 				for (int i = 0; i < n; i++) pAlg.order.push_back(order[i]);
-				shuffle(pAlg.order.begin(), pAlg.order.end(), generator);
+				shuffle(pAlg.order.begin(), pAlg.order.end(), RND_GENERATOR);
 				pAlg.run();
 				alg.addTripartitions(pAlg.tripHash);
 				//for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]);
@@ -1138,7 +1139,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		else{
 			for (int i = 0; i < N; i++) order.push_back(i);
-			shuffle(order.begin(), order.end(), generator);
+			shuffle(order.begin(), order.end(), RND_GENERATOR);
 			unordered_set<int> selected;
 			for (int i = 0; i < n; i++) selected.insert(order[i]);
 			createPlacementAlgorithm(pAlg, selected);
@@ -1349,7 +1350,7 @@ struct MetaAlgorithm{
 	vector<string> files, names;
 	int nThreads = 1, nRounds = 4, nSample = 4, support = 1;
 	double p = 0.25, lambda = 0.5;
-	string outputFile, guideFile, constraintFile, constraintTree;
+	string outputFile, guideFile, constraintFile, constraintTree, guideTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
 	
@@ -1376,8 +1377,8 @@ struct MetaAlgorithm{
 		string version = string(ALG_VERSION) + "." + OBJECTIVE_VERSION + "." + DRIVER_VERSION;
 		MDGenerator::version = version;
 
-		LOG << ARG.getFullName() << endl;
-		LOG << "Version: " << version << endl;
+		cerr << ARG.getFullName() << endl;
+		cerr << "Version: " << version << endl;
 		ARG.addStringArg('c', "constraint", "", "Newick file containing a binary species tree to place missing species on");
 		ARG.addStringArg('g', "guide", "", "Newick file containing binary trees as guide trees");
 		ARG.addStringArg('o', "output", "<standard output>", "File name for the output species tree", true);
@@ -1420,6 +1421,7 @@ struct MetaAlgorithm{
 		lambda = ARG.getDoubleArg("lambda");
 		support = ARG.getIntArg("support");
 		srand(ARG.getIntArg("seed"));
+		RND_GENERATOR.seed(ARG.getIntArg("seed"));
 
 		int loglevel = ARG.getIntArg("verbose");
 		LOG.enabled = (loglevel >= 2);
@@ -1457,6 +1459,9 @@ struct MetaAlgorithm{
 			while (getline(fin, tree)){
 				if (tree.size()) alg.addGuideTree(tree, name2id, ROUND_NN);
 			}
+		}
+		if (guideTree != ""){
+			alg.addGuideTree(guideTree, name2id, ROUND_NN);
 		}
 		
 		auto res = (constraintTree == "") ? alg.run(nRounds) : alg.constrainedRun(nRounds, constraintTree, name2id);
