@@ -1,6 +1,9 @@
 all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky
 	echo "*** Installation complete! ***"
 
+mac: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise
+	echo "*** Installation complete! ***"
+
 astral:
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral
 
