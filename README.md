@@ -10,23 +10,23 @@ A family of optimatization algorithms for species tree inference:
 5. [Weighted ASTRAL - Hybrid](tutorial/astral-hybrid.md)
 6. [ASTERISK](README/asterisk.md)
 
-## GUI for Windows users (NEW)
+# Announcements
 
-Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
-<!--
-GUI for other plantforms is also available at `src/aster-gui.py` with dependencies:
-```
-pip3 install pyqt5 pyqt5-tools
-```
--->
+## Integrated in Phylosuite (NEW)
+
+Many ASTER tools have been integrated in [PhyloSuite](https://dongzhang0725.github.io/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
+
+## GUI for Windows users
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`.
  
 ## Bug Reports
 
 Contact ``chaozhang@berkeley.edu``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
-- The rest of this TUTORIAL file
-- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
+- The rest of this README file
+- Program specific tutorials (see EXECUTION section)
 - Forums (feel free to ask questions or ask for help running ASTER):
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
