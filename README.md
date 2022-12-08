@@ -14,7 +14,7 @@ A family of optimatization algorithms for species tree inference:
 
 ## Integrated in Phylosuite (NEW)
 
-Many ASTER tools have been integrated in [PhyloSuite](https://dongzhang0725.github.io/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
+Many ASTER tools have been integrated in [PhyloSuite](http://phylosuite.jushengwu.com/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
 
 ## GUI for Windows users
 
