@@ -27,6 +27,8 @@ typedef int count_t;
 
 using namespace std;
 
+int GENE_ID = 0;
+
 struct Workflow {
     MetaAlgorithm meta;
     TripartitionInitializer& tripInit = meta.tripInit;
@@ -36,6 +38,7 @@ struct Workflow {
 
     string guide;
     int diskcover;
+    bool useDCM = false;
 
     void addName(const string& name) {
         if (name2id.count(name) == 0) {
@@ -92,43 +95,20 @@ struct Workflow {
         return v;
     }
 
-    void species2kernal(vector<int> &result, const unordered_map<int, int> &kernals, BinaryTree &hierarchy, int cur, int kernal = -1){
+    void ind2kernal(vector<int> &result, const unordered_map<int, int> &kernals, BinaryTree &hierarchy, int cur, int kernal = -1){
         if (kernals.count(cur)) kernal = kernals.at(cur);
         if (hierarchy.taxon(cur) != -1){
             result[hierarchy.taxon(cur)] = kernal;
         }
         else {
             int lc = hierarchy.left(cur), rc = hierarchy.right(cur);
-            species2kernal(result, kernals, hierarchy, lc, kernal);
-            species2kernal(result, kernals, hierarchy, rc, kernal);
+            ind2kernal(result, kernals, hierarchy, lc, kernal);
+            ind2kernal(result, kernals, hierarchy, rc, kernal);
         }
     }
 
-    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
-        vector<vector<vector<int> > > siteRepSpecies2kernal;
-        vector<vector<int> > kernalOffset;
-        int nInd = ind2species.size(), nSpecies = names.size(), nKernal = 0, nRep = diskcover;
-        if (guide == ""){
-            nKernal = nSite;
-            nRep = 0;
-        }
-        else {
-            BinaryTree stree(guide, name2id);
-            for (int i = 0; i < nSite; i++){
-                siteRepSpecies2kernal.emplace_back();
-                kernalOffset.emplace_back();
-                for (int j = 0; j < nRep; j++){
-                    BinaryTree hierarchy = stree.sample(); 
-                    unordered_map<int, int> kernals;
-                    breakHierarchy<3>(kernals, hierarchy, hierarchy.root, pos, offset);
-                    kernalOffset[i].push_back(nKernal);
-                    nKernal += kernals.size();
-                    siteRepSpecies2kernal[i].emplace_back(nSpecies);
-                    species2kernal(siteRepSpecies2kernal[i][j], kernals, hierarchy, hierarchy.root, -1);
-                }
-            }
-        }
-        TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
+    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset){
+        int nInd = ind2species.size();
         array<size_t, 4> cnt = {};
         for (int iInd = 0; iInd < nInd; iInd++) {
             size_t pSeq = pos + iInd * offset;
@@ -138,33 +118,68 @@ struct Workflow {
             gene.species2ind[ind2species[iInd]].push_back(iInd);
             gene.ind2seq[iInd] = pSeq;
         }
-        for (int iKernal = 0; iKernal < nKernal; iKernal++){
-            gene.weight[iKernal] = 1;
-        }
         double total = cnt[0] + cnt[1] + cnt[2] + cnt[3];
         for (int j = 0; j < 4; j++) {
             gene.pi[j] = cnt[j] / total;
         }
-        if (guide != ""){
-            vector<int> kernalSize(nKernal);
-            ofstream test("test"); 
-            for (int iInd = 0; iInd < nInd; iInd++) {
-                for (int iSite = 0; iSite < nSite; iSite++) {
-                    for (int iRep = 0; iRep < nRep; iRep++){
-                        int iKernal = siteRepSpecies2kernal[iSite][iRep][ind2species[iInd]];
-                        if (iKernal != -1) iKernal += kernalOffset[iSite][iRep];
-                        gene.setIndSiteRep2kernal(iInd, iSite, iRep, iKernal);
-                        if (iKernal != -1) kernalSize[iKernal]++;
-                        test << iKernal << "\t";
-                    }
-                }
-                test << endl;
-            }
-            for (int iKernal = 0; iKernal < nKernal; iKernal++){
-                if (kernalSize[iKernal] < 3) gene.weight[iKernal] = 0;
-            }
+    }
+
+    void formatGeneNaive(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+        int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
+        TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
+        buildGeneSeq(gene, ind2species, pos, nSite, offset);
+        for (int iKernal = 0; iKernal < nKernal; iKernal++){
+            gene.weight[iKernal] = 1;
         }
         tripInit.genes.emplace_back(gene);
+    }
+
+    void formatGeneDCM(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+        LOG << "Building local tree " << ++GENE_ID << " ...\n";
+        Workflow WF(*this, ind2species, pos, nSite, offset);
+        BinaryTree gtree = WF.getGenetree();
+        vector<vector<vector<int> > > siteRepInd2kernal;
+        vector<vector<int> > kernalOffset;
+        int nInd = ind2species.size(), nSpecies = names.size(), nKernal = 0, nRep = diskcover;
+        for (int iSite = 0; iSite < nSite; iSite++){
+            siteRepInd2kernal.emplace_back();
+            kernalOffset.emplace_back();
+            for (int iRep = 0; iRep < nRep; iRep++){
+                BinaryTree hierarchy = gtree.sample(); 
+                unordered_map<int, int> kernals;
+                breakHierarchy<3>(kernals, hierarchy, hierarchy.root, pos, offset);
+                kernalOffset[iSite].push_back(nKernal);
+                nKernal += kernals.size();
+                siteRepInd2kernal[iSite].emplace_back(nInd);
+                ind2kernal(siteRepInd2kernal[iSite][iRep], kernals, hierarchy, hierarchy.root, -1);
+            }
+        }
+        TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
+        buildGeneSeq(gene, ind2species, pos, nSite, offset);
+        vector<int> kernalSize(nKernal);
+        //ofstream test("test"); 
+        for (int iInd = 0; iInd < nInd; iInd++) {
+            for (int iSite = 0; iSite < nSite; iSite++) {
+                for (int iRep = 0; iRep < nRep; iRep++){
+                    int iKernal = siteRepInd2kernal[iSite][iRep][iInd];
+                    if (iKernal != -1) iKernal += kernalOffset[iSite][iRep];
+                    gene.setIndSiteRep2kernal(iInd, iSite, iRep, iKernal);
+                    if (iKernal != -1) kernalSize[iKernal]++;
+                    //test << iKernal << "\t";
+                }
+            }
+            //test << endl;
+        }
+        for (int iKernal = 0; iKernal < nKernal; iKernal++){
+            if (kernalSize[iKernal] < 3) gene.weight[iKernal] = 0;
+            else gene.weight[iKernal] = 1;
+        }
+        tripInit.genes.emplace_back(gene);
+    }
+
+    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+        if (useDCM) formatGeneDCM(ind2species, pos, nSite, offset);
+        else formatGeneNaive(ind2species, pos, nSite, offset);
     }
 
     void readFasta(const string file) {
@@ -287,11 +302,13 @@ struct Workflow {
     }
 
     Workflow(int argc, char** argv, string guide, const vector<string> names, unordered_map<string, int> name2id):
-            guide(guide), diskcover(ARG.getIntArg("diskcover")) {
+            guide(guide), diskcover(ARG.getIntArg("diskcover")), useDCM(true) {
         //string mappingFile;
         meta.initialize(argc, argv);
         meta.names = names;
         meta.name2id = name2id;
+        meta.nRounds = 0;
+        meta.guideTree = guide;
         init();
     }
 
@@ -314,11 +331,53 @@ struct Workflow {
             while (readPhylip(fin, fin2));
         }
         else {
-            cerr << "Currently ASTERISK does not support phylip format. Try fasta.";
+            cerr << "Failed to parse format named '" << ARG.getStringArg("format") << "'\n";
             exit(1);
         }
         tripInit.nSpecies = names.size();
+    }
 
+    Workflow(const Workflow &WF, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset){
+        meta.initialize();
+        vector<string> species2ind(WF.names.size());
+        vector<int> ind2ind;
+        int nInd = ind2species.size();
+        for (int iInd = 0; iInd < nInd; iInd++){
+            ind2ind.push_back(iInd);
+            int iSpecies = ind2species[iInd];
+            string name = WF.names[iSpecies] + "_" + to_string(iInd);
+            names.push_back(name);
+            name2id[name] = iInd;
+            if (species2ind[iSpecies] == "") species2ind[iSpecies] = name;
+            else species2ind[iSpecies] = string("(") + species2ind[iSpecies] + "," + name + ")";
+        }
+        TreeTokenizer TK(WF.guide);
+        string token;
+        while((token = TK()) != ""){
+            if (TreeTokenizer::KEYWORDS.find(token[0]) != string::npos) guide += token;
+            else guide += species2ind[WF.name2id.at(token)];
+        }
+        meta.nRounds = 0;
+        meta.guideTree = guide;
+        for (int t = 0; t < tripInit.nThreads; t++){
+            size_t iSite = t * nSite / tripInit.nThreads;
+            size_t new_nSite = (t + 1) * nSite / tripInit.nThreads - t * nSite / tripInit.nThreads;
+            for (int iInd = 0; iInd < nInd; iInd++){
+                for (int diSite = 0; diSite < new_nSite; diSite++){
+                    tripInit.seq.append(WF.tripInit.seq.get(pos + iInd * offset + iSite + diSite));
+                }
+            }
+            formatGeneNaive(ind2ind, iSite * nInd, new_nSite, new_nSite);
+        }
+        tripInit.nSpecies = names.size();
+        tripInit.nThreads = meta.nThreads;
+    }
+
+    BinaryTree getGenetree(){
+        LOG.enabled = false;
+        pair<score_t, string> result = meta.run();
+        LOG.enabled = true;
+        return BinaryTree(result.second, name2id);
     }
 };
 
@@ -340,6 +399,10 @@ int main(int argc, char** argv){
     {
         LOG << "Iteration " << iteration << ":" << endl;
         Workflow WF(argc, argv);
+        if (ARG.getStringArg("guide") != ""){
+            WF.meta.nRounds = 0;
+            WF.meta.nSample = 0;
+        }
         if (iteration < ARG.getIntArg("iteration")) WF.meta.outputFile = "<standard output>";
         LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
         result = WF.meta.run();
@@ -350,7 +413,6 @@ int main(int argc, char** argv){
         iteration++;
         Workflow WF(argc, argv, result.second, names, name2id);
         if (iteration < ARG.getIntArg("iteration")) WF.meta.outputFile = "<standard output>";
-        WF.meta.guideTree = result.second;
         LOG << "Iteration " << iteration << ":" << endl;
         result = WF.meta.run();
     }

@@ -84,6 +84,14 @@ struct TripartitionInitializer{
 			return b[i & (SEQ_BATCH_SIZE - 1)];
 		}
 
+		char get(size_t id) const {
+			if (get(id, 0)) return 'A';
+			if (get(id, 1)) return 'C';
+			if (get(id, 2)) return 'G';
+			if (get(id, 3)) return 'T';
+			return 'N';
+		}
+
 		void add(size_t id, array<size_t, 4>& cnt) const {
 			size_t i = id * 4;
 			bitset<SEQ_BATCH_SIZE>& b = *(seq[i >> SEQ_BATCH_BIT]);
