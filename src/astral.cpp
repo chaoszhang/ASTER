@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "2"
+#define DRIVER_VERSION "3"
 
 /* CHANGE LOG
+ * 3: Parse gene tree branch lengths
  * 2: Officialize program name
  * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
  */
@@ -29,6 +30,10 @@ ostream& operator<<(ostream& cout, __int128 x){
 #else
 typedef long long score_t;
 #endif
+
+score_t from_string(const string s){
+	return stold(s);
+}
 
 #include "argparser.hpp"
 #include "genetreewithbinaryweight.hpp"
@@ -62,6 +67,13 @@ int MAPPING(int begin, int end){
 	return name2id[s];
 }
 
+score_t LENGTH(int begin, int end){
+	int i = begin;
+	while (i < end && TEXT[i] != ':') i++;
+	if (i == end) return 1;
+	else return from_string(TEXT.substr(i + 1, end - i - 1));
+}
+
 void parse(int parent = -1, bool isLeft = true){
 	int cur = tripInit.nodes[part].size();
 	tripInit.nodes[part].emplace_back();
@@ -77,6 +89,7 @@ void parse(int parent = -1, bool isLeft = true){
 		vector<int> lst;
 		lst.push_back(cur);
 		tripInit.nodes[part][cur].isGhostBranch = true;
+		tripInit.nodes[part][cur].length = 0;
 		while (TEXT[pos] != ')'){
 			int left = lst[rand() % lst.size()];
 			int up = tripInit.nodes[part].size();
@@ -84,6 +97,7 @@ void parse(int parent = -1, bool isLeft = true){
 			lst.push_back(up);
 			if (cur == left) cur = up;
 			tripInit.nodes[part][up].isGhostBranch = true;
+			tripInit.nodes[part][up].length = 0;
 			int g = tripInit.nodes[part][left].up;
 			if (g != -1){
 				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
@@ -98,12 +112,14 @@ void parse(int parent = -1, bool isLeft = true){
 		int i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		tripInit.nodes[part][cur].isGhostBranch = false;
+		tripInit.nodes[part][cur].length = LENGTH(i, pos);
 	} 
 	else {
 		int i = pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
 		tripInit.leafParent[part][MAPPING(i, pos)].push_back(cur);
 		tripInit.nodes[part][cur].isGhostBranch = false;
+		tripInit.nodes[part][cur].length = LENGTH(i, pos);
 	}
 }
 
@@ -129,16 +145,25 @@ void readInputTrees(string input, string mapping) {
 	}
 }
 
-string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
-inputGeneTrees: the path to a file containing all gene trees in Newick format
-)V0G0N";
+void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
+	if (node->isLeaf()){
+		cerr << node->taxonName();
+	}
+	else {
+		cerr << "(";
+		examplePrintSubtreeWithSupport(node->leftChild());
+		cerr << ",";
+		examplePrintSubtreeWithSupport(node->rightChild());
+		cerr << ")[" << node->annotation().ab_cd.quartetCnt << "," << node->annotation().ac_bd.quartetCnt << "," << node->annotation().ad_bc.quartetCnt << "]:" << node->length();
+	}
+}
 
 int main(int argc, char** argv){
 	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	
 	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
+	meta.initialize(argc, argv);
 	mappingFile = ARG.getStringArg("mapping");
 	
 	for (int i = 0; i < meta.nThread2; i++){
@@ -155,5 +180,7 @@ int main(int argc, char** argv){
 	
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
+
+	// examplePrintSubtreeWithSupport(meta.annotTree->root());
 	return 0;
 }
