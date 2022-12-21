@@ -31,7 +31,7 @@ ostream& operator<<(ostream& cout, __int128 x){
 typedef long long score_t;
 #endif
 
-score_t from_string(const string s){
+double from_string(const string s){
 	return stold(s);
 }
 
@@ -67,10 +67,10 @@ int MAPPING(int begin, int end){
 	return name2id[s];
 }
 
-score_t LENGTH(int begin, int end){
+double LENGTH(int begin, int end){
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
-	if (i == end) return 1;
+	if (i == end) return 0;
 	else return from_string(TEXT.substr(i + 1, end - i - 1));
 }
 
@@ -147,14 +147,20 @@ void readInputTrees(string input, string mapping) {
 
 void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 	if (node->isLeaf()){
-		cerr << node->taxonName();
+		cout << node->taxonName();
 	}
 	else {
-		cerr << "(";
+		cout << "(";
 		examplePrintSubtreeWithSupport(node->leftChild());
-		cerr << ",";
+		cout << ",";
 		examplePrintSubtreeWithSupport(node->rightChild());
-		cerr << ")[" << node->annotation().ab_cd.quartetCnt << "," << node->annotation().ac_bd.quartetCnt << "," << node->annotation().ad_bc.quartetCnt << "]:" << node->length();
+		cout << ")'{support:" << node->support() << ",length:" << node->length()
+			<< ",LR_SO:{quartetCnt:" << node->annotation().ab_cd.quartetCnt << ",sumInternal:" <<  node->annotation().ab_cd.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ab_cd.sumLengthD << ",sumR:" <<  node->annotation().ab_cd.sumLengthC << ",sumS:" <<  node->annotation().ab_cd.sumLengthB << ",sumO:" <<  node->annotation().ab_cd.sumLengthA << "}"
+			<< ",LS_RO:{quartetCnt:" << node->annotation().ac_bd.quartetCnt << ",sumInternal:" <<  node->annotation().ac_bd.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ac_bd.sumLengthD << ",sumR:" <<  node->annotation().ac_bd.sumLengthC << ",sumS:" <<  node->annotation().ac_bd.sumLengthB << ",sumO:" <<  node->annotation().ac_bd.sumLengthA << "}"
+			<< ",LO_RS:{quartetCnt:" << node->annotation().ad_bc.quartetCnt << ",sumInternal:" <<  node->annotation().ad_bc.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ad_bc.sumLengthD << ",sumR:" <<  node->annotation().ad_bc.sumLengthC << ",sumS:" <<  node->annotation().ad_bc.sumLengthB << ",sumO:" <<  node->annotation().ad_bc.sumLengthA << "}}'";
 	}
 }
 
@@ -181,6 +187,9 @@ int main(int argc, char** argv){
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
 
-	// examplePrintSubtreeWithSupport(meta.annotTree->root());
+	#ifdef ASTRALIV
+	examplePrintSubtreeWithSupport(meta.annotTree->root());
+	cout << ";\n";
+	#endif
 	return 0;
 }
