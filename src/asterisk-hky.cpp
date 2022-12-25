@@ -325,7 +325,7 @@ struct Workflow {
                 readFasta(line);
             }
         }
-        if (ARG.getStringArg("format") == "phylip") {
+        else if (ARG.getStringArg("format") == "phylip") {
             ifstream fin(ARG.getStringArg("input")), fin2(ARG.getStringArg("input"));
             string line;
             while (readPhylip(fin, fin2));
@@ -387,7 +387,7 @@ int main(int argc, char** argv){
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
-    ARG.addIntArg(0, "iteration", 2, "The number of iterations in the iterative method");
+    ARG.addIntArg(0, "iteration", 1, "The number of iterations in the iterative method");
     ARG.addFlag('I', "quick", "Set the iteration number to 1", [&]() {
 		ARG.getIntArg("iteration") = 1;
 	}, true);
