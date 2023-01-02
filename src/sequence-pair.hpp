@@ -3,246 +3,274 @@
 #include<vector>
 #include<array>
 #include<thread>
+#include<future>
+#include<bitset>
+#include<memory>
 #include "threadpool.hpp"
 
-#define G_SUPPORT
-#define CUSTOMIZED_LENGTH
+//#define G_SUPPORT
+
 using namespace std;
 
-inline score_t scorePair(long long oddX0, long long oddX1, long long oddX2, long long oddY0, long long oddY1, long long oddY2, score_t piXpiYodd,
-		long long evenX0, long long evenX1, long long evenX2, long long evenY0, long long evenY1, long long evenY2, score_t piXpiYeven){
-	long long odd0 = oddX0 + oddY0, odd1 = oddX1 + oddY1, odd2 = oddX2 + oddY2;
-	long long even0 = evenX0 + evenY0, even1 = evenX1 + evenY1, even2 = evenX2 + evenY2;
-	return (piXpiYodd * odd0 * (odd0 - 1) - oddX0 * oddY0) * (2 * piXpiYeven * even1 * even2 - evenX1 * evenY2 - evenY1 * evenX2)
-		 + (piXpiYeven * even0 * (even0 - 1) - evenX0 * evenY0) * (2 * piXpiYodd * odd1 * odd2 - oddX1 * oddY2 - oddY1 * oddX2);
+inline score_t scorePos(const array<array<unsigned short, 4>, 3> &cnt, score_t pq){
+	const unsigned ax0 = cnt[0][0], bx0 = cnt[0][1], xa0 = cnt[0][2], xb0 = cnt[0][3], xx0 = ax0 + bx0;
+	const unsigned ax1 = cnt[1][0], bx1 = cnt[1][1], xa1 = cnt[1][2], xb1 = cnt[1][3], xx1 = ax1 + bx1;
+	const unsigned ax2 = cnt[2][0], bx2 = cnt[2][1], xa2 = cnt[2][2], xb2 = cnt[2][3], xx2 = ax2 + bx2;
+	
+	return (xx0 * (xx0 - 1) * pq - ax0 * bx0) * (2 * xx1 * xx2 * pq - (xa1 * xb2 + xb1 * xa2))
+		 + (xx0 * (xx0 - 1) * pq - xa0 * xb0) * (2 * xx1 * xx2 * pq - (ax1 * bx2 + bx1 * ax2))
+		 + (xx1 * (xx1 - 1) * pq - ax1 * bx1) * (2 * xx2 * xx0 * pq - (xa2 * xb0 + xb2 * xa0))
+		 + (xx1 * (xx1 - 1) * pq - xa1 * xb1) * (2 * xx2 * xx0 * pq - (ax2 * bx0 + bx2 * ax0))
+		 + (xx2 * (xx2 - 1) * pq - ax2 * bx2) * (2 * xx0 * xx1 * pq - (xa0 * xb1 + xb0 * xa1))
+		 + (xx2 * (xx2 - 1) * pq - xa2 * xb2) * (2 * xx0 * xx1 * pq - (ax0 * bx1 + bx0 * ax1));
 }
 
-inline score_t scorePos(const array<unsigned short, 3> oddX, const array<unsigned short, 3> oddY, score_t piXpiYodd,
-		const array<unsigned short, 3> evenX, const array<unsigned short, 3> evenY, score_t piXpiYeven){
-	return scorePair(oddX[0], oddX[1], oddX[2], oddY[0], oddY[1], oddY[2], piXpiYodd,
-					 evenX[0], evenX[1], evenX[2], evenY[0], evenY[1], evenY[2], piXpiYeven)
-		 + scorePair(oddX[1], oddX[2], oddX[0], oddY[1], oddY[2], oddY[0], piXpiYodd,
-					 evenX[1], evenX[2], evenX[0], evenY[1], evenY[2], evenY[0], piXpiYeven)
-		 + scorePair(oddX[2], oddX[0], oddX[1], oddY[2], oddY[0], oddY[1], piXpiYodd,
-					 evenX[2], evenX[0], evenX[1], evenY[2], evenY[0], evenY[1], piXpiYeven);
-}
+const int SEQ_BATCH_BIT = 25, SEQ_BATCH_SIZE = 1 << SEQ_BATCH_BIT;
 
 struct TripartitionInitializer{
-	struct Tree{
-		int npos = 0, ntree = 0;
-		vector<float> piXpiY;
-		vector<vector<bool> > seqX, seqY;
-		vector<vector<unsigned short> > speciesMapper;
+	struct Sequence{
+		vector<shared_ptr<bitset<SEQ_BATCH_SIZE> > > seq;
+		size_t p = 0;
 
-		Tree(){}
-		Tree(int n): seqX(n), seqY(n), speciesMapper(n){}
-	};
-	int nThreads = 1;
-	vector<vector<Tree> > trees;
-};
+		Sequence(){
+			seq.emplace_back(new bitset<SEQ_BATCH_SIZE>());
+		}
 
-struct Tripartition{
-	struct Tree{
-		vector<vector<array<unsigned short, 3> > > cntX, cntY; // tree * pos * part
-		vector<score_t> scores; // tree;
-		vector<bool> valid; // tree;
-
-		Tree(){}
-		Tree(int ntree, int npos): scores(ntree), valid(ntree),
-			cntX(ntree, vector<array<unsigned short, 3> >(npos)), cntY(ntree, vector<array<unsigned short, 3> >(npos)){}
-	};
-
-	const TripartitionInitializer& TI;
-	vector<vector<char> > color;
-	vector<vector<Tree> > trees; // gene * bin
-
-	Tripartition(const TripartitionInitializer &init): TI(init), trees(init.trees.size()),
-			color(init.nThreads, vector<char>(init.trees[0][0].seqX.size(), -1)){
-		for (int i = 0; i < TI.trees.size(); i++){
-			for (int j = 0; j < TI.trees[i].size(); j++){
-				trees[i].emplace_back(TI.trees[i][j].ntree, TI.trees[i][j].npos);
+		template<bool A, bool C, bool G, bool T> void append(char c1, char c2) {
+			bitset<SEQ_BATCH_SIZE>& b = *(seq.back());
+			switch (c1) {
+				case 'A': case 'a': b.set(p + A, 1); break;
+				case 'C': case 'c': b.set(p + C, 1); break;
+				case 'G': case 'g': b.set(p + G, 1); break;
+				case 'T': case 't': b.set(p + T, 1); break;
+			}
+			p += 2;
+			switch (c2) {
+				case 'A': case 'a': b.set(p + A, 1); break;
+				case 'C': case 'c': b.set(p + C, 1); break;
+				case 'G': case 'g': b.set(p + G, 1); break;
+				case 'T': case 't': b.set(p + T, 1); break;
+			}
+			p += 2;
+			if (p == SEQ_BATCH_SIZE) {
+				p = 0;
+				seq.emplace_back(new bitset<SEQ_BATCH_SIZE>());
 			}
 		}
-	}
+
+		size_t len() const {
+			return ((((size_t) seq.size() - 1) << SEQ_BATCH_BIT) + p) >> 2;
+		}
+
+		bool get(size_t id, size_t pos) const {
+			size_t i = id * 4 + pos;
+			bitset<SEQ_BATCH_SIZE>& b = *(seq[i >> SEQ_BATCH_BIT]);
+			return b[i & (SEQ_BATCH_SIZE - 1)];
+		}
+
+		void add(size_t id, array<size_t, 4>& cnt) const {
+			size_t i = id * 4;
+			bitset<SEQ_BATCH_SIZE>& b = *(seq[i >> SEQ_BATCH_BIT]);
+			i &= SEQ_BATCH_SIZE - 1;
+			for (int t = 0; t < 4; t++) {
+				cnt[t] += b[i++];
+			}
+		}
+
+		inline void add(size_t id, array<unsigned short, 4>& cnt) const {
+			size_t i = id * 4;
+			bitset<SEQ_BATCH_SIZE>& b = *(seq[i >> SEQ_BATCH_BIT]);
+			i &= SEQ_BATCH_SIZE - 1;
+			for (int t = 0; t < 4; t++) {
+				cnt[t] += b[i++];
+			}
+		}
+
+		inline void rmv(size_t id, array<unsigned short, 4>& cnt) const {
+			size_t i = id * 4;
+			bitset<SEQ_BATCH_SIZE>& b = *(seq[i >> SEQ_BATCH_BIT]);
+			i &= SEQ_BATCH_SIZE - 1;
+			for (int t = 0; t < 4; t++) {
+				cnt[t] -= b[i++];
+			}
+		}
+	};
+
+	template<typename T> struct Array {
+		vector<shared_ptr<array<T, SEQ_BATCH_SIZE> > > seq;
+		int p = 0;
+
+		Array() : seq(1) {}
+
+		void append(const T& t) {
+			array<T, SEQ_BATCH_SIZE> & b = *(seq.back());
+			b[p++] = t;
+			if (p == SEQ_BATCH_SIZE) {
+				p = 0;
+				seq.emplace_back();
+			}
+		}
+
+		const T& get(size_t id) const {
+			bitset<SEQ_BATCH_SIZE>& b = *(seq[id >> SEQ_BATCH_BIT]);
+			return b[id & (SEQ_BATCH_SIZE - 1)];
+		}
+	};
 	
-	void updatePart(int part, int x, int i){
-		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
-		int y = color[part][i];
-		color[part][i] = x;
-		for (int a = start; a < end; a++){
-			for (int b = 0; b < trees[a].size(); b++){
-				for (int t: TI.trees[a][b].speciesMapper[i]){
-					trees[a][b].valid[t] = false;
-					for (int p = 0; p < trees[a][b].cntX[t].size(); p++){
-						if (y != -1) {
-							trees[a][b].cntX[t][p][y] -= TI.trees[a][b].seqX[i][p];
-							trees[a][b].cntY[t][p][y] -= TI.trees[a][b].seqY[i][p];
-						}
-						if (x != -1) {
-							trees[a][b].cntX[t][p][x] += TI.trees[a][b].seqX[i][p];
-							trees[a][b].cntY[t][p][x] += TI.trees[a][b].seqY[i][p];
+	struct Gene{
+		struct Initializer {
+			score_t pq;
+			vector<vector<int> > species2ind;
+			int* indSiteRep2kernal;
+			size_t* ind2seq;
+			float* weight;
+			int nInd, nSpecies, nSite, nKernal, nRep;
+
+			Initializer(int nInd, int nSpecies, int nSite, int nKernal, int nRep): species2ind(nSpecies),
+					nInd(nInd), nSpecies(nSpecies), nSite(nSite), nKernal(nKernal), nRep(nRep),
+					indSiteRep2kernal((nRep == 0) ? nullptr : new int[nInd * nSite * nRep]),
+					ind2seq(new size_t[nInd]), weight(new float[nKernal]){}
+			
+			void setIndSiteRep2kernal(int iInd, int iSite, int iRep, int iKernal){
+				indSiteRep2kernal[(iInd * nSite + iSite) * nRep + iRep] = iKernal;
+			}
+
+			int* species2indRange() const{
+				int* result = new int[nSpecies];
+				int cnt = 0;
+				for (int i = 0; i < nSpecies; i++){
+					cnt += species2ind[i].size();
+					result[i] = cnt;
+				}
+				return result;
+			}
+
+			int* indBin() const{
+				int cnt = 0;
+				for (const vector<int> &arr: species2ind) cnt += arr.size();
+				int* result = new int[cnt];
+				int i = 0;
+				for (const vector<int> &arr: species2ind){
+					for (const int &e: arr){
+						result[i] = e;
+						i++;
+					}
+				}
+				return result;
+			}
+		};
+		
+		struct Kernal {
+			array<array<unsigned short, 4>, 3> cnt;
+			score_t scoreCache = 0;
+			float weight = 1;
+			bool valid = true;
+
+			void reset(){
+				valid = false;
+				for (int i = 0; i < 3; i++)
+					for (int j = 0; j < 4; j++)
+						cnt[i][j] = 0;
+			}
+
+			void update(int y, int x, const Sequence &seq, size_t pSeq){
+				valid = false;
+				if (y != -1) seq.rmv(pSeq, cnt[y]);
+				if (x != -1) seq.add(pSeq, cnt[x]);
+			}
+
+			score_t score(const score_t pq){
+				if (valid) return scoreCache;
+				valid = true;
+				scoreCache = weight * scorePos(cnt, pq);
+				return scoreCache;
+			}
+		};
+
+		const int nInd, nSpecies, nSite, nKernal, nRep;
+		const shared_ptr<const int[]> species2indRange, indBin;
+		const shared_ptr<const int[]> indSiteRep2kernal;
+		const shared_ptr<const size_t[]> ind2seq;
+		const shared_ptr<Kernal[]> kernal;
+		const score_t pq;
+
+		Gene(): nInd(0), nSpecies(0), nSite(0), nKernal(0), nRep(0),
+				pq(0), species2indRange(nullptr), indBin(nullptr), 
+				indSiteRep2kernal(nullptr), ind2seq(nullptr), kernal(nullptr){}
+
+		Gene(const Initializer& init): nInd(init.nInd), nSpecies(init.nSpecies), nSite(init.nSite), nKernal(init.nKernal), nRep(init.nRep),
+				pq(init.pq), species2indRange(init.species2indRange()), indBin(init.indBin()), 
+				indSiteRep2kernal(init.indSiteRep2kernal), ind2seq(init.ind2seq), kernal(new Kernal[init.nKernal]) {
+			for (int i = 0; i < nKernal; i++) kernal[i].weight = init.weight[i];
+		}
+
+		void updateCnt(int i, int y, int x, const Sequence &seq) {
+			if (i >= nSpecies) return;
+			int indStart = (i == 0) ? 0 : species2indRange[i - 1];
+			int indEnd = species2indRange[i];
+			for (int indIt = indStart; indIt < indEnd; indIt++) {
+				int iInd = indBin[indIt];
+				if (nRep == 0){
+					for (int iSite = 0; iSite < nSite; iSite++){
+						kernal[iSite].update(y, x, seq, ind2seq[iInd] + iSite);
+					}
+				}
+				else {
+					for (int iSite = 0; iSite < nSite; iSite++){
+						for (int iRep = 0; iRep < nRep; iRep++){
+							int iKernal = indSiteRep2kernal[(iInd * nSite + iSite) * nRep + iRep];
+							if (iKernal != -1) kernal[iKernal].update(y, x, seq, ind2seq[iInd] + iSite);
 						}
 					}
 				}
 			}
+		}
+
+		score_t scoreCnt() {
+			score_t score = 0;
+			for (int iKernal = 0; iKernal < nKernal; iKernal++){
+				score += kernal[iKernal].score(pq);
+			}
+			return score;
+		}
+
+		void clearCntScore(){
+			for (int iKernal = 0; iKernal < nKernal; iKernal++){
+				kernal[iKernal].reset();
+			}
+		}
+	};
+
+	int nThreads = 1, nSpecies = 0;
+	vector<Gene> genes;
+	Sequence seq;
+};
+
+struct Tripartition{
+	vector<vector<char> > color;
+	TripartitionInitializer& TI;
+
+	Tripartition(TripartitionInitializer &init): TI(init), color(init.nThreads, vector<char>(init.nSpecies, -1)){
+		for (TripartitionInitializer::Gene &g: TI.genes){
+			g.clearCntScore();
+		}
+	}
+
+	void updatePart(int part, int x, int i){
+		int start = TI.genes.size() * part / TI.nThreads, end = TI.genes.size() * (1 + part) / TI.nThreads;
+		int y = color[part][i];
+		color[part][i] = x;
+		for (int a = start; a < end; a++){
+			TI.genes[a].updateCnt(i, y, x, TI.seq);
 		}
 	}
 	
 	score_t scorePart(int part){
-		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
+		int start = TI.genes.size() * part / TI.nThreads, end = TI.genes.size() * (1 + part) / TI.nThreads;
 		score_t result = 0;
 		for (int a = start; a < end; a++){
-			for (int b = 0; b < trees[a].size(); b++){
-				for (int t = 0; t < trees[a][b].scores.size(); t++){
-					if (trees[a][b].valid[t]){
-						result += trees[a][b].scores[t];
-						continue;
-					}
-					score_t temp = 0;
-					for (int p = 0; p < trees[a][b].cntX[t].size(); p += 2){
-						temp += scorePos(trees[a][b].cntX[t][p], trees[a][b].cntY[t][p], TI.trees[a][b].piXpiY[p],
-										 trees[a][b].cntX[t][p+1], trees[a][b].cntY[t][p+1], TI.trees[a][b].piXpiY[p+1]);
-					}
-					trees[a][b].scores[t] = temp;
-					trees[a][b].valid[t] = true;
-					result += trees[a][b].scores[t];
-				}
-			}
+			result += TI.genes[a].scoreCnt();
 		}
 		return result;
-	}
-};
-
-inline score_t supportPair(long long oddX0, long long oddX1, long long oddX2, long long oddX3, 
-		long long oddY0, long long oddY1, long long oddY2, long long oddY3, score_t piXpiYodd,
-		long long evenX0, long long evenX1, long long evenX2, long long evenX3,
-		long long evenY0, long long evenY1, long long evenY2, long long evenY3, score_t piXpiYeven){
-	long long odd0 = oddX0 + oddY0, odd1 = oddX1 + oddY1, odd2 = oddX2 + oddY2, odd3 = oddX3 + oddY3;
-	long long even0 = evenX0 + evenY0, even1 = evenX1 + evenY1, even2 = evenX2 + evenY2, even3 = evenX3 + evenY3;
-	return (2 * piXpiYodd * odd0 * odd1 - oddX0 * oddY1 - oddY0 * oddX1) * (2 * piXpiYeven * even2 * even3 - evenX2 * evenY3 - evenY2 * evenX3)
-		 + (2 * piXpiYeven * even0 * even1 - evenX0 * evenY1 - evenY0 * evenX1) * (2 * piXpiYodd * odd2 * odd3 - oddX2 * oddY3 - oddY2 * oddX3);
-}
-
-array<double, 3> supportPos(const array<unsigned short, 4> oddX, const array<unsigned short, 4> oddY, score_t piXpiYodd,
-		const array<unsigned short, 4> evenX, const array<unsigned short, 4> evenY, score_t piXpiYeven){
-	return {(double) supportPair(oddX[0], oddX[1], oddX[2], oddX[3], oddY[0], oddY[1], oddY[2], oddY[3], piXpiYodd,
-					    		 evenX[0], evenX[1], evenX[2], evenX[3], evenY[0], evenY[1], evenY[2], evenY[3], piXpiYeven),
-		    (double) supportPair(oddX[0], oddX[2], oddX[1], oddX[3], oddY[0], oddY[2], oddY[1], oddY[3], piXpiYodd,
-					             evenX[0], evenX[2], evenX[1], evenX[3], evenY[0], evenY[2], evenY[1], evenY[3], piXpiYeven),
-		    (double) supportPair(oddX[0], oddX[3], oddX[1], oddX[2], oddY[0], oddY[3], oddY[1], oddY[2], piXpiYodd,
-					             evenX[0], evenX[3], evenX[1], evenX[2], evenY[0], evenY[3], evenY[1], evenY[2], piXpiYeven)};
-}
-
-struct Quadrupartition{
-	struct Tree{
-		vector<vector<array<unsigned short, 4> > > cntX, cntY; // tree * pos * part
-		vector<array<score_t, 3> > scores; // tree;
-		vector<bool> valid; // tree;
-
-		Tree(){}
-		Tree(int ntree, int npos): scores(ntree), valid(ntree),
-			cntX(ntree, vector<array<unsigned short, 4> >(npos)), cntY(ntree, vector<array<unsigned short, 4> >(npos)){}
-	};
-
-	const TripartitionInitializer& TI;
-	vector<vector<char> > color;
-	vector<vector<Tree> > trees; // gene * bin
-
-	Quadrupartition(const TripartitionInitializer &init): TI(init), trees(init.trees.size()),
-			color(init.nThreads, vector<char>(init.trees[0][0].seqX.size(), -1)){
-		for (int i = 0; i < TI.trees.size(); i++){
-			for (int j = 0; j < TI.trees[i].size(); j++){
-				trees[i].emplace_back(TI.trees[i][j].ntree, TI.trees[i][j].npos);
-			}
-		}
-	}
-	
-	void updatePart(int part, int x, int i){
-		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
-		int y = color[part][i];
-		color[part][i] = x;
-		for (int a = start; a < end; a++){
-			for (int b = 0; b < trees[a].size(); b++){
-				for (int t: TI.trees[a][b].speciesMapper[i]){
-					trees[a][b].valid[t] = false;
-					for (int p = 0; p < trees[a][b].cntX[t].size(); p++){
-						if (y != -1) {
-							trees[a][b].cntX[t][p][y] -= TI.trees[a][b].seqX[i][p];
-							trees[a][b].cntY[t][p][y] -= TI.trees[a][b].seqY[i][p];
-						}
-						if (x != -1) {
-							trees[a][b].cntX[t][p][x] += TI.trees[a][b].seqX[i][p];
-							trees[a][b].cntY[t][p][x] += TI.trees[a][b].seqY[i][p];
-						}
-					}
-				}
-			}
-		}
-	}
-	
-	array<double, 3> scorePart(int part){
-		int start = trees.size() * part / TI.nThreads, end = trees.size() * (1 + part) / TI.nThreads;
-		array<double, 3> result;
-		result[0] = 0;
-		result[1] = 0;
-		result[2] = 0;
-		for (int a = start; a < end; a++){
-			for (int b = 0; b < trees[a].size(); b++){
-				for (int t = 0; t < trees[a][b].scores.size(); t++){
-					if (trees[a][b].valid[t]){
-						result[0] += trees[a][b].scores[t][0];
-						result[1] += trees[a][b].scores[t][1];
-						result[2] += trees[a][b].scores[t][2];
-						continue;
-					}
-					score_t temp0 = 0, temp1 = 0, temp2 = 0;
-					for (int p = 0; p < trees[a][b].cntX[t].size(); p += 2){
-						array<double, 3> cnt = supportPos(trees[a][b].cntX[t][p], trees[a][b].cntY[t][p], TI.trees[a][b].piXpiY[p],
-										                  trees[a][b].cntX[t][p+1], trees[a][b].cntY[t][p+1], TI.trees[a][b].piXpiY[p+1]);
-						temp0 += cnt[0];
-						temp1 += cnt[1];
-						temp2 += cnt[2];
-					}
-					trees[a][b].scores[t][0] = temp0;
-					trees[a][b].scores[t][1] = temp1;
-					trees[a][b].scores[t][2] = temp2;
-					trees[a][b].valid[t] = true;
-					result[0] += trees[a][b].scores[t][0];
-					result[1] += trees[a][b].scores[t][1];
-					result[2] += trees[a][b].scores[t][2];
-				}
-			}
-		}
-		return result;
-	}
-
-	void update(int x, int i){
-		vector<thread> thrds;
-		for (int p = 1; p < TI.nThreads; p++) thrds.emplace_back(&Quadrupartition::updatePart, this, p, x, i);
-		updatePart(0, x, i);
-		for (thread &t: thrds) t.join();
-	}
-	
-	array<double, 3> score(){
-		vector<thread> thrds;
-		vector<future<array<double, 3> > > temp(TI.nThreads);
-		for (int p = 1; p < TI.nThreads; p++){
-			temp[p] = async(launch::async, &Quadrupartition::scorePart, this, p);
-		}
-		array<double, 3> res = scorePart(0);
-		for (int p = 1; p < TI.nThreads; p++){
-			array<double, 3> t = temp[p].get();
-			res[0] += t[0];
-			res[1] += t[1];
-			res[2] += t[2];
-		}
-		return res;
-	}
-
-	string length(const array<double, 3> &scores){
-		if (scores[0] <= 0) return to_string(-0.0);
-		if (scores[0] < max(scores[1], scores[2])) return to_string(-0.0);
-		if (max(scores[1], scores[2]) <= 0) return "Inf";
-		return to_string((log(scores[0]) - log(max(scores[1], scores[2]))) / 2);
 	}
 };

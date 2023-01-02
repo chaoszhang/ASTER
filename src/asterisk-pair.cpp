@@ -1,9 +1,16 @@
+#define DRIVER_VERSION "0"
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
+#include<unordered_set>
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
+#include<algorithm>
+#include<random>
+#include<thread>
+#include<mutex>
 
 #define LARGE_DATA
 #ifdef LARGE_DATA
@@ -16,220 +23,356 @@ typedef int count_t;
 
 #include "sequence-pair.hpp"
 #include "algorithms.hpp"
+#include "sequtils.hpp"
 
 using namespace std;
 
-TripartitionInitializer tripInit;
+int GENE_ID = 0;
 
-int npos = 0;
-vector<string> names;
-unordered_map<string, int> name2id;
+struct Workflow {
+    MetaAlgorithm meta;
+    TripartitionInitializer& tripInit = meta.tripInit;
 
-string formatName(const string name){
-	string res;
-	for (char c: name){
-		if (c != '>' && c != ' ' && c != '\t') res += c;
-	}
-	return res;
-}
+    vector<string>& names = meta.names;
+    unordered_map<string, int>& name2id = meta.name2id;
 
-void readFile(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char CY3, const char cr1, const char cr2, const char cy1, const char cy2, const char cy3){
-	int cnt[4] = {}, id = -1, oldNpos = npos;
-	string line;
-	while (getline(fin, line)){
-		if (line[0] == '>') {
-			if (id != -1 && npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
-			id = name2id[formatName(line)];
-		}
-		else{
-			for (int i = 0; i + 1 < line.size(); i += 2){
-				const char c1 = line[i], c2 = line[i + 1];
-				const bool R1 = (c1 == CR1 || c1 == cr1 || c1 == CR2 || c1 == cr2);
-				const bool R2 = (c2 == CR1 || c2 == cr1 || c2 == CR2 || c2 == cr2);
-				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2 || c1 == CY3 || c1 == cy3);
-				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2 || c2 == CY3 || c2 == cy3);
-				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
-				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
-				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
-				else if (R1 && Y2){ tripInit.seq[id].push_back(1); cnt[1]++; }
-				else if (Y1 && R2){ tripInit.seq[id].push_back(2); cnt[2]++; }
-				else if (Y1 && Y2){ tripInit.seq[id].push_back(3); cnt[3]++; }
-				else if (N1 && N2){ tripInit.seq[id].push_back(-1); }
+    string guide;
+    int diskcover;
+    bool useDCM = false;
+
+    void addName(const string& name) {
+        if (name2id.count(name) == 0) {
+            name2id[name] = names.size();
+            names.push_back(name);
+        }
+    }
+
+    static int infoCount(const array<int, 4> &cnt){
+        int result = 0;
+        for (int j = 0; j < 4; j++) {
+            if (cnt[j] >= 2) result++;
+        }
+        return result;
+    }
+
+    static array<int, 4> add(const array<int, 4> &a, const array<int, 4> &b){
+        array<int, 4> result;
+        for (int j = 0; j < 4; j++) {
+            result[j] = a[j] + b[j];
+        }
+        return result;
+    }
+
+    static int sum(const array<int, 4> &cnt){
+        int result = 0;
+        for (int j = 0; j < 4; j++) {
+            result += cnt[j];
+        }
+        return result;
+    }
+
+    template<int THRESHOLD> array<int, 4> breakHierarchy(unordered_map<int, int> &result, 
+            BinaryTree &hierarchy, int cur, size_t pos, size_t offset){
+        if (hierarchy.taxon(cur) != -1){
+            array<int, 4> curCnt;
+            for (int j = 0; j < 4; j++){
+                curCnt[j] = tripInit.seq.get(pos + hierarchy.taxon(cur) * offset, j);
+            }
+            return curCnt;
+        }
+        int lc = hierarchy.left(cur), rc = hierarchy.right(cur);
+        array<int, 4> lv = breakHierarchy<THRESHOLD>(result, hierarchy, lc, pos, offset);
+        array<int, 4> rv = breakHierarchy<THRESHOLD>(result, hierarchy, rc, pos, offset);
+        array<int, 4> v = add(lv, rv);
+        int cnt = result.size();
+        if (infoCount(v) > THRESHOLD && hierarchy.breaking(cur)){
+            if (!(infoCount(lv) > THRESHOLD && hierarchy.breaking(lc)) && sum(lv) >= 4 && infoCount(lv) > 1) result[lc] = cnt++;
+            if (!(infoCount(rv) > THRESHOLD && hierarchy.breaking(rc)) && sum(rv) >= 4 && infoCount(rv) > 1) result[rc] = cnt++;
+        }
+        else {
+            if (cur == hierarchy.root && sum(v) >= 4) result[cur] = cnt++;
+        }
+        return v;
+    }
+
+    void ind2kernal(vector<int> &result, const unordered_map<int, int> &kernals, BinaryTree &hierarchy, int cur, int kernal = -1){
+        if (kernals.count(cur)) kernal = kernals.at(cur);
+        if (hierarchy.taxon(cur) != -1){
+            result[hierarchy.taxon(cur)] = kernal;
+        }
+        else {
+            int lc = hierarchy.left(cur), rc = hierarchy.right(cur);
+            ind2kernal(result, kernals, hierarchy, lc, kernal);
+            ind2kernal(result, kernals, hierarchy, rc, kernal);
+        }
+    }
+
+    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset){
+        int nInd = ind2species.size();
+        array<size_t, 4> cnt = {};
+        for (int iInd = 0; iInd < nInd; iInd++) {
+            size_t pSeq = pos + iInd * offset;
+            for (int iSite = 0; iSite < nSite; iSite++) {
+                tripInit.seq.add(pSeq + iSite, cnt);
+            }
+            gene.species2ind[ind2species[iInd]].push_back(iInd);
+            gene.ind2seq[iInd] = pSeq;
+        }
+        double total = cnt[0] + cnt[1] + cnt[2] + cnt[3];
+		double p = (cnt[0] + 0.5 * (cnt[1] + cnt[2])) / total;
+        gene.pq = p * (1 - p);
+    }
+
+    void formatGeneNaive(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+        int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
+        TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
+        buildGeneSeq(gene, ind2species, pos, nSite, offset);
+        for (int iKernal = 0; iKernal < nKernal; iKernal++){
+            gene.weight[iKernal] = 1;
+        }
+        tripInit.genes.emplace_back(gene);
+    }
+
+    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+        //if (useDCM) formatGeneDCM(ind2species, pos, nSite, offset);
+        //else 
+		formatGeneNaive(ind2species, pos, nSite, offset);
+    }
+
+    void readFasta(const string file) {
+        vector<pair<long long, long long> > sitepair, sitepair2;
+		long long nTaxa, nSites;
+        {
+			int d = ARG.getIntArg("pairdist");
+            vector<array<unsigned short, 4> > freq;
+            ifstream fin(file);
+            string name;
+            fin >> name;
+            while (name != "") {
+                addName(name.substr(1));
+                name = "";
+                string seq, line;
+                while (fin >> line) {
+                    if (line[0] == '>') { name = line; break; }
+                    seq += line;
+                }
+                if (freq.size() != seq.size()) {
+                    if (freq.size() == 0) freq.resize(seq.size());
+                    else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
+                }
+                for (int i = 0; i < seq.size(); i++) {
+                    switch (seq[i]) {
+                        case 'A': case 'a': freq[i][0]++; break;
+                        case 'C': case 'c': freq[i][1]++; break;
+                        case 'G': case 'g': freq[i][2]++; break;
+                        case 'T': case 't': freq[i][3]++; break;
+                    }
+                }
+            }
+			nSites = freq.size();
+			long long category[4] = {-(1 << 30), -(1 << 30), -(1 << 30), -(1 << 30)};
+            for (long long i = 0; i < nSites; i++) {
+                int cnt = 0;
+				bool singleton = false;
+                for (int j = 0; j < 4; j++) {
+                    if (freq[i][j] > 0) cnt++;
+					if (freq[i][j] == 1) singleton = true;
+                }
+                if (cnt == 2) { if (category[0] + d >= i) sitepair.push_back({category[0], i}); category[0] = i; }
+				if (cnt == 3) { if (category[1] + d >= i) sitepair.push_back({category[1], i}); category[1] = i; }
+				if (cnt == 4 && singleton) { if (category[2] + d >= i) sitepair.push_back({category[2], i}); category[2] = i; }
+				if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
+            }
+        }
+        {
+            ifstream fin(file);
+            string name;
+            fin >> name;
+            vector<int> ind2species;
+            long long pos = tripInit.seq.len();
+			long long offset = 3 * sitepair.size() + sitepair2.size();
+            while (name != "") {
+                ind2species.push_back(name2id[name.substr(1)]);
+                name = "";
+                string line, seq;
+                while (fin >> line) {
+                    if (line[0] == '>') { name = line; break; }
+                    seq += line;
+                }
+                for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair2) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+            }
+			for (int x = 0; x < 3; x++) {
+				long long len = sitepair.size();
+				long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+				for (int i = 0; i < nChunk; i++) {
+					size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+					formatGene(ind2species, pos + s, t - s, offset);
+				}
+				pos += sitepair.size();
 			}
-			if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
-		}
-	}
-	for (id = 0; id < tripInit.seq.size(); id++){
-		while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
-	}
-	score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-	while (tripInit.pi.size() < npos) tripInit.pi.push_back((cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum));
-	for (int p = oldNpos; p < npos; p++){
-		int pcnt[4] = {};
-		for (id = 0; id < tripInit.seq.size(); id++){
-			if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
-		}
-		tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
-	}
-}
-
-void readPhilip(istream &fin, const char CR1, const char CR2, const char CY1, const char CY2, const char CY3, const char cr1, const char cr2, const char cy1, const char cy2, const char cy3){
-	string line;
-	int nTaxa, L;
-	while (fin >> nTaxa){
-		int cnt[4] = {}, oldNpos = npos;
-		fin >> L;
-		for (int i = 0; i < nTaxa; i++){
-			fin >> line;
-			int id = name2id[line];
-			getline(fin, line);
-			for (int i = 0; i + 1 < line.size(); i += 2){
-				const char c1 = line[i], c2 = line[i + 1];
-				const bool R1 = (c1 == CR1 || c1 == cr1 || c1 == CR2 || c1 == cr2);
-				const bool R2 = (c2 == CR1 || c2 == cr1 || c2 == CR2 || c2 == cr2);
-				const bool Y1 = (c1 == CY1 || c1 == cy1 || c1 == CY2 || c1 == cy2 || c1 == CY3 || c1 == cy3);
-				const bool Y2 = (c2 == CY1 || c2 == cy1 || c2 == CY2 || c2 == cy2 || c2 == CY3 || c2 == cy3);
-				const bool N1 = R1 || Y1 || (c1 == 'X' || c1 == 'x' || c1 == 'N' || c1 == 'n' || c1 == '-');
-				const bool N2 = R2 || Y2 || (c2 == 'X' || c2 == 'x' || c2 == 'N' || c2 == 'n' || c2 == '-');
-				if (R1 && R2){ tripInit.seq[id].push_back(0); cnt[0]++; }
-				else if (R1 && Y2){ tripInit.seq[id].push_back(1); cnt[1]++; }
-				else if (Y1 && R2){ tripInit.seq[id].push_back(2); cnt[2]++; }
-				else if (Y1 && Y2){ tripInit.seq[id].push_back(3); cnt[3]++; }
-				else if (N1 && N2){ tripInit.seq[id].push_back(-1); }
+			{
+				long long len = sitepair2.size();
+				long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+				for (int i = 0; i < nChunk; i++) {
+					long long s = i * len / nChunk, t = (i + 1) * len / nChunk;
+					formatGene(ind2species, pos + s, t - s, offset);
+				}
 			}
-			if (npos < tripInit.seq[id].size()) npos = tripInit.seq[id].size();
-		}
-		for (int id = 0; id < tripInit.seq.size(); id++){
-			while (tripInit.seq[id].size() < npos) tripInit.seq[id].push_back(-1);
-		}
-		score_t cntsum = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-		while (tripInit.pi.size() < npos) tripInit.pi.push_back((cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum));
-		//LOG << cntsum << "\t" << (cnt[0] * 2 + cnt[1] + cnt[2]) / (2 * cntsum) << "\t" << cnt[0] * cnt[3] / (1.0 * cnt[1] * cnt[2]) << endl;
-		for (int p = oldNpos; p < npos; p++){
-			int pcnt[4] = {};
-			for (int id = 0; id < tripInit.seq.size(); id++){
-				if (tripInit.seq[id][p] != -1) pcnt[tripInit.seq[id][p]]++;
-			}
-			tripInit.weight.push_back(pcnt[0] + pcnt[1] + pcnt[2] + pcnt[3] - max({pcnt[0], pcnt[1], pcnt[2], pcnt[3]}) > 1);
-		}
-	}
-}
+        }
+    }
 
-string helpText = R"V0G0N(feast [-o oFilePath -r nRound -s nSample -p probability -t nThread -y] inputList
--o  path to output file (default: stdout)
--r  number of total rounds of placements (default: 5)
--s  number of total rounds of subsampling (default: 0)
--p  subsampling probability of keeping each taxon (default: 0.5)
--t  number of threads (default: 1)
--y  take one input in PHYLIP format instead of a list of inputs in FASTA format 
-inputList: the path to a file containing a list of paths to input aligned gene files, one file per line
-Gene files must be in FASTA format. The header line should be ">Species_Name".
-)V0G0N";
+    bool readPhylip(ifstream &fin, ifstream &fin2){
+        long long nTaxa, nSites;
+        if (!(fin >> nTaxa)) return false;
+        fin >> nSites;
+		vector<pair<long long, long long> > sitepair, sitepair2;
+        {
+			int d = ARG.getIntArg("pairdist");
+            vector<array<unsigned short, 4> > freq(nSites);
+            for (int i = 0; i < nTaxa; i++){
+                string name, seq;
+                fin >> name >> seq;
+                if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
+                addName(name);
+                for (int j = 0; j < nSites; j++) {
+                    switch (seq[j]) {
+                        case 'A': case 'a': freq[j][0]++; break;
+                        case 'C': case 'c': freq[j][1]++; break;
+                        case 'G': case 'g': freq[j][2]++; break;
+                        case 'T': case 't': freq[j][3]++; break;
+                    }
+                }
+            }
+			long long category[4] = {-(1 << 30), -(1 << 30), -(1 << 30), -(1 << 30)};
+            for (long long i = 0; i < nSites; i++) {
+                int cnt = 0;
+				bool singleton = false;
+                for (int j = 0; j < 4; j++) {
+                    if (freq[i][j] > 0) cnt++;
+					if (freq[i][j] == 1) singleton = true;
+                }
+                if (cnt == 2) { if (category[0] + d >= i) sitepair.push_back({category[0], i}); category[0] = i; }
+				if (cnt == 3) { if (category[1] + d >= i) sitepair.push_back({category[1], i}); category[1] = i; }
+				if (cnt == 4 && singleton) { if (category[2] + d >= i) sitepair.push_back({category[2], i}); category[2] = i; }
+				if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
+            }
+        }
+        {
+            fin2 >> nTaxa >> nSites;
+            long long pos = tripInit.seq.len();
+			long long offset = 3 * sitepair.size() + sitepair2.size();
+            vector<int> ind2species;
+            for (int i = 0; i < nTaxa; i++){
+                string name, seq;
+                fin2 >> name >> seq;
+                ind2species.push_back(name2id[name]);
+                for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
+				for (const pair<long long, long long> &e: sitepair2) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+            }
+			for (int x = 0; x < 3; x++) {
+				long long len = sitepair.size();
+				long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+				for (int i = 0; i < nChunk; i++) {
+					size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+					formatGene(ind2species, pos + s, t - s, offset);
+				}
+				pos += sitepair.size();
+			}
+			{
+				long long len = sitepair2.size();
+				long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+				for (int i = 0; i < nChunk; i++) {
+					long long s = i * len / nChunk, t = (i + 1) * len / nChunk;
+					formatGene(ind2species, pos + s, t - s, offset);
+				}
+			}
+        }
+        return true;
+    }
+
+    Workflow(int argc, char** argv){
+        //string mappingFile;
+        meta.initialize(argc, argv);
+        init();
+    }
+
+    Workflow(int argc, char** argv, string guide, const vector<string> names, unordered_map<string, int> name2id):
+            guide(guide), diskcover(ARG.getIntArg("diskcover")), useDCM(true) {
+        //string mappingFile;
+        meta.initialize(argc, argv);
+        meta.names = names;
+        meta.name2id = name2id;
+        meta.nRounds = 0;
+        meta.guideTree = guide;
+        init();
+    }
+
+    void init(){
+        tripInit.nThreads = meta.nThreads;
+        
+        if (ARG.getStringArg("format") == "fasta") {
+            readFasta(ARG.getStringArg("input"));
+        }
+        else if (ARG.getStringArg("format") == "list") {
+            ifstream fin(ARG.getStringArg("input"));
+            string line;
+            while (getline(fin, line)) {
+                readFasta(line);
+            }
+        }
+        else if (ARG.getStringArg("format") == "phylip") {
+            ifstream fin(ARG.getStringArg("input")), fin2(ARG.getStringArg("input"));
+            string line;
+            while (readPhylip(fin, fin2));
+        }
+        else {
+            cerr << "Failed to parse format named '" << ARG.getStringArg("format") << "'\n";
+            exit(1);
+        }
+        tripInit.nSpecies = names.size();
+    }
+
+    BinaryTree getGenetree(){
+        LOG.enabled = false;
+        pair<score_t, string> result = meta.run();
+        LOG.enabled = true;
+        return BinaryTree(result.second, name2id);
+    }
+};
 
 int main(int argc, char** argv){
-	vector<string> files;
-	
-	int nThreads = 1, nRounds = 4, nSample = 0;
-	bool phylip = false;
-	double p = 0.5;
-	string outputFile;
-	ofstream fileOut;
-	if (argc == 1) {LOG << helpText; return 0;}
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-y") == 0) {phylip = true; i--; continue;}
-		
-		if (strcmp(argv[i], "-o") == 0) outputFile = argv[i + 1];
-		if (strcmp(argv[i], "-r") == 0) sscanf(argv[i + 1], "%d", &nRounds);
-		if (strcmp(argv[i], "-s") == 0) sscanf(argv[i + 1], "%d", &nSample);
-		if (strcmp(argv[i], "-p") == 0) sscanf(argv[i + 1], "%lf", &p);
-		if (strcmp(argv[i], "-t") == 0) sscanf(argv[i + 1], "%d", &nThreads);
-		if (strcmp(argv[i], "-h") == 0) {LOG << helpText; return 0;}
+    ARG.setProgramName("asterisk-hky", "Accurate Species Tree EstimatoR from Independent Site Kernals");
+    ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment", true);
+    ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
+    ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
+    ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
+	ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites");
+    ARG.addIntArg(0, "iteration", 1, "The number of iterations in the iterative method");
+    ARG.addFlag('I', "quick", "Set the iteration number to 1", [&]() {
+		ARG.getIntArg("iteration") = 1;
+	}, true);
+
+    int iteration = 1;
+    pair<score_t, string> result;
+    vector<string> names;
+    unordered_map<string, int> name2id;
+    {
+        Workflow WF(argc, argv);
+        if (ARG.getStringArg("guide") != ""){
+            WF.meta.nRounds = 0;
+            WF.meta.nSample = 0;
+        }
+        if (iteration < ARG.getIntArg("iteration")) WF.meta.outputFile = "<standard output>";
+        LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
+        result = WF.meta.run();
+        names = WF.names;
+        name2id = WF.name2id;
 	}
-	ostream &fout = (outputFile == "") ? cout : fileOut;
-	if (outputFile != "") fileOut.open(outputFile);
-	
-	if (nRounds < nThreads){
-		tripInit.nThreads = nThreads / nRounds;
-		nThreads = nRounds;
-	}
-	
-	if (phylip) {
-		{
-			ifstream fin(argv[argc - 1]);
-			int n, L;
-			string line;
-			while (fin >> n){
-				fin >> L;
-				for (int i = 0; i < n; i++){
-					string s;
-					fin >> s;
-					getline(fin, line);
-					if(name2id.count(s) == 0) {
-						name2id[s] = names.size();
-						names.push_back(s);
-						tripInit.seq.push_back({});
-					}
-				}
-			}
-		}
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
-		{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'A', 0, 'C', 'G', 'T', 'a', 0, 'c', 'g', 't'); }
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'C', 0, 'A', 'G', 'T', 'c', 0, 'a', 'g', 't'); }
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'G', 0, 'A', 'C', 'T', 'g', 0, 'a', 'c', 't'); }
-		//{ ifstream fin(argv[argc - 1]); readPhilip(fin, 'T', 0, 'A', 'C', 'G', 't', 0, 'a', 'c', 'g'); }
-	}
-	else {
-		ifstream listIn(argv[argc - 1]);
-		for (string file; getline(listIn, file);){
-			files.push_back(file);
-		}
-		
-		for (string file: files){
-			ifstream fin(file);
-			string line;
-			while (getline(fin, line)){
-				if (line[0] != '>') continue;
-				string s = formatName(line);
-				if(name2id.count(s) == 0) {
-					name2id[s] = names.size();
-					names.push_back(s);
-					tripInit.seq.push_back({});
-				}
-			}
-		}
-		for (string file: files){
-			//{ ifstream fin(file); readFile(fin, 'A', 'C', 'G', 'T', 0, 'a', 'c', 'g', 't', 0); }
-			{ ifstream fin(file); readFile(fin, 'A', 'G', 'C', 'T', 0, 'a', 'g', 'c', 't', 0); }
-			//{ ifstream fin(file); readFile(fin, 'A', 'T', 'C', 'G', 0, 'a', 't', 'c', 'g', 0); }
-			//{ ifstream fin(file); readFile(fin, 'A', 0, 'C', 'G', 'T', 'a', 0, 'c', 'g', 't'); }
-			//{ ifstream fin(file); readFile(fin, 'C', 0, 'A', 'G', 'T', 'c', 0, 'a', 'g', 't'); }
-			//{ ifstream fin(file); readFile(fin, 'G', 0, 'A', 'C', 'T', 'g', 0, 'a', 'c', 't'); }
-			//{ ifstream fin(file); readFile(fin, 'T', 0, 'A', 'C', 'G', 't', 0, 'a', 'c', 'g'); }
-		}
-	}
-	
-	for (int i = 0; i < names.size(); i++){
-		tripInit.weightHelper.push_back(0);
-	}
-	tripInit.weightHelper.push_back(0);
-	
-	tripInit.npos = npos;
-	LOG << "#Species: " << names.size() << endl;
-	LOG << "#Bases: " << npos << endl;
-	LOG << "#Rounds: " << nRounds << endl;
-	LOG << "#Samples: " << nSample << endl;
-	LOG << "#Threads: " << nThreads << "x" << tripInit.nThreads << endl;
-	LOG << "p = " << p << endl;
-	
-	ConstrainedOptimizationAlgorithm alg(names.size(), tripInit, names);
-	auto res = alg.run(nRounds, nThreads);
-	LOG << "Score: " << (double) res.first << endl;
-	LOG << res.second << endl;
-	
-	res = alg.run(nSample, nThreads, p);
-	LOG << "Score: " << (double) res.first << endl;
-	fout << res.second << endl;
+    LOG << "Score: " << (double) result.first << endl;
 	return 0;
 }

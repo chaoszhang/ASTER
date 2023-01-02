@@ -201,7 +201,7 @@ struct Workflow {
                     if (freq.size() == 0) freq.resize(seq.size());
                     else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
                 }
-                for (int i = 0; i < seq.size(); i++) {
+                for (size_t i = 0; i < seq.size(); i++) {
                     switch (seq[i]) {
                         case 'A': case 'a': freq[i][0]++; break;
                         case 'C': case 'c': freq[i][1]++; break;
@@ -211,7 +211,7 @@ struct Workflow {
                 }
             }
             keep.resize(freq.size());
-            for (int i = 0; i < keep.size(); i++) {
+            for (size_t i = 0; i < keep.size(); i++) {
                 int cnt = 0;
                 for (int j = 0; j < 4; j++) {
                     if (freq[i][j] >= 2) cnt++;
@@ -246,7 +246,7 @@ struct Workflow {
     }
 
     bool readPhylip(ifstream &fin, ifstream &fin2){
-        int nTaxa, nSites;
+        size_t nTaxa, nSites;
         if (!(fin >> nTaxa)) return false;
         fin >> nSites;
         vector<bool> keep(nSites);
@@ -282,7 +282,7 @@ struct Workflow {
                 string name, seq;
                 fin2 >> name >> seq;
                 ind2species.push_back(name2id[name]);
-                for (int j = 0; j < keep.size(); j++){
+                for (size_t j = 0; j < keep.size(); j++){
                     if (keep[j]) tripInit.seq.append(seq[j]);
                 }
             }
