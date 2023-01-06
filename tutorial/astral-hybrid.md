@@ -1,19 +1,20 @@
-# Accurate Species Tree ALgorithm (wASTRAL-unweighted)
-ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
+# Weighted ASTRAL Series (wASTRAL)
+1. Weighted ASTRAL by Branch Support (astral-weighted)
+2. Weighted ASTRAL by Branch Length (astral-lengthweighted)
+3. Weighted ASTRAL - Hybrid (astral-hybrid)
 
-`wASTRAL-unweighted` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
-
-As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with wASTRAL-unweighted and use the wASTRAL-unweighted output tree as `-q` option to ASTRAL-III. 
+Weighted ASTRAL series introduce threshold-free weighting schemes for the quartet-based species tree inference, the metric used in the popular method ASTRAL. By reducing the impact of quartets with low support or long terminal branches (or both), weighting provides stronger theoretical guarantees and better empirical performance than the unweighted ASTRAL. Our results show that weighted ASTRAL improves the utility of summary methods and can reduce the incongruence often observed across analytical pipelines.
 
 ## Publication
 
 [1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
 
-[2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+(OPTIONAL) [2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
 
 ### Example of usage
 
-We obtained the species tree from gene trees using wASTRAL-unweighted v1.13.2.3 [1] by optimizing the objective function of ASTRAL [2].
+We obtained the species tree from gene trees using wASTRAL-hybird v1.13.2.3 [1]. 
+(OPTIONAL) This method reimplements ASTRAL-III [2] and takes into account phylogenetic uncertainty by intergrating signals from branch length and branch support in gene trees.
 
 
 # Announcements
@@ -60,7 +61,7 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum install gcc-c++
       ```
     - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`.
-  - If you see "error" when running `make`, please try `make astral` instead and file a bug report.
+  - If you see "error" when running `make`, please try `make astral-hybrid` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
@@ -76,10 +77,11 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
 # INPUT
-* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.
-* When individuals genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
-  1. You can give multiple individuals from the same species the same name in the input gene trees (e.g., `((species_name_A,species_name_B),(species_name_A,species_name_C));`).
-  2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats (e.g., for gene trees like `((individual_A1,individual_B1),(individual_A2,individual_C1));`):
+* The input gene trees are in the Newick format
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals/genes per species.
+* When individuals/genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals/genes from the same species the same name in the input gene trees.
+  2. OR, a mapping file needs to be provided using the `-a` option.
 ```
 individual_A1 species_name_A
 individual_A2 species_name_A
@@ -88,56 +90,69 @@ individual_B2 species_name_B
 individual_B3 species_name_B
 ...
 ```
+  Or
+```
+gene_A1 species_name_A
+gene_A2 species_name_A
+gene_B1 species_name_B
+gene_B2 species_name_B
+gene_B3 species_name_B
+...
+```
+
+1. **Weighted ASTRAL by Branch Support (astral-weighted)**: Non-root interal node labels must be a non-negative number being support. Eg. `((A,B)100,(C,D)0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+2. **Weighted ASTRAL by Branch Length (astral-lengthweighted)**: Non-root labels must have branch lengths after `:`. Eg. `((A,B):1,(C,D):0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
+3. **Weighted ASTRAL - Hybrid (astral-hybrid)**: Non-root interal node labels must be a non-negative number being support before `:` and non-root labels must have branch lengths after `:`. Eg. `((A:1,B:1)100:1,(C:1,D:1)0:0);` or `((A:1,B:1)1.0:1,(C:1,D:1)0.333:0);`.
 
 # OUTPUT
 The output in is Newick format and gives:
 
 * the species tree topology
-* branch lengths in coalescent units (only for internal branches)
+* branch lengths in coalescent units for astral-weighted and in **combined (coalensecent + 2 * substitution) units** (only for internal branches)
 * branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
 * It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 
-The ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
+The weighted ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 
 # EXECUTION
 ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to the directory (location) where you have downloaded ASTER and issue the following command:
 
 ```
-bin/astral
+bin/astral-hybrid
 ```
 
-This will give you a list of options available. If you are using Windows, please replace `bin/astral` with `.\exe\astral.exe`.
+This will give you a list of options available. If you are using Windows, please replace `bin/astral-hybrid` with `.\exe\astral-hybrid.exe`.
 
 To find the species tree with input from in a file called `INPUT_FILE`, use:
 
 ```
-bin/astral INPUT_FILE
+bin/astral-hybrid INPUT_FILE
 ```
 or
 ```
-bin/astral -i INPUT_FILE
+bin/astral-hybrid -i INPUT_FILE
 ```
 
 In the first case, INPUT_FILE is ***hard-coded*** to be the ***last argument*** for backward compatibility. 
 
-For example if you want to run `astral` with input `example/genetree.nw`, then run
+For example if you want to run `astral-hybrid` with input `example/genetree.nw`, then run
 
 ```
-bin/astral example/genetree.nw
+bin/astral-hybrid example/genetree.nw
 ```
 or
 ```
-bin/astral -i example/genetree.nw
+bin/astral-hybrid -i example/genetree.nw
 ```
 
 The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
 ```
-bin/astral -o OUTPUT_FILE INPUT_FILE
+bin/astral-hybrid -o OUTPUT_FILE INPUT_FILE
 ```
 or
 ```
-bin/astral -i INPUT_FILE -o OUTPUT_FILE
+bin/astral-hybrid -i INPUT_FILE -o OUTPUT_FILE
 ```
 
 With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, from here on we will not demonstrate `-i INPUT_FILE` cases.
@@ -145,27 +160,61 @@ With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, fro
 To save the logs (**also recommended**), run:
 
 ```
-bin/astral -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-hybrid -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 For example, you can run
 
 ```
-bin/astral -o example/genetree.nw.stree example/genetree.nw 2>example/genetree.nw.log
+bin/astral-hybrid -o example/genetree.nw.stree example/genetree.nw 2>example/genetree.nw.log
 ```
 
 ASTER supports multi-threading. To run program with 4 threads, add `-t 4` before `INPUT_FILE`:
 
 ```
-bin/astral -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-hybrid -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 ASTER has very good parrallel efficiency up to 64 cores when input data is large. In fact, it often experiences super-linear speedup with 16 cores or more. So feel free to use as many cores as you want.
 
-By default, ASTRAL assumes multiple individuals from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+***Notice:*** For `astral-weighted` (support) and `astral-hybrid` (hybrid), you ***must*** provide max (`-x`) and min (`-n`) of support value to the program; otherwise it will default to `max=100, min=0`. Please ensure that you provide the correct max and min; otherwise, the output of the program ***may not be meaningful***.
 
 ```
-bin/astral -a example/genetree.map example/genetree.nw
+bin/astral-hybrid -x MAX_SUPPORT -n MIN_SUPPORT INPUT_FILE
+```
+
+For **Bootstrap** support, the default value should be fine (any of the following commands works):
+
+```
+bin/astral-hybrid INPUT_FILE
+bin/astral-hybrid -S INPUT_FILE
+bin/astral-hybrid -x 100 -n 0 INPUT_FILE
+```
+
+For **local Baysian** support, `-x 1 -n 0.333` is recommended or `-B` for short:
+
+```
+bin/astral-hybrid -B INPUT_FILE
+```
+or
+```
+bin/astral-hybrid -x 1 -n 0.333 INPUT_FILE
+```
+
+For other **probability & likelihood** support, `-x 1 -n 0` may be more reasonable or `-L` for short:
+
+```
+bin/astral-hybrid -L INPUT_FILE
+```
+or
+```
+bin/astral-hybrid -x 1 -n 0 INPUT_FILE
+```
+
+By default, wASTRAL assumes multiple individuals/alleles from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+
+```
+bin/astral-hybrid -a example/genetree.map example/genetree.nw
 ```
 
 When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
@@ -175,49 +224,49 @@ When your dataset has no more than 50 species and no more than 500 genes, you ma
 ASTER algorithm first performs `R` (4 by default) rounds of search and then repeatedly performs `S` (4 by default) rounds of subsampling and exploration until no improvement found.
 
 ```
-bin/astral -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-hybrid -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to run with more rounds of placement for ensured optimality, then you can run with
 ```
-bin/astral -r 16 -s 16 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-hybrid -r 16 -s 16 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 or simply
 ```
-bin/astral -R -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral-hybrid -R -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/astral -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-hybrid -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 Specifically, you can score and annotate a ***fully resolved*** species tree containing all taxa with `-c SPECIES_TREE_IN_NEWICK_FORMAT`. If want to score a species tree or you want to place only ***one*** taxon onto the tree, you can use
 
 ```
-bin/astral -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-hybrid -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 or simply,
 ```
-bin/astral -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-hybrid -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/astral -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral-hybrid -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
-bin/astral -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral -u 2 -o OUTPUT_FILE INPUT_FILE
+bin/astral-hybrid -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/astral-hybrid -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
-Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+Species tree with more than **2000** taxa may cause **floating point underflow or precision issue**. Use the following command instead:
 
 ```
-bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
+bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
 ```
