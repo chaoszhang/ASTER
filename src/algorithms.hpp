@@ -36,6 +36,11 @@ typedef unsigned __int128 hash_t;
 #ifndef ERROR_TOLERANCE
 #define ERROR_TOLERANCE 0
 #endif
+
+#if defined(SUPPORT) || defined(G_SUPPORT) || defined(LOCAL_BOOTSTRAP)
+#define SOME_FORM_OF_SUPPORT
+#endif
+
 using namespace std;
 
 struct LogInfo {
@@ -63,6 +68,11 @@ struct Hasher{
 	}
 };
 
+string formatBootstrap(double s){
+	int a = floor(s);
+	int b = round(10 * (s - a));
+	return to_string(a) + "." + to_string(b);
+}
 
 struct AnnotatedTree{
 	struct Node{
@@ -1296,7 +1306,7 @@ struct ConstrainedOptimizationAlgorithm{
 		return 1 - p * 3;
 	}
 
-#if defined(SUPPORT) || defined(G_SUPPORT)
+#ifdef SOME_FORM_OF_SUPPORT
 	void switchSubtree(Quadrupartition &quad, int v, int s, int t){
 		if (nodes[v].leafId != -1) {
 			quad.update(t, nodes[v].leafId);
@@ -1368,7 +1378,14 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		node->s = support0;
 		#endif
-
+		#ifdef LOCAL_BOOTSTRAP
+		array<int, 3> bs = node->annot.bootstrap();
+		double nbs = node->annot.bs.size() / 100.0;
+		if (support == 1) res += formatBootstrap(bs[0] / nbs);
+		else {
+			res += "'[bs1=" + to_string(bs[0]) + ";bs2=" + to_string(bs[1]) + ";bs3=" + to_string(bs[2]) + "]'";
+		}
+		#endif
 		#ifdef G_SUPPORT
 		double p0 = gTest(score[0], score[1], score[2]);
 		double p1 = gTest(score[1], score[2], score[0]);
@@ -1501,6 +1518,9 @@ struct MetaAlgorithm{
 	#ifdef G_SUPPORT
 		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: Grubbs's test p-value, 2: detailed, 3: freqQuad.csv)");
 	#endif
+	#ifdef LOCAL_BOOTSTRAP
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: local bootstrap, 2: detailed)");
+	#endif
 		ARG.parse(argc, argv);
 	}
 
@@ -1584,7 +1604,7 @@ struct MetaAlgorithm{
 		
 		string output = res.second;
 		LOG << "Final Tree: " << output << endl;
-		#if defined(SUPPORT) || defined(G_SUPPORT)
+		#ifdef SOME_FORM_OF_SUPPORT
 		double w = 1;
 		#ifdef SUPPORT
 		w = ARG.getDoubleArg("downweightrepeat");

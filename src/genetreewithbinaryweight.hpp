@@ -66,7 +66,7 @@ struct CustomizedAnnotation{
 		return r;
 	}
 
-	CustomizedAnnotation operator+= (const CustomizedAnnotation& o){
+	CustomizedAnnotation& operator+= (const CustomizedAnnotation& o){
 		ab_cd += o.ab_cd;
 		ac_bd += o.ac_bd;
 		ad_bc += o.ad_bc;
