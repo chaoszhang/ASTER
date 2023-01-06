@@ -10,3 +10,4 @@ g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libst
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid.exe
 g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid_precise.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/asterisk-hky.cpp -o exe/asterisk-hky.exe
+g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/asterisk-pair.cpp -o exe/asterisk-pair.exe

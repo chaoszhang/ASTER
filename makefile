@@ -1,4 +1,4 @@
-all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky
+all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky asterisk-pair
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise
@@ -34,12 +34,12 @@ astral-hybrid:
 astral-hybrid_precise:
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
 	
-asterisk:
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk.cpp -o bin/asterisk
-
 asterisk-hky:
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-hky.cpp -o bin/asterisk-hky
 	
+asterisk-pair:
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-pair.cpp -o bin/asterisk-pair
+
 dir:
 	mkdir -p bin
 

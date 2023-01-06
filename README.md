@@ -3,30 +3,29 @@
 [<img src="logo.png" width="250"/>](logo.png)
 
 A family of optimatization algorithms for species tree inference:
-1. [ASTRAL](tutorial/astral.md) (re-implemented in C++, suitable for large data, multi-individual, and super-tree)
-2. [ASTRAL-Pro](tutorial/astral-pro.md) (re-implemented in C++ for better running time, memory consumption, and usability)
-3. [Weighted ASTRAL by Branch Support](tutorial/astral-hybrid.md)
-4. [Weighted ASTRAL by Branch Length](tutorial/astral-hybrid.md)
-5. [Weighted ASTRAL - Hybrid](tutorial/astral-hybrid.md)
-6. [ASTERISK](README/asterisk.md)
+1. [ASTRAL](tutorial/astral.md)
+2. [ASTRAL-Pro](tutorial/astral-pro.md)
+3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
+4. [ASTERISK-hky](README/asterisk.md)
+5. [ASTERISK-pair](README/asterisk.md)
 
-# Announcements
+## GUI for Windows users (NEW)
 
-## Integrated in Phylosuite (NEW)
-
-Many ASTER tools have been integrated in [PhyloSuite](http://phylosuite.jushengwu.com/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
-
-## GUI for Windows users
-
-Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`.
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
+<!--
+GUI for other plantforms is also available at `src/aster-gui.py` with dependencies:
+```
+pip3 install pyqt5 pyqt5-tools
+```
+-->
  
 ## Bug Reports
 
 Contact ``chaozhang@berkeley.edu``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
-- The rest of this README file
-- Program specific tutorials (see EXECUTION section)
+- The rest of this TUTORIAL file
+- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
 - Forums (feel free to ask questions or ask for help running ASTER):
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
@@ -69,10 +68,31 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 Please click the link below:
 1. [ASTRAL](tutorial/astral.md)
 2. [ASTRAL-Pro](tutorial/astral-pro.md)
-3. [Weighted ASTRAL by Branch Support](tutorial/astral-hybrid.md)
-4. [Weighted ASTRAL by Branch Length](tutorial/astral-hybrid.md)
-5. [Weighted ASTRAL - Hybrid](tutorial/astral-hybrid.md)
-6. [ASTERISK](README/asterisk.md)
+3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
+4. [ASTERISK-hky](README/asterisk.md)
+5. [ASTERISK-pair](README/asterisk.md)
+
+# HELP ME CHOOSE A SUITABLE TOOL
+
+Q: I have a supermatrix of SNPs in fasta/phylip format and I want a "quick-and-dirty" run to get an adequate phylogenetic tree.
+
+A: I recommend **ASTERISK-hky**, which is usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting with enough data.
+
+Q: My dataset has a lot of muti-copy genes (e.g. plants) and I want to make an effort to utilize these precious signals.
+
+A: I highly recommend **ASTRAL-Pro**, which takes as input non-rooted non-labelled gene family trees. ASTRAL-Pro does not need to know the homology relationships of genes, but you still need to reconstruct gene family trees by yourself using RAxML/IQTree/Fasttree.
+
+Q: I have aligned genomes (>10M sites) and the average nucleotide identity is >80% between closely related species (e.g. birds, mammals, or abundant taxon sampling).
+
+A: I recommend **ASTERISK-hky** (faster) and **ASTERISK-pair** (slower). Those methods are usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting. Please run both and select the species tree that makes more sense.
+
+Q: I have gene trees with branch lengths and Bootstrap/Baysian supports and I know that horizontal gene transfers and hybridizations are rare.
+
+A: I recommend **Weighted ASTRAL - hybrid**. It utilizes branch lengths and supports to improve accuracy.
+
+Q: I have gene trees but they do not satisfy the requirements for Weighted ASTRAL - hybrid.
+
+A: You can still use **ASTRAL**. By the way, this version of ASTRAL is also useful for finding the supertree.
 
 # ACKNOWLEGEMENT
 ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab.
