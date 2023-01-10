@@ -12,7 +12,7 @@
 #include<thread>
 #include<mutex>
 
-#define LARGE_DATA
+//#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef long double score_t;
 typedef long long count_t;

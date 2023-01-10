@@ -252,7 +252,7 @@ struct TripartitionInitializer{
 		const shared_ptr<const int[]> species2indRange, indBin;
 		const shared_ptr<const int[]> indSiteRep2kernal;
 		const shared_ptr<const size_t[]> ind2seq;
-		const shared_ptr<Kernal[]> kernal;
+		shared_ptr<Kernal[]> kernal;
 		const array<float, 4> pi;
 
 		Gene(): nInd(0), nSpecies(0), nSite(0), nKernal(0), nRep(0),
@@ -418,12 +418,13 @@ struct Quadrupartition{
 		const int ufb_size, ufb_fold;
 		shared_ptr<int[]> ufb_offset;
 
-		Gene(const TripartitionInitializer::Gene& init, int ufb_size, int ufb_fold): nInd(init.nInd), nSpecies(init.nSpecies), nSite(init.nSite), nKernal(init.nKernal), nRep(init.nRep),
+		Gene(TripartitionInitializer::Gene& init, int ufb_size, int ufb_fold): nInd(init.nInd), nSpecies(init.nSpecies), nSite(init.nSite), nKernal(init.nKernal), nRep(init.nRep),
 				pi(init.pi), species2indRange(init.species2indRange), indBin(init.indBin), 
 				indSiteRep2kernal(init.indSiteRep2kernal), ind2seq(init.ind2seq), kernal(new Kernal[init.nKernal]),
 				ufb_size(ufb_size), ufb_fold(ufb_fold), ufb_offset(new int[ufb_fold]) {
 			for (int i = 0; i < ufb_fold; i++) ufb_offset[i] = rand() % ufb_size;
 			for (int i = 0; i < nKernal; i++) kernal[i].weight = init.kernal[i].weight;
+			init.kernal.reset();
 		}
 
 		void updateCnt(int i, int y, int x, const TripartitionInitializer::Sequence &seq) {
@@ -481,7 +482,7 @@ struct Quadrupartition{
 	TripartitionInitializer& TI;
 
 	Quadrupartition(TripartitionInitializer &init): TI(init), color(init.nThreads, vector<char>(init.nSpecies, -1)){
-		for (const TripartitionInitializer::Gene &g: TI.genes){
+		for (TripartitionInitializer::Gene &g: TI.genes){
 			genes.emplace_back(g, TI.ufb_size, TI.ufb_fold);
 			genes.back().clearCntScore();
 		}
