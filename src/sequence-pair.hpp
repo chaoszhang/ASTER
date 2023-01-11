@@ -160,13 +160,12 @@ struct TripartitionInitializer{
 			vector<vector<int> > species2ind;
 			int* indSiteRep2kernal;
 			size_t* ind2seq;
-			float* weight;
+			score_t weight = 1;
 			int nInd, nSpecies, nSite, nKernal, nRep;
 
 			Initializer(int nInd, int nSpecies, int nSite, int nKernal, int nRep): species2ind(nSpecies),
 					nInd(nInd), nSpecies(nSpecies), nSite(nSite), nKernal(nKernal), nRep(nRep),
-					indSiteRep2kernal((nRep == 0) ? nullptr : new int[nInd * nSite * nRep]),
-					ind2seq(new size_t[nInd]), weight(new float[nKernal]){}
+					indSiteRep2kernal((nRep == 0) ? nullptr : new int[nInd * nSite * nRep]), ind2seq(new size_t[nInd]){}
 			
 			void setIndSiteRep2kernal(int iInd, int iSite, int iRep, int iKernal){
 				indSiteRep2kernal[(iInd * nSite + iSite) * nRep + iRep] = iKernal;
@@ -199,28 +198,20 @@ struct TripartitionInitializer{
 		
 		struct Kernal {
 			array<array<unsigned short, 4>, 3> cnt;
-			score_t scoreCache = 0;
-			float weight = 1;
-			bool valid = true;
 
 			void reset(){
-				valid = false;
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < 4; j++)
 						cnt[i][j] = 0;
 			}
 
 			void update(int y, int x, const Sequence &seq, size_t pSeq){
-				valid = false;
 				if (y != -1) seq.rmv(pSeq, cnt[y]);
 				if (x != -1) seq.add(pSeq, cnt[x]);
 			}
 
 			score_t score(const score_t pq){
-				if (valid) return scoreCache;
-				valid = true;
-				scoreCache = weight * scorePos(cnt, pq);
-				return scoreCache;
+				return scorePos(cnt, pq);
 			}
 		};
 
@@ -230,21 +221,25 @@ struct TripartitionInitializer{
 		const shared_ptr<const size_t[]> ind2seq;
 		shared_ptr<Kernal[]> kernal;
 		const score_t pq;
+		const score_t weight = 1;
+		
+		score_t scoreCache = 0;
+		bool valid = false;
 
 		Gene(): nInd(0), nSpecies(0), nSite(0), nKernal(0), nRep(0),
 				pq(0), species2indRange(nullptr), indBin(nullptr), 
 				indSiteRep2kernal(nullptr), ind2seq(nullptr), kernal(nullptr){}
 
 		Gene(const Initializer& init): nInd(init.nInd), nSpecies(init.nSpecies), nSite(init.nSite), nKernal(init.nKernal), nRep(init.nRep),
-				pq(init.pq), species2indRange(init.species2indRange()), indBin(init.indBin()), 
-				indSiteRep2kernal(init.indSiteRep2kernal), ind2seq(init.ind2seq), kernal(new Kernal[init.nKernal]) {
-			for (int i = 0; i < nKernal; i++) kernal[i].weight = init.weight[i];
-		}
+				pq(init.pq), species2indRange(init.species2indRange()), indBin(init.indBin()), weight(init.weight),
+				indSiteRep2kernal(init.indSiteRep2kernal), ind2seq(init.ind2seq), kernal(new Kernal[init.nKernal]) {}
 
 		void updateCnt(int i, int y, int x, const Sequence &seq) {
 			if (i >= nSpecies) return;
 			int indStart = (i == 0) ? 0 : species2indRange[i - 1];
 			int indEnd = species2indRange[i];
+			if (indStart == indEnd) return;
+			valid = false;
 			for (int indIt = indStart; indIt < indEnd; indIt++) {
 				int iInd = indBin[indIt];
 				if (nRep == 0){
@@ -264,14 +259,18 @@ struct TripartitionInitializer{
 		}
 
 		score_t scoreCnt() {
+			if (valid) return scoreCache;
+			valid = true;
 			score_t score = 0;
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
 				score += kernal[iKernal].score(pq);
 			}
-			return score;
+			scoreCache = weight * score;
+			return scoreCache;
 		}
 
 		void clearCntScore(){
+			valid = false;
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
 				kernal[iKernal].reset();
 			}
@@ -324,38 +323,30 @@ inline score_t quadPos(const array<unsigned short, 4> &cnt0, const array<unsigne
 		 + (2 * xx0 * xx1 * pq - (ax0 * bx1 + bx0 * ax1)) * (2 * xx2 * xx3 * pq - (xa2 * xb3 + xb2 * xa3));
 }
 
-inline array<score_t, 3> quadPos(const array<array<unsigned short, 4>, 4> &cnt, score_t pq, float weight = 1){
-	return {quadPos(cnt[0], cnt[1], cnt[2], cnt[3], pq) * weight,
-			quadPos(cnt[0], cnt[2], cnt[1], cnt[3], pq) * weight,
-			quadPos(cnt[0], cnt[3], cnt[1], cnt[2], pq) * weight};
+inline array<score_t, 3> quadPos(const array<array<unsigned short, 4>, 4> &cnt, score_t pq){
+	return {quadPos(cnt[0], cnt[1], cnt[2], cnt[3], pq),
+			quadPos(cnt[0], cnt[2], cnt[1], cnt[3], pq),
+			quadPos(cnt[0], cnt[3], cnt[1], cnt[2], pq)};
 }
 
 struct Quadrupartition{
 	struct Gene{
 		struct Kernal {
 			array<array<unsigned short, 4>, 4> cnt;
-			array<score_t, 3> scoreCache;
-			float weight = 1;
-			bool valid = true;
-
+			
 			void reset(){
-				valid = false;
 				for (int i = 0; i < 4; i++)
 					for (int j = 0; j < 4; j++)
 						cnt[i][j] = 0;
 			}
 
 			void update(int y, int x, const TripartitionInitializer::Sequence &seq, size_t pSeq){
-				valid = false;
 				if (y != -1) seq.rmv(pSeq, cnt[y]);
 				if (x != -1) seq.add(pSeq, cnt[x]);
 			}
 
 			array<score_t, 3> score(score_t pq){
-				if (valid) return scoreCache;
-				valid = true;
-				scoreCache = quadPos(cnt, pq, weight);
-				return scoreCache;
+				return quadPos(cnt, pq);
 			}
 		};
 
@@ -367,13 +358,16 @@ struct Quadrupartition{
 		const score_t pq;
 		const int ufb_size, ufb_fold;
 		shared_ptr<int[]> ufb_offset;
+		const score_t weight = 1;
+		
+		array<score_t, 3> scoreCache;
+		bool valid = true;
 
 		Gene(TripartitionInitializer::Gene& init, int ufb_size, int ufb_fold): nInd(init.nInd), nSpecies(init.nSpecies), nSite(init.nSite), nKernal(init.nKernal), nRep(init.nRep),
 				pq(init.pq), species2indRange(init.species2indRange), indBin(init.indBin), 
 				indSiteRep2kernal(init.indSiteRep2kernal), ind2seq(init.ind2seq), kernal(new Kernal[init.nKernal]),
-				ufb_size(ufb_size), ufb_fold(ufb_fold), ufb_offset(new int[ufb_fold]) {
+				ufb_size(ufb_size), ufb_fold(ufb_fold), ufb_offset(new int[ufb_fold]), weight(init.weight) {
 			for (int i = 0; i < ufb_fold; i++) ufb_offset[i] = rand() % ufb_size;
-			for (int i = 0; i < nKernal; i++) kernal[i].weight = init.kernal[i].weight;
 			init.kernal.reset();
 		}
 
@@ -381,6 +375,8 @@ struct Quadrupartition{
 			if (i >= nSpecies) return;
 			int indStart = (i == 0) ? 0 : species2indRange[i - 1];
 			int indEnd = species2indRange[i];
+			if (indStart == indEnd) return;
+			valid = false;
 			for (int indIt = indStart; indIt < indEnd; indIt++) {
 				int iInd = indBin[indIt];
 				if (nRep == 0){
@@ -400,20 +396,29 @@ struct Quadrupartition{
 		}
 
 		array<score_t, 3> scoreCnt() {
+			valid = true;
 			array<score_t, 3> score = {};
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
 				array<score_t, 3> temp = kernal[iKernal].score(pq);
 				for (int i = 0; i < 3; i++) score[i] += temp[i];
 			}
-			return score;
+			scoreCache = {score[0] * weight, score[1] * weight, score[2] * weight};
+			return scoreCache;
 		}
 
 		void annotate(CustomizedAnnotation &annot){
+			valid = true;
+			array<score_t, 3> score = {};
+			vector<array<score_t, 3> > temp(nKernal);
+			for (int iKernal = 0; iKernal < nKernal; iKernal++){
+				temp[iKernal] = kernal[iKernal].score(pq);
+				for (int i = 0; i < 3; i++) score[i] += temp[iKernal][i];
+			}
+			scoreCache = {score[0] * weight, score[1] * weight, score[2] * weight};
 			for (int t = 0; t < ufb_fold; t++){
 				int pos = ufb_offset[t];
 				for (int iKernal = 0; iKernal < nKernal; iKernal++){
-					array<score_t, 3> temp = kernal[iKernal].score(pq);
-					for (int i = 0; i < 3; i++) annot.bs[pos][i] += temp[i];
+					for (int i = 0; i < 3; i++) annot.bs[pos][i] += temp[iKernal][i];
 					pos++;
 					if (pos == ufb_size) pos = 0;
 				}
@@ -421,6 +426,7 @@ struct Quadrupartition{
 		}
 
 		void clearCntScore(){
+			valid = false;
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
 				kernal[iKernal].reset();
 			}

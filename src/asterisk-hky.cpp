@@ -128,9 +128,6 @@ struct Workflow {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
         buildGeneSeq(gene, ind2species, pos, nSite, offset);
-        for (int iKernal = 0; iKernal < nKernal; iKernal++){
-            gene.weight[iKernal] = 1;
-        }
         tripInit.genes.emplace_back(gene);
     }
 
@@ -169,10 +166,6 @@ struct Workflow {
                 }
             }
             //test << endl;
-        }
-        for (int iKernal = 0; iKernal < nKernal; iKernal++){
-            if (kernalSize[iKernal] < 3) gene.weight[iKernal] = 0;
-            else gene.weight[iKernal] = 1;
         }
         tripInit.genes.emplace_back(gene);
     }

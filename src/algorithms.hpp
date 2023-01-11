@@ -1342,10 +1342,10 @@ struct ConstrainedOptimizationAlgorithm{
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
-		array<double, 3> score = quad.score();
 		#ifdef CUSTOMIZED_ANNOTATION
 		node->annot = quad.annotate();
 		#endif
+		array<double, 3> score = quad.score();
 		//r|u|c0c1|-
 		switchSubtree(quad, get<0>(c), 3, 2);
 		score[0] /= weight; score[1] /= weight; score[2] /= weight;
@@ -1383,7 +1383,8 @@ struct ConstrainedOptimizationAlgorithm{
 		double nbs = node->annot.bs.size() / 100.0;
 		if (support == 1) res += formatBootstrap(bs[0] / nbs);
 		else {
-			res += "'[bs1=" + to_string(bs[0]) + ";bs2=" + to_string(bs[1]) + ";bs3=" + to_string(bs[2]) + "]'";
+			res += "'[bs1=" + to_string(bs[0]) + ";bs2=" + to_string(bs[1]) + ";bs3=" + to_string(bs[2]) + 
+				   ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
 		}
 		#endif
 		#ifdef G_SUPPORT

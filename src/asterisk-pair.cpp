@@ -127,9 +127,6 @@ struct Workflow {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
         buildGeneSeq(gene, ind2species, pos, nSite, offset);
-        for (int iKernal = 0; iKernal < nKernal; iKernal++){
-            gene.weight[iKernal] = 1;
-        }
         tripInit.genes.emplace_back(gene);
     }
 
