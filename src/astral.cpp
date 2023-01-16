@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
 
 /* CHANGE LOG
+ * 4: Adding rooting option
  * 3: Parse gene tree branch lengths
  * 2: Officialize program name
  * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
@@ -41,7 +42,6 @@ double from_string(const string s){
 
 MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
-vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
 unordered_map<string, string> leafname_mapping;
 string TEXT;
@@ -60,7 +60,7 @@ int MAPPING(int begin, int end){
 	if (name2id.count(s) == 0){
 		name2id[s] = names.size();
 		names.push_back(s);
-		for (int i = 0; i < meta.nThread2; i++){
+		for (int i = 0; i < meta.nThreads; i++){
 			tripInit.leafParent[i].emplace_back();
 		}
 	}
@@ -167,18 +167,26 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 int main(int argc, char** argv){
 	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
+	ARG.addStringArg(0, "root", "", "Root at the given species");
 	
 	string mappingFile;
 	meta.initialize(argc, argv);
 	mappingFile = ARG.getStringArg("mapping");
-	
-	for (int i = 0; i < meta.nThread2; i++){
+
+	for (int i = 0; i < meta.nThreads; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}
-	for (int i = 0; i < meta.nBatch; i++){
-		batchInit[i].nodes.emplace_back();
-		batchInit[i].leafParent.emplace_back();
+	
+	if (ARG.getStringArg("root") != ""){
+		string s = ARG.getStringArg("root");
+		if (name2id.count(s) == 0){
+			name2id[s] = names.size();
+			names.push_back(s);
+			for (int i = 0; i < meta.nThreads; i++){
+				tripInit.leafParent[i].emplace_back();
+			}
+		}
 	}
 	readInputTrees(ARG.getStringArg("input"), mappingFile);
 	
