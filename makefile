@@ -1,44 +1,44 @@
-all: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise asterisk-hky asterisk-pair
+all: dir astral astral-pro astral-hybrid master-site master-pair
 	echo "*** Installation complete! ***"
 
-mac: dir astral astral_int128 astral-pro astral-pro_int128 astral-weighted astral-weighted_precise astral-lengthweighted astral-lengthweighted_precise astral-hybrid astral-hybrid_precise
+mac: dir astral astral-pro astral-hybrid
 	echo "*** Installation complete! ***"
 
-astral:
+astral: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral
 
-astral_int128:
+astral_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral_int128
 	
-astral-pro: 
+astral-pro: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro
 	
-astral-pro_int128:
+astral-pro_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro_int128
 
-astral-weighted:
+astral-weighted: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-weighted.cpp -o bin/astral-weighted
 	
-astral-weighted_precise:
+astral-weighted_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-weighted.cpp -o bin/astral-weighted_precise
 	
-astral-lengthweighted:
+astral-lengthweighted: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-lengthweighted.cpp -o bin/astral-lengthweighted
 	
-astral-lengthweighted_precise:
+astral-lengthweighted_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-lengthweighted.cpp -o bin/astral-lengthweighted_precise
 	
-astral-hybrid:
+astral-hybrid: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid
 	
-astral-hybrid_precise:
+astral-hybrid_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
 	
-asterisk-hky:
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-hky.cpp -o bin/asterisk-hky
+master-site: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/master-site.cpp -o bin/master-site
 	
-asterisk-pair:
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/asterisk-pair.cpp -o bin/asterisk-pair
+master-pair: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/master-pair.cpp -o bin/master-pair
 
 dir:
 	mkdir -p bin
@@ -56,3 +56,4 @@ tutorial: all
 	bin/astral -H
 	bin/astral-pro -H
 	bin/astral-hybrid -H
+	bin/master-site -H

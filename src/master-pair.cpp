@@ -36,10 +36,6 @@ struct Workflow {
     vector<string>& names = meta.names;
     unordered_map<string, int>& name2id = meta.name2id;
 
-    string guide;
-    int diskcover;
-    bool useDCM = false;
-
     void addName(const string& name) {
         if (name2id.count(name) == 0) {
             name2id[name] = names.size();
@@ -123,17 +119,11 @@ struct Workflow {
         gene.pq = p * (1 - p);
     }
 
-    void formatGeneNaive(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
         buildGeneSeq(gene, ind2species, pos, nSite, offset);
         tripInit.genes.emplace_back(gene);
-    }
-
-    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
-        //if (useDCM) formatGeneDCM(ind2species, pos, nSite, offset);
-        //else 
-		formatGeneNaive(ind2species, pos, nSite, offset);
     }
 
     void readFasta(const string file) {
@@ -298,17 +288,6 @@ struct Workflow {
         init();
     }
 
-    Workflow(int argc, char** argv, string guide, const vector<string> names, unordered_map<string, int> name2id):
-            guide(guide), diskcover(ARG.getIntArg("diskcover")), useDCM(true) {
-        //string mappingFile;
-        meta.initialize(argc, argv);
-        meta.names = names;
-        meta.name2id = name2id;
-        meta.nRounds = 0;
-        meta.guideTree = guide;
-        init();
-    }
-
     void init(){
         tripInit.nThreads = meta.nThreads;
         
@@ -343,33 +322,15 @@ struct Workflow {
 };
 
 int main(int argc, char** argv){
-    ARG.setProgramName("asterisk-hky", "Accurate Species Tree EstimatoR from Independent Site Kernals");
+    ARG.setProgramName("master-pair", "Massive-scale Alignment-based Species Tree EstimatoR (Pair)");
     ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment", true);
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
 	ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites");
-    ARG.addIntArg(0, "iteration", 1, "The number of iterations in the iterative method");
-    ARG.addFlag('I', "quick", "Set the iteration number to 1", [&]() {
-		ARG.getIntArg("iteration") = 1;
-	}, true);
 
-    int iteration = 1;
-    pair<score_t, string> result;
-    vector<string> names;
-    unordered_map<string, int> name2id;
-    {
-        Workflow WF(argc, argv);
-        if (ARG.getStringArg("guide") != ""){
-            WF.meta.nRounds = 0;
-            WF.meta.nSample = 0;
-        }
-        if (iteration < ARG.getIntArg("iteration")) WF.meta.outputFile = "<standard output>";
-        LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
-        result = WF.meta.run();
-        names = WF.names;
-        name2id = WF.name2id;
-	}
-    LOG << "Score: " << (double) result.first << endl;
+    Workflow WF(argc, argv);
+    LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
+    LOG << "Score: " << (double) WF.meta.run().first << endl;
 	return 0;
 }

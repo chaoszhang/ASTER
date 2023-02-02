@@ -1363,9 +1363,9 @@ struct ConstrainedOptimizationAlgorithm{
 			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
 			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
 			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
-			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
-			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
-			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2) - lgamma(tscore + 1.0 + lambda * 2);
+			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2);
+			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2);
+			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2);
 			support0 = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
 			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
 			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
