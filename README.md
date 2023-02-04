@@ -1,6 +1,6 @@
 # Accurate Species Tree EstimatoR (ASTER❋)
 
-[<img src="logo.png" width="250"/>](logo.png)
+[<img src="misc/ASTER.png" width="250"/>](misc/ASTER.png)
 
 A family of optimatization algorithms for species tree inference:
 1. [ASTRAL](tutorial/astral.md)
