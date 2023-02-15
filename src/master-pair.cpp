@@ -331,6 +331,7 @@ int main(int argc, char** argv){
 
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
-    LOG << "Score: " << (double) WF.meta.run().first << endl;
+    auto res = WF.meta.run();
+    LOG << "Score: " << (double) res.first << endl;
 	return 0;
 }

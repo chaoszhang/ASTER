@@ -367,7 +367,7 @@ The output in is Newick format and gives:
 
 * the species tree topology
 * branch supports measured as local bootstrap support (>95.0 means good)
-* It can also annotate branches with other quantities, such as quartet supports for all three topologies.
+* It can also annotate branches with other quantities, such as quartet scores and local bootstraps for all three topologies.
 )V0G0N";
 
 const string SHARED_EXE = R"V0G0N(
@@ -536,16 +536,16 @@ If you want to give hints by providing candidate species trees or trees similar 
 ```
 bin/PROGRAM_NAME -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
+)V0G0N";
 
+const string APRO_UNIQUE_ADV = R"V0G0N(
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
 bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
 bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
-)V0G0N";
 
-const string APRO_UNIQUE_ADV = R"V0G0N(
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 
 ```
@@ -560,6 +560,13 @@ bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 )V0G0N";
 
 const string ASTRAL_UNIQUE_ADV = R"V0G0N(
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 
 ```
@@ -568,6 +575,13 @@ bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
 )V0G0N";
 
 const string WASTRAL_UNIQUE_ADV = R"V0G0N(
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
 Species tree with more than **2000** taxa may cause **floating point underflow or precision issue**. Use the following command instead:
 
 ```

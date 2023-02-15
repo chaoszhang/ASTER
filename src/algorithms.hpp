@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.13"
+#define ALG_VERSION "v1.14"
 
 /* CHANGE LOG
+ * 1.14: adding more information in -u 2 option
  * 1.13: adding species tree annotation functionality
  * 1.12: significantly refactoring the code for reduced memory
  * 1.11: fixing incomplete class bug in threadpool for some compilers
@@ -1373,7 +1374,8 @@ struct ConstrainedOptimizationAlgorithm{
 		if (support == 1) res += to_string(support0);
 		else {
 			array<double, 3> p = {support0, support1, support2};
-			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) + "]'";
+			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) 
+				+ ";q1=" + to_string(score[0] / tscore) + ";q2=" + to_string(score[1] / tscore) + ";q3=" + to_string(score[2] / tscore) + "]'";
 			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		node->s = support0;
