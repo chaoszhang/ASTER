@@ -1386,7 +1386,8 @@ struct ConstrainedOptimizationAlgorithm{
 		if (support == 1) res += formatBootstrap(bs[0] / nbs);
 		else {
 			res += "'[bs1=" + to_string(bs[0]) + ";bs2=" + to_string(bs[1]) + ";bs3=" + to_string(bs[2]) + 
-				   ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
+				   ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) +
+				   ";q1=" + to_string(score[0] / tscore) + ";q2=" + to_string(score[1] / tscore) + ";q3=" + to_string(score[2] / tscore) + "]'";;
 		}
 		#endif
 		#ifdef G_SUPPORT
