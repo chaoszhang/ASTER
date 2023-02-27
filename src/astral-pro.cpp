@@ -4,6 +4,8 @@
  * 3: Add support for polytomies
  */
 
+#define ROOTING
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -449,6 +451,16 @@ int main(int argc, char** argv){
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
+	}
+	if (ARG.getStringArg("root") != ""){
+		string s = ARG.getStringArg("root");
+		if (name2id.count(s) == 0){
+			name2id[s] = id2name.size();
+			id2name.push_back(s);
+			for (int i = 0; i < meta.nThreads; i++){
+				tripInit.leafParent[i].emplace_back();
+			}
+		}
 	}
 	annotate(ARG.getStringArg("input"), mappingFile);
 	

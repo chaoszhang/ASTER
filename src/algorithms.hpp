@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.14"
+#define ALG_VERSION "v1.15"
 
 /* CHANGE LOG
+ * 1.15: adding rooting option
  * 1.14: adding more information in -u 2 option
  * 1.13: adding species tree annotation functionality
  * 1.12: significantly refactoring the code for reduced memory
@@ -1525,6 +1526,10 @@ struct MetaAlgorithm{
 	#ifdef LOCAL_BOOTSTRAP
 		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: local bootstrap, 2: detailed)");
 	#endif
+	#ifdef ROOTING
+		ARG.addStringArg(0, "root", "", "Root at the given species");
+	#endif
+	
 		ARG.parse(argc, argv);
 	}
 

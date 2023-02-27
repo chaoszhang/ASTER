@@ -1,5 +1,7 @@
 #define DRIVER_VERSION "3"
 
+#define ROOTING
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -37,7 +39,6 @@ score_t from_string(const string s){
 
 MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
-vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
 unordered_map<string, unordered_set<string> > reverse_mapping;
 unordered_map<string, string> leafname_mapping;
@@ -208,9 +209,15 @@ int main(int argc, char** argv){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}
-	for (int i = 0; i < meta.nBatch; i++){
-		batchInit[i].nodes.emplace_back();
-		batchInit[i].leafParent.emplace_back();
+	if (ARG.getStringArg("root") != ""){
+		string s = ARG.getStringArg("root");
+		if (name2id.count(s) == 0){
+			name2id[s] = names.size();
+			names.push_back(s);
+			for (int i = 0; i < meta.nThreads; i++){
+				tripInit.leafParent[i].emplace_back();
+			}
+		}
 	}
 	readInputTrees(ARG.getStringArg("input"), mappingFile);
 	

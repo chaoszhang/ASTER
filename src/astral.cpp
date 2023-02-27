@@ -7,6 +7,8 @@
  * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
  */
 
+#define ROOTING
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -167,7 +169,6 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 int main(int argc, char** argv){
 	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
-	ARG.addStringArg(0, "root", "", "Root at the given species");
 	
 	string mappingFile;
 	meta.initialize(argc, argv);

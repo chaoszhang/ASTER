@@ -12,6 +12,8 @@
 #include<thread>
 #include<mutex>
 
+#define ROOTING
+
 //#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef long double score_t;
@@ -285,6 +287,7 @@ struct Workflow {
     Workflow(int argc, char** argv){
         //string mappingFile;
         meta.initialize(argc, argv);
+        if (ARG.getStringArg("root") != "") addName(ARG.getStringArg("root"));
         init();
     }
 
