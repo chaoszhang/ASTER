@@ -1472,6 +1472,7 @@ struct MetaAlgorithm{
 	string outputFile, guideFile, constraintFile, constraintTree, guideTree;
 	ofstream fileOut;
 	unordered_map<string, int> name2id;
+	unordered_map<string, string> leafname_mapping;
 	
 	TripartitionInitializer tripInit;
 
@@ -1529,6 +1530,9 @@ struct MetaAlgorithm{
 	#ifdef ROOTING
 		ARG.addStringArg(0, "root", "", "Root at the given species");
 	#endif
+	#ifdef NAME_MAPPING
+		ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
+	#endif
 	
 		ARG.parse(argc, argv);
 	}
@@ -1553,9 +1557,27 @@ struct MetaAlgorithm{
 
 		int loglevel = ARG.getIntArg("verbose");
 		LOG.enabled = (loglevel >= 2);
+	
+	#ifdef NAME_MAPPING
+		string mappingFile;
+		mappingFile = ARG.getStringArg("mapping");
+		if (mappingFile != ""){
+			ifstream fmap(mappingFile);
+			string gname, sname;
+			while (fmap >> gname){
+				fmap >> sname;
+				leafname_mapping[gname] = sname;
+			}
+		}
+	#endif
 
 		// deprecated
 		batchInit.resize(nBatch);
+	}
+
+	string mappedname(string name){
+		if (leafname_mapping.count(name)) return leafname_mapping.at(name);
+		return name;
 	}
 	
 	pair<score_t, string> run(){

@@ -13,6 +13,7 @@
 #include<mutex>
 
 #define ROOTING
+#define NAME_MAPPING
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -113,7 +114,7 @@ struct Workflow {
             string name;
             fin >> name;
             while (name != "") {
-                addName(name.substr(1));
+                addName(meta.mappedname(name.substr(1)));
                 name = "";
                 string seq, line;
                 while (fin >> line) {
@@ -149,7 +150,7 @@ struct Workflow {
             vector<int> ind2species;
             size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
             while (name != "") {
-                ind2species.push_back(name2id[name.substr(1)]);
+                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
                 name = "";
                 string line, seq;
                 while (fin >> line) {
@@ -179,7 +180,7 @@ struct Workflow {
                 string name, seq;
                 fin >> name >> seq;
                 if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
-                addName(name);
+                addName(meta.mappedname(name));
                 for (int j = 0; j < seq.size(); j++) {
                     switch (seq[j]) {
                         case 'A': case 'a': freq[j][0]++; break;
@@ -204,7 +205,7 @@ struct Workflow {
             for (int i = 0; i < nTaxa; i++){
                 string name, seq;
                 fin2 >> name >> seq;
-                ind2species.push_back(name2id[name]);
+                ind2species.push_back(name2id[meta.mappedname(name)]);
                 for (size_t j = 0; j < keep.size(); j++){
                     if (keep[j]) tripInit.seq.append(seq[j]);
                 }
