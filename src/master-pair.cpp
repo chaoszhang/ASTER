@@ -14,6 +14,7 @@
 
 #define ROOTING
 #define NAME_MAPPING
+#define BLOCK_BOOTSTRAP
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA

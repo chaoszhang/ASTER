@@ -446,6 +446,7 @@ struct Quadrupartition{
 		}
 
 		array<score_t, 3> scoreCnt() {
+			if (valid) return scoreCache;
 			valid = true;
 			array<score_t, 3> score = {};
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
@@ -457,6 +458,13 @@ struct Quadrupartition{
 		}
 
 		void annotate(CustomizedAnnotation &annot){
+		#ifdef BLOCK_BOOTSTRAP
+			scoreCnt();
+			for (int t = 0; t < ufb_fold; t++){
+				int pos = ufb_offset[t];
+				for (int i = 0; i < 3; i++) annot.bs[pos][i] += scoreCache[i];
+			}
+		#else
 			valid = true;
 			array<score_t, 3> score = {};
 			vector<array<score_t, 3> > temp(nKernal);
@@ -473,6 +481,7 @@ struct Quadrupartition{
 					if (pos == ufb_size) pos = 0;
 				}
 			}
+		#endif
 		}
 
 		void clearCntScore(){
