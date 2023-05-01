@@ -131,6 +131,7 @@ struct Workflow {
     }
 
     void readFasta(const string file) {
+        cerr << "Processing " << file << "... \n";
         vector<pair<long long, long long> > sitepair, sitepair2;
 		long long nTaxa, nSites;
         {

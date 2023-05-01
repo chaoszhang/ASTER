@@ -108,6 +108,7 @@ struct Workflow {
     }
 
     void readFasta(const string file) {
+        cerr << "Processing " << file << "... \n";
         vector<bool> keep;
         {
             vector<array<unsigned short, 4> > freq;
@@ -160,6 +161,89 @@ struct Workflow {
                 }
                 for (int i = 0; i < keep.size(); i++){
                     if (keep[i]) tripInit.seq.append(seq[i]);
+                }
+            }
+            int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+            for (int i = 0; i < nChunk; i++) {
+                size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+                formatGene(ind2species, pos + s, t - s, len);
+            }
+        }
+    }
+
+    void readFastaConsensus(const string file) {
+        cerr << "Processing " << file << "... \n";
+        vector<bool> keep;
+        unordered_map<int, vector<string> > seqGroup;
+        vector<int> ind2species;
+        vector<string> consensusSeqs;
+        {
+            vector<array<unsigned short, 4> > freq;
+            ifstream fin(file);
+            string name;
+            fin >> name;
+            while (name != "") {
+                string realname = meta.mappedname(name.substr(1));
+                addName(realname);
+                name = "";
+                string seq, line;
+                while (fin >> line) {
+                    if (line[0] == '>') { name = line; break; }
+                    seq += line;
+                }
+                if (freq.size() != seq.size()) {
+                    if (freq.size() == 0) freq.resize(seq.size());
+                    else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
+                }
+                seqGroup[name2id[realname]].push_back(seq);
+            }
+            for (const pair<int, vector<string> > &e: seqGroup){
+                ind2species.push_back(e.first);
+                string seq;
+                const vector<string> &seqs = e.second;
+                for (int j = 0; j < seqs[0].size(); j++){
+                    int cntA = 0, cntC = 0, cntG = 0, cntT = 0;
+                    for (size_t i = 0; i < seqs.size(); i++) {
+                        switch (seqs[i][j]) {
+                            case 'A': case 'a': cntA++; break;
+                            case 'C': case 'c': cntC++; break;
+                            case 'G': case 'g': cntG++; break;
+                            case 'T': case 't': cntT++; break;
+                        }
+                    }
+                    int total = cntA + cntC + cntG + cntT;
+                    if (2 * cntA > total) seq += 'A';
+                    else if (2 * cntC > total) seq += 'C';
+                    else if (2 * cntG > total) seq += 'G';
+                    else if (2 * cntT > total) seq += 'T';
+                    else seq += '-';
+                }
+                consensusSeqs.push_back(seq);
+            }
+            for (size_t i = 0; i < consensusSeqs.size(); i++) {
+                for (int j = 0; j < consensusSeqs[i].size(); j++){
+                    switch (consensusSeqs[i][j]) {
+                        case 'A': case 'a': freq[j][0]++; break;
+                        case 'C': case 'c': freq[j][1]++; break;
+                        case 'G': case 'g': freq[j][2]++; break;
+                        case 'T': case 't': freq[j][3]++; break;
+                    }
+                }
+            }
+            keep.resize(freq.size());
+            cerr << keep.size() << endl;
+            for (size_t i = 0; i < keep.size(); i++) {
+                int cnt = 0, cnt1 = 0;
+                for (int j = 0; j < 4; j++) {
+                    if (freq[i][j] >= 2) cnt++;
+                    if (freq[i][j] == 1) cnt1++;
+                }
+                keep[i] = (cnt >= 2 || cnt1 >= 2);
+            }
+            size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
+            for (size_t i = 0; i < consensusSeqs.size(); i++) {
+                for (int j = 0; j < keep.size(); j++){
+                    if (keep[j]) tripInit.seq.append(consensusSeqs[i][j]);
                 }
             }
             int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
@@ -238,6 +322,13 @@ struct Workflow {
             string line;
             while (getline(fin, line)) {
                 readFasta(line);
+            }
+        }
+        else if (ARG.getStringArg("format") == "consensus") {
+            ifstream fin(ARG.getStringArg("input"));
+            string line;
+            while (getline(fin, line)) {
+                readFastaConsensus(line);
             }
         }
         else if (ARG.getStringArg("format") == "phylip") {
