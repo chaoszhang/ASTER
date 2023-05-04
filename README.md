@@ -6,8 +6,8 @@ A family of optimatization algorithms for species tree inference:
 1. [ASTRAL](tutorial/astral.md)
 2. [ASTRAL-Pro](tutorial/astral-pro.md)
 3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
-4. [MASTER-site](tutorial/master-site.md) (aka: ASTERISK-hky)
-5. [MASTER-pair](tutorial/master-site.md) (aka: ASTERISK-pair)
+4. [CASTER-site](tutorial/caster-site.md)
+5. [CASTER-pair](tutorial/caster-site.md)
 
 # Announcements
 
@@ -69,14 +69,14 @@ Please click the link below:
 1. [ASTRAL](tutorial/astral.md)
 2. [ASTRAL-Pro](tutorial/astral-pro.md)
 3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
-4. [MASTER-site](tutorial/master-site.md) (aka: ASTERISK-hky)
-5. [MASTER-pair](tutorial/master-site.md) (aka: ASTERISK-pair)
+4. [CASTER-site](tutorial/caster-site.md)
+5. [CASTER-pair](tutorial/caster-site.md)
 
 # HELP ME CHOOSE A SUITABLE TOOL
 
 Q: I have a supermatrix of SNPs in fasta/phylip format and I want a "quick-and-dirty" run to get an adequate phylogenetic tree.
 
-A: I recommend **MASTER-site**, which is usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting with enough data.
+A: I recommend **CASTER-site**, which is usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting with enough data.
 
 Q: My dataset has a lot of muti-copy genes (e.g. plants) and I want to make an effort to utilize these precious signals.
 
@@ -84,7 +84,7 @@ A: I highly recommend **ASTRAL-Pro**, which takes as input non-rooted non-labell
 
 Q: I have aligned genomes (>10M sites) and the average nucleotide identity is >80% between closely related species (e.g. birds, mammals, or abundant taxon sampling).
 
-A: I recommend **MASTER-site** (faster) and **MASTER-pair** (slower). Those methods are usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting. Please run both and select the species tree that makes more sense.
+A: I recommend **CASTER-site** (faster) and **CASTER-pair** (slower). Those methods are usually 1-2 magnitudes faster than concatenation-based maximum likelihood methods yet more accurate in presence of incomplete lineage sorting. Please run both and select the species tree that makes more sense.
 
 Q: I have gene trees with branch lengths and Bootstrap/Baysian supports and I know that horizontal gene transfers and hybridizations are rare.
 

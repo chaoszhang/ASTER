@@ -9,5 +9,5 @@ g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astra
 ::g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-lengthweighted.cpp -o exe/astral-lengthweighted_precise.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid.exe
 ::g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-hybrid.cpp -o exe/astral-hybrid_precise.exe
-g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/master-site.cpp -o exe/master-site.exe
-g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/master-pair.cpp -o exe/master-pair.exe
+g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/caster-site.cpp -o exe/caster-site.exe
+g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/caster-pair.cpp -o exe/caster-pair.exe

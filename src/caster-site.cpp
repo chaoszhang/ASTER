@@ -138,11 +138,12 @@ struct Workflow {
             }
             keep.resize(freq.size());
             for (size_t i = 0; i < keep.size(); i++) {
-                int cnt = 0;
+                int cnt = 0, cnt1 = 0;
                 for (int j = 0; j < 4; j++) {
                     if (freq[i][j] >= 2) cnt++;
+                    if (freq[i][j] == 1) cnt1++;
                 }
-                keep[i] = (cnt >= 2);
+                keep[i] = (cnt >= 2 || cnt1 >= 2);
             }
         }
         {
@@ -212,13 +213,23 @@ struct Workflow {
                         }
                     }
                     int total = cntA + cntC + cntG + cntT;
+                    /*
                     if (2 * cntA > total) seq += 'A';
                     else if (2 * cntC > total) seq += 'C';
                     else if (2 * cntG > total) seq += 'G';
                     else if (2 * cntT > total) seq += 'T';
                     else seq += '-';
+                    */
+                    if (total == 0) seq += '-';
+                    else if (cntA == total) seq += 'A';
+                    else if (cntC == total) seq += 'C';
+                    else if (cntG == total) seq += 'G';
+                    else if (cntT == total) seq += 'T';
+                    else seq += '-';
                 }
                 consensusSeqs.push_back(seq);
+                cerr << ">" << meta.names[e.first] << endl;
+                cerr << seq << endl;
             }
             for (size_t i = 0; i < consensusSeqs.size(); i++) {
                 for (int j = 0; j < consensusSeqs[i].size(); j++){
@@ -231,7 +242,6 @@ struct Workflow {
                 }
             }
             keep.resize(freq.size());
-            cerr << keep.size() << endl;
             for (size_t i = 0; i < keep.size(); i++) {
                 int cnt = 0, cnt1 = 0;
                 for (int j = 0; j < 4; j++) {
@@ -276,11 +286,12 @@ struct Workflow {
                 }
             }
             for (int i = 0; i < keep.size(); i++) {
-                int cnt = 0;
+                int cnt = 0, cnt1 = 0;
                 for (int j = 0; j < 4; j++) {
                     if (freq[i][j] >= 2) cnt++;
+                    if (freq[i][j] == 1) cnt1++;
                 }
-                keep[i] = (cnt >= 2);
+                keep[i] = (cnt >= 2 || cnt1 >= 2);
             }
         }
         {
@@ -352,7 +363,7 @@ struct Workflow {
 };
 
 int main(int argc, char** argv){
-    ARG.setProgramName("master-site", "Massive-scale Alignment-based Species Tree EstimatoR (Site)");
+    ARG.setProgramName("caster-site", "Coalescence-aware Alignment-based Species Tree EstimatoR (Site)");
     ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment", true);
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);

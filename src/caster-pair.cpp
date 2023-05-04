@@ -328,7 +328,7 @@ struct Workflow {
 };
 
 int main(int argc, char** argv){
-    ARG.setProgramName("master-pair", "Massive-scale Alignment-based Species Tree EstimatoR (Pair)");
+    ARG.setProgramName("caster-pair", "Coalescence-aware Alignment-based Species Tree EstimatoR (Pair)");
     ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment", true);
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);

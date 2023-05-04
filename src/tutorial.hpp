@@ -61,23 +61,23 @@ We obtained the species tree from gene trees using wASTRAL-hybird VERSION [1].
 
 )V0G0N";
 
-const string MASTER_UNIQUE_INTRO = R"V0G0N(# Massive-scale Alignment-based Species Tree EstimatoR (MASTER)
+const string CASTER_UNIQUE_INTRO = R"V0G0N(# Massive-scale Alignment-based Species Tree EstimatoR (CASTER)
 
-[<img src="../misc/MASTER.png" width="250"/>](../misc/MASTER.png)
+[<img src="../misc/CASTER.png" width="250"/>](../misc/CASTER.png)
 
 Genome-wide data have the promise of dramatically improving phylogenetic inferences. Yet, inferring the true phylogeny remains a challenge, mainly because the evolutionary histories of different genomic regions differ. The traditional concatenation approach ignores such differences, resulting in both theoretical and empirical shortcomings. In response, many discordance-aware inference methods have been developed. Yet, all have their own weaknesses. Many methods rely on short recombination-free genomic segments to build gene trees and thus suffer from a lack of signals for gene tree reconstruction, resulting in poor species tree. Some methods wrongly assume that the rate of evolution is uniform across the species tree. Yet, others lack enough scalability to analyze phylogenomic data.
 
-We introduce a new site-based species tree inference method that seeks to address these challenges without reconstructing gene trees. Our method, called MASTER (Massive-scale Alignment-based Species Tree EstimatoR), has two flavors: MASTER-site and MASTER-pair. The first is based on patterns in individual sites and the second is based on pairs of sites.
+We introduce a new site-based species tree inference method that seeks to address these challenges without reconstructing gene trees. Our method, called CASTER (Massive-scale Alignment-based Species Tree EstimatoR), has two flavors: CASTER-site and CASTER-pair. The first is based on patterns in individual sites and the second is based on pairs of sites.
 
-MASTER has several outstanding features:
-1. MASTER introduces two new optimization objectives based on genomic site patterns of four species; we show that optimizing these objectives produces two estimators: MASTER-site is statistically consistent under MSC+HKY model while allowing mutation rate to change across sites and across species tree branches; MASTER-pair is statistically consistent under MSC+GTR model under further assumptions.
-2. MASTER comes with a scalable algorithm to optimize the objectives summed over all species quartets. Remarkably, its time complexity is linear to the number of sites and at most quasi-quadratic with respect to the number of species.
-3. MASTER can handle multiple samples per species, and MASTER-site specifically can work with allele frequencies of unphased multiploid.
-4. MASTER is extremenly memory efficent, requiring <1 byte per SNP per sample
+CASTER has several outstanding features:
+1. CASTER introduces two new optimization objectives based on genomic site patterns of four species; we show that optimizing these objectives produces two estimators: CASTER-site is statistically consistent under MSC+HKY model while allowing mutation rate to change across sites and across species tree branches; CASTER-pair is statistically consistent under MSC+GTR model under further assumptions.
+2. CASTER comes with a scalable algorithm to optimize the objectives summed over all species quartets. Remarkably, its time complexity is linear to the number of sites and at most quasi-quadratic with respect to the number of species.
+3. CASTER can handle multiple samples per species, and CASTER-site specifically can work with allele frequencies of unphased multiploid.
+4. CASTER is extremenly memory efficent, requiring <1 byte per SNP per sample
 
-Under extensive simulation of genome-wide data, including recombination, we show that both MASTER-site and MASTER-pair out-perform concatenation using RAxML-ng, as well as discordance-aware methods SVDQuartets and wASTRAL in terms of both accuracy and running time. Noticeably, MASTER-site is 60–150X faster than the alternative methods. It reconstructs an Avian tree of 51 species from aligned genomes with 254 million SNPs in only 3.5 hours on an 8-core desktop machine with 32 GB memory. It can also reconstruct a species tree of 201 species with approximately 2 billion SNPs using a server of 256 GB memory.
+Under extensive simulation of genome-wide data, including recombination, we show that both CASTER-site and CASTER-pair out-perform concatenation using RAxML-ng, as well as discordance-aware methods SVDQuartets and wASTRAL in terms of both accuracy and running time. Noticeably, CASTER-site is 60–150X faster than the alternative methods. It reconstructs an Avian tree of 51 species from aligned genomes with 254 million SNPs in only 3.5 hours on an 8-core desktop machine with 32 GB memory. It can also reconstruct a species tree of 201 species with approximately 2 billion SNPs using a server of 256 GB memory.
 
-Our results suggest that MASTER-site and MASTER-pair can fulfill the need for large-scale phylogenomic inferences.
+Our results suggest that CASTER-site and CASTER-pair can fulfill the need for large-scale phylogenomic inferences.
 
 ## Publication
 
@@ -85,7 +85,7 @@ TBD
 
 ## Notice
 
-Since MASTER-site and MASTER-pair assume different models, please run both and choose the result that makes more sense if you can.
+Since CASTER-site and CASTER-pair assume different models, please run both and choose the result that makes more sense if you can.
 
 )V0G0N";
 
@@ -244,13 +244,13 @@ The output in is Newick format and gives:
 The weighted ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 )V0G0N";
 
-const string MASTER_IO = R"V0G0N(
+const string CASTER_IO = R"V0G0N(
 # INPUT
 * The input by default is a single MSA in Fasta format
 * The input can also be a text file containing a list of Fasta files (one file per line) if you add `-f list` to input arguments
 * The input can also be a single Phylip files or vertically concatenated Phylip files in one file by adding `-f phylip` to input arguments
 * The input files can have missing taxa and multiple individuals/copies per species.
-* When individuals/copies/genes from the same species are available, you need to let MASTER to know that they are frome the same species. You can do this in two ways.
+* When individuals/copies/genes from the same species are available, you need to let CASTER to know that they are frome the same species. You can do this in two ways.
   1. You can give multiple individuals/copies/genes from the same species the same name in the input gene trees.
   2. OR, a mapping file needs to be provided using the `-a` option.
 ```
@@ -326,7 +326,7 @@ AA
 TT
 ```
 
-Multiple Phylip file, multiploid without mapping file (if using `MASTER-pair`, genes must be phased; if using `MASTER-site`, you can arbitrarily phase them):
+Multiple Phylip file, multiploid without mapping file (if using `CASTER-pair`, genes must be phased; if using `CASTER-site`, you can arbitrarily phase them):
 ```
 6 3
 species_A AAA
@@ -342,7 +342,7 @@ species_T TT
 species_T TT
 ```
 
-Notice: only `MASTER-site` works on unphased SNPs, you can translate VCF files into Fasta (or Phylip) in the following way.
+Notice: only `CASTER-site` works on unphased SNPs, you can translate VCF files into Fasta (or Phylip) in the following way.
 
 VCF:
 ```
@@ -591,7 +591,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
     const string APRO = "astral-pro";
     const string ASTRAL = "astral";
     const string WASTRAL = "astral-hybrid";
-    const string MASTER = "master-site";
+    const string CASTER = "caster-site";
 
     string replace(string txt, string from, string to){
         return regex_replace(txt, regex(from), to);
@@ -602,7 +602,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) rawtext = APRO_UNIQUE_INTRO;
         if (programName == ASTRAL) rawtext = ASTRAL_UNIQUE_INTRO;
         if (programName == WASTRAL) rawtext = WASTRAL_UNIQUE_INTRO;
-        if (programName == MASTER) rawtext = MASTER_UNIQUE_INTRO;
+        if (programName == CASTER) rawtext = CASTER_UNIQUE_INTRO;
         return replace(rawtext, "VERSION", version);
     }
 
@@ -610,7 +610,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral-pro");
         if (programName == ASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral");
         if (programName == WASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral-hybrid");
-        if (programName == MASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "master-site");
+        if (programName == CASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "caster-site");
         return SHARED_INTRO;
     }
 
@@ -618,7 +618,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) return APRO_IO;
         if (programName == ASTRAL) return ASTRAL_IO;
         if (programName == WASTRAL) return WASTRAL_IO;
-        if (programName == MASTER) return MASTER_IO;
+        if (programName == CASTER) return CASTER_IO;
         return "";
     }
 
@@ -626,7 +626,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
         if (programName == ASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
-        if (programName == MASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "master-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
+        if (programName == CASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
         return SHARED_EXE;
     }
 
@@ -641,7 +641,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-pro"), "EXAMPLE_INPUT", "multitree.nw");
         if (programName == ASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
-        if (programName == MASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "master-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
+        if (programName == CASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
         return SHARED_ADV;
     }
 

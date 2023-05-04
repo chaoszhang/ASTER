@@ -1,4 +1,4 @@
-all: dir astral astral-pro astral-hybrid master-site master-pair
+all: dir astral astral-pro astral-hybrid caster-site caster-pair
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral-pro astral-hybrid
@@ -34,11 +34,11 @@ astral-hybrid: dir
 astral-hybrid_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
 	
-master-site: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/master-site.cpp -o bin/master-site
+caster-site: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site
 	
-master-pair: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/master-pair.cpp -o bin/master-pair
+caster-pair: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair
 
 dir:
 	mkdir -p bin
@@ -56,4 +56,4 @@ tutorial: all
 	bin/astral -H
 	bin/astral-pro -H
 	bin/astral-hybrid -H
-	bin/master-site -H
+	bin/caster-site -H
