@@ -5,13 +5,13 @@ mac: dir astral astral-pro astral-hybrid
 	echo "*** Installation complete! ***"
 
 astral: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral || g++ -std=c++17 -O2 -pthread src/astral.cpp -o bin/astral
 
 astral_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral_int128
 	
 astral-pro: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro || g++ -std=c++17 -O2 -pthread src/astral-pro.cpp -o bin/astral-pro
 	
 astral-pro_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro_int128
@@ -29,16 +29,16 @@ astral-lengthweighted_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-lengthweighted.cpp -o bin/astral-lengthweighted_precise
 	
 astral-hybrid: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid || g++ -std=c++17 -O2 -pthread src/astral-hybrid.cpp -o bin/astral-hybrid
 	
 astral-hybrid_precise: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
 	
 caster-site: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site || g++ -std=gnu++17 -O2 -pthread src/caster-site.cpp -o bin/caster-site
 	
 caster-pair: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair
 
 dir:
 	mkdir -p bin
