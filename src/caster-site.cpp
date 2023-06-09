@@ -33,6 +33,27 @@ using namespace std;
 
 int GENE_ID = 0;
 
+pair<string, string> resolveDiploid(const string &seq){
+	pair<string, string> res;
+	for (const char c: seq){
+		switch (c) {
+			case 'A': case 'a': res.first.push_back('A'); res.second.push_back('A'); break;
+			case 'C': case 'c': res.first.push_back('C'); res.second.push_back('C'); break;
+			case 'G': case 'g': res.first.push_back('G'); res.second.push_back('G'); break;
+			case 'T': case 't': res.first.push_back('T'); res.second.push_back('T'); break;
+			case 'U': case 'u': res.first.push_back('T'); res.second.push_back('T'); break;
+			case 'M': case 'm': res.first.push_back('A'); res.second.push_back('C'); break;
+			case 'R': case 'r': res.first.push_back('A'); res.second.push_back('G'); break;
+			case 'W': case 'w': res.first.push_back('A'); res.second.push_back('T'); break;
+			case 'S': case 's': res.first.push_back('C'); res.second.push_back('G'); break;
+			case 'Y': case 'y': res.first.push_back('C'); res.second.push_back('T'); break;
+			case 'K': case 'k': res.first.push_back('G'); res.second.push_back('T'); break;
+			default: res.first.push_back('N'); res.second.push_back('N');
+		}
+	}
+	return res;
+}
+
 struct Workflow {
     MetaAlgorithm meta;
     TripartitionInitializer& tripInit = meta.tripInit;
@@ -133,6 +154,7 @@ struct Workflow {
                         case 'C': case 'c': freq[i][1]++; break;
                         case 'G': case 'g': freq[i][2]++; break;
                         case 'T': case 't': freq[i][3]++; break;
+                        case 'U': case 'u': freq[i][3]++; break;
                     }
                 }
             }
@@ -171,21 +193,17 @@ struct Workflow {
             }
         }
     }
-
-    void readFastaConsensus(const string file) {
+	
+	void readFastaAmbiguity(const string file) {
         cerr << "Processing " << file << "... \n";
         vector<bool> keep;
-        unordered_map<int, vector<string> > seqGroup;
-        vector<int> ind2species;
-        vector<string> consensusSeqs;
         {
             vector<array<unsigned short, 4> > freq;
             ifstream fin(file);
             string name;
             fin >> name;
             while (name != "") {
-                string realname = meta.mappedname(name.substr(1));
-                addName(realname);
+                addName(meta.mappedname(name.substr(1)));
                 name = "";
                 string seq, line;
                 while (fin >> line) {
@@ -196,48 +214,21 @@ struct Workflow {
                     if (freq.size() == 0) freq.resize(seq.size());
                     else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
                 }
-                seqGroup[name2id[realname]].push_back(seq);
-            }
-            for (const pair<int, vector<string> > &e: seqGroup){
-                ind2species.push_back(e.first);
-                string seq;
-                const vector<string> &seqs = e.second;
-                for (int j = 0; j < seqs[0].size(); j++){
-                    int cntA = 0, cntC = 0, cntG = 0, cntT = 0;
-                    for (size_t i = 0; i < seqs.size(); i++) {
-                        switch (seqs[i][j]) {
-                            case 'A': case 'a': cntA++; break;
-                            case 'C': case 'c': cntC++; break;
-                            case 'G': case 'g': cntG++; break;
-                            case 'T': case 't': cntT++; break;
-                        }
+				pair<string, string> seqs = resolveDiploid(seq);
+                for (size_t i = 0; i < seq.size(); i++) {
+                    switch (seqs.first[i]) {
+                        case 'A': case 'a': freq[i][0]++; break;
+                        case 'C': case 'c': freq[i][1]++; break;
+                        case 'G': case 'g': freq[i][2]++; break;
+                        case 'T': case 't': freq[i][3]++; break;
+                        case 'U': case 'u': freq[i][3]++; break;
                     }
-                    int total = cntA + cntC + cntG + cntT;
-                    /*
-                    if (2 * cntA > total) seq += 'A';
-                    else if (2 * cntC > total) seq += 'C';
-                    else if (2 * cntG > total) seq += 'G';
-                    else if (2 * cntT > total) seq += 'T';
-                    else seq += '-';
-                    */
-                    if (total == 0) seq += '-';
-                    else if (cntA == total) seq += 'A';
-                    else if (cntC == total) seq += 'C';
-                    else if (cntG == total) seq += 'G';
-                    else if (cntT == total) seq += 'T';
-                    else seq += '-';
-                }
-                consensusSeqs.push_back(seq);
-                cerr << ">" << meta.names[e.first] << endl;
-                cerr << seq << endl;
-            }
-            for (size_t i = 0; i < consensusSeqs.size(); i++) {
-                for (int j = 0; j < consensusSeqs[i].size(); j++){
-                    switch (consensusSeqs[i][j]) {
-                        case 'A': case 'a': freq[j][0]++; break;
-                        case 'C': case 'c': freq[j][1]++; break;
-                        case 'G': case 'g': freq[j][2]++; break;
-                        case 'T': case 't': freq[j][3]++; break;
+					switch (seqs.second[i]) {
+                        case 'A': case 'a': freq[i][0]++; break;
+                        case 'C': case 'c': freq[i][1]++; break;
+                        case 'G': case 'g': freq[i][2]++; break;
+                        case 'T': case 't': freq[i][3]++; break;
+                        case 'U': case 'u': freq[i][3]++; break;
                     }
                 }
             }
@@ -250,10 +241,28 @@ struct Workflow {
                 }
                 keep[i] = (cnt >= 2 || cnt1 >= 2);
             }
+        }
+        {
+            ifstream fin(file);
+            string name;
+            fin >> name;
+            vector<int> ind2species;
             size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
-            for (size_t i = 0; i < consensusSeqs.size(); i++) {
-                for (int j = 0; j < keep.size(); j++){
-                    if (keep[j]) tripInit.seq.append(consensusSeqs[i][j]);
+            while (name != "") {
+                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
+                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
+                name = "";
+                string line, seq;
+                while (fin >> line) {
+                    if (line[0] == '>') { name = line; break; }
+                    seq += line;
+                }
+				pair<string, string> seqs = resolveDiploid(seq);
+                for (int i = 0; i < keep.size(); i++){
+                    if (keep[i]) tripInit.seq.append(seqs.first[i]);
+                }
+				for (int i = 0; i < keep.size(); i++){
+                    if (keep[i]) tripInit.seq.append(seqs.second[i]);
                 }
             }
             int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
@@ -263,7 +272,7 @@ struct Workflow {
             }
         }
     }
-
+	
     bool readPhylip(ifstream &fin, ifstream &fin2){
         size_t nTaxa, nSites;
         if (!(fin >> nTaxa)) return false;
@@ -282,6 +291,7 @@ struct Workflow {
                         case 'C': case 'c': freq[j][1]++; break;
                         case 'G': case 'g': freq[j][2]++; break;
                         case 'T': case 't': freq[j][3]++; break;
+						case 'U': case 'u': freq[j][3]++; break;
                     }
                 }
             }
@@ -314,6 +324,71 @@ struct Workflow {
         }
         return true;
     }
+	
+	bool readPhylipAmbiguity(ifstream &fin, ifstream &fin2){
+        size_t nTaxa, nSites;
+        if (!(fin >> nTaxa)) return false;
+        fin >> nSites;
+        vector<bool> keep(nSites);
+        {
+            vector<array<unsigned short, 4> > freq(nSites);
+            for (int i = 0; i < nTaxa; i++){
+                string name, seq;
+                fin >> name >> seq;
+                if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
+                addName(meta.mappedname(name));
+				pair<string, string> seqs = resolveDiploid(seq);
+                for (int j = 0; j < seq.size(); j++) {
+                    switch (seqs.first[j]) {
+                        case 'A': case 'a': freq[j][0]++; break;
+                        case 'C': case 'c': freq[j][1]++; break;
+                        case 'G': case 'g': freq[j][2]++; break;
+                        case 'T': case 't': freq[j][3]++; break;
+						case 'U': case 'u': freq[j][3]++; break;
+                    }
+					switch (seqs.second[j]) {
+                        case 'A': case 'a': freq[j][0]++; break;
+                        case 'C': case 'c': freq[j][1]++; break;
+                        case 'G': case 'g': freq[j][2]++; break;
+                        case 'T': case 't': freq[j][3]++; break;
+						case 'U': case 'u': freq[j][3]++; break;
+                    }
+                }
+            }
+            for (int i = 0; i < keep.size(); i++) {
+                int cnt = 0, cnt1 = 0;
+                for (int j = 0; j < 4; j++) {
+                    if (freq[i][j] >= 2) cnt++;
+                    if (freq[i][j] == 1) cnt1++;
+                }
+                keep[i] = (cnt >= 2 || cnt1 >= 2);
+            }
+        }
+        {
+            fin2 >> nTaxa >> nSites;
+            size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
+            vector<int> ind2species;
+            for (int i = 0; i < nTaxa; i++){
+                string name, seq;
+                fin2 >> name >> seq;
+                ind2species.push_back(name2id[meta.mappedname(name)]);
+                ind2species.push_back(name2id[meta.mappedname(name)]);
+				pair<string, string> seqs = resolveDiploid(seq);
+                for (size_t j = 0; j < keep.size(); j++){
+                    if (keep[j]) tripInit.seq.append(seqs.first[j]);
+                }
+				for (size_t j = 0; j < keep.size(); j++){
+                    if (keep[j]) tripInit.seq.append(seqs.second[j]);
+                }
+            }
+            int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+            for (int i = 0; i < nChunk; i++) {
+                size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+                formatGene(ind2species, pos + s, t - s, len);
+            }
+        }
+        return true;
+    }
 
     Workflow(int argc, char** argv){
         //string mappingFile;
@@ -324,33 +399,49 @@ struct Workflow {
 
     void init(){
         tripInit.nThreads = meta.nThreads;
-        
-        if (ARG.getStringArg("format") == "fasta") {
-            readFasta(ARG.getStringArg("input"));
-        }
-        else if (ARG.getStringArg("format") == "list") {
-            ifstream fin(ARG.getStringArg("input"));
-            string line;
-            while (getline(fin, line)) {
-                readFasta(line);
-            }
-        }
-        else if (ARG.getStringArg("format") == "consensus") {
-            ifstream fin(ARG.getStringArg("input"));
-            string line;
-            while (getline(fin, line)) {
-                readFastaConsensus(line);
-            }
-        }
-        else if (ARG.getStringArg("format") == "phylip") {
-            ifstream fin(ARG.getStringArg("input")), fin2(ARG.getStringArg("input"));
-            string line;
-            while (readPhylip(fin, fin2));
-        }
-        else {
-            cerr << "Failed to parse format named '" << ARG.getStringArg("format") << "'\n";
-            exit(1);
-        }
+		
+		if (ARG.getIntArg("ambiguity") == 0){
+			if (ARG.getStringArg("format") == "fasta") {
+				readFasta(ARG.getStringArg("input"));
+			}
+			else if (ARG.getStringArg("format") == "list") {
+				ifstream fin(ARG.getStringArg("input"));
+				string line;
+				while (getline(fin, line)) {
+					readFasta(line);
+				}
+			}
+			else if (ARG.getStringArg("format") == "phylip") {
+				ifstream fin(ARG.getStringArg("input")), fin2(ARG.getStringArg("input"));
+				string line;
+				while (readPhylip(fin, fin2));
+			}
+			else {
+				cerr << "Failed to parse format named '" << ARG.getStringArg("format") << "'\n";
+				exit(1);
+			}
+		}
+		else {
+			if (ARG.getStringArg("format") == "fasta") {
+				readFastaAmbiguity(ARG.getStringArg("input"));
+			}
+			else if (ARG.getStringArg("format") == "list") {
+				ifstream fin(ARG.getStringArg("input"));
+				string line;
+				while (getline(fin, line)) {
+					readFastaAmbiguity(line);
+				}
+			}
+			else if (ARG.getStringArg("format") == "phylip") {
+				ifstream fin(ARG.getStringArg("input")), fin2(ARG.getStringArg("input"));
+				string line;
+				while (readPhylip(fin, fin2));
+			}
+			else {
+				cerr << "Failed to parse format named '" << ARG.getStringArg("format") << "'\n";
+				exit(1);
+			}
+		}
         tripInit.nSpecies = names.size();
     }
 
@@ -367,6 +458,7 @@ int main(int argc, char** argv){
     ARG.addStringArg('f', "format", "fasta", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment", true);
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
+	ARG.addIntArg(0, "ambiguity", 0, "0 (default): ambiguity codes are treated as N, 1: ambiguity codes are treated as diploid unphased sites");
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
     
     Workflow WF(argc, argv);

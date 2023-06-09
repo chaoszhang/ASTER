@@ -103,6 +103,7 @@ struct TripartitionInitializer{
 				case 'C': case 'c': b.set(p++, 0); b.set(p++, 1); b.set(p++, 0); b.set(p++, 0); break;
 				case 'G': case 'g': b.set(p++, 0); b.set(p++, 0); b.set(p++, 1); b.set(p++, 0); break;
 				case 'T': case 't': b.set(p++, 0); b.set(p++, 0); b.set(p++, 0); b.set(p++, 1); break;
+				case 'U': case 'u': b.set(p++, 0); b.set(p++, 0); b.set(p++, 0); b.set(p++, 1); break;
 				default: b.set(p++, 0); b.set(p++, 0); b.set(p++, 0); b.set(p++, 0);
 			}
 			if (p == SEQ_BATCH_SIZE) {

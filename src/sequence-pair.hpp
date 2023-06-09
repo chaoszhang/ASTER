@@ -80,6 +80,7 @@ struct TripartitionInitializer{
 				case 'C': case 'c': b.set(p + C, 1); break;
 				case 'G': case 'g': b.set(p + G, 1); break;
 				case 'T': case 't': b.set(p + T, 1); break;
+				case 'U': case 'u': b.set(p + T, 1); break;
 			}
 			p += 2;
 			switch (c2) {
@@ -87,6 +88,7 @@ struct TripartitionInitializer{
 				case 'C': case 'c': b.set(p + C, 1); break;
 				case 'G': case 'g': b.set(p + G, 1); break;
 				case 'T': case 't': b.set(p + T, 1); break;
+				case 'U': case 'u': b.set(p + T, 1); break;
 			}
 			p += 2;
 			if (p == SEQ_BATCH_SIZE) {

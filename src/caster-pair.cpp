@@ -33,6 +33,36 @@ using namespace std;
 
 int GENE_ID = 0;
 
+string recode(const string &AA){
+	string NA;
+	for (const char c: AA){
+		switch(c){
+			case 'C': case 'c':
+			case 'M': case 'm':
+			case 'I': case 'i':
+			case 'L': case 'l':
+			case 'V': case 'v': NA.push_back('A'); break;
+			case 'D': case 'd':
+			case 'E': case 'e':
+			case 'Q': case 'q':
+			case 'N': case 'n':
+			case 'H': case 'h':
+			case 'R': case 'r':
+			case 'K': case 'k': NA.push_back('T'); break;
+			case 'S': case 's':
+			case 'T': case 't':
+			case 'A': case 'a':
+			case 'G': case 'g':
+			case 'P': case 'p': NA.push_back('C'); break;
+			case 'W': case 'w':
+			case 'Y': case 'y':
+			case 'F': case 'f': NA.push_back('G'); break;
+			default: NA.push_back('N');
+		}
+	}
+	return NA;
+}
+
 struct Workflow {
     MetaAlgorithm meta;
     TripartitionInitializer& tripInit = meta.tripInit;
@@ -152,12 +182,14 @@ struct Workflow {
                     if (freq.size() == 0) freq.resize(seq.size());
                     else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
                 }
+				if (ARG.getIntArg("datatype") == 1) seq = recode(seq);
                 for (int i = 0; i < seq.size(); i++) {
                     switch (seq[i]) {
                         case 'A': case 'a': freq[i][0]++; break;
                         case 'C': case 'c': freq[i][1]++; break;
                         case 'G': case 'g': freq[i][2]++; break;
                         case 'T': case 't': freq[i][3]++; break;
+						case 'U': case 'u': freq[i][3]++; break;
                     }
                 }
             }
@@ -191,6 +223,7 @@ struct Workflow {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
+				if (ARG.getIntArg("datatype") == 1) seq = recode(seq);
                 for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
 				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
 				for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
@@ -235,6 +268,7 @@ struct Workflow {
                         case 'C': case 'c': freq[j][1]++; break;
                         case 'G': case 'g': freq[j][2]++; break;
                         case 'T': case 't': freq[j][3]++; break;
+						case 'U': case 'u': freq[j][3]++; break;
                     }
                 }
             }
@@ -334,7 +368,8 @@ int main(int argc, char** argv){
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
 	ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites");
-
+	ARG.addIntArg(0, "datatype", 0, "0 (default): nucleotides, 1: amino acids");
+    
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
