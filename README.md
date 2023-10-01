@@ -8,6 +8,8 @@ A family of optimatization algorithms for species tree inference:
 3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
 4. [CASTER-site](tutorial/caster-site.md)
 5. [CASTER-pair](tutorial/caster-site.md)
+6. WASTER-site
+7. MONSTER
 
 # Announcements
 

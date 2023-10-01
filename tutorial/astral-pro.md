@@ -1,24 +1,39 @@
-# Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro)
+# Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro2)
 ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees and is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL-pro extends ASTRAL to allow multi-copy genes. ASTRAL-pro finds the species tree that has the maximum number of shared induced quartet tree equivalent classes with the set of gene trees, subject to the constraint that the set of bipartitions in the species tree comes from a predefined set of bipartitions. Please see the paper below for the definition of the PL-quartet scores, which is what ASTRAL-Pro optimizes. We refer to the tool both as A-Pro and ASTRAL-Pro. 
 
-ASTER re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
+`ASTRAL-Pro2` re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
 
 ## Publication
 
-Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
+[1] Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
 
-Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
+[2] Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
+
+### Example of usage
+
+We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 v1.13.1.3 [1] by optimizing the objective function of ASTRAL-Pro [2].
+
+
+# Announcements
+
+## Integrated in Phylosuite (NEW)
+
+Many ASTER tools have been integrated in [PhyloSuite](http://phylosuite.jushengwu.com/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
+
+## GUI for Windows users
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
 ## Bug Reports
 
-Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
+Contact ``chaozhang@berkeley.edu``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
 - The rest of this TUTORIAL file
-- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
-- Forums:
+- Forums (feel free to ask questions or ask for help running ASTER):
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
+  - QQ group: 130635706
 
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
@@ -42,11 +57,12 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum update
       sudo yum install gcc-c++
       ```
-    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
+    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`.
+  - If you see "error" when running `make`, please try `make astral-pro` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
-- Executables for x86-64 are available in `exe` folder and it is **very likely** that they already work.
+- [Executables](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip) for x86-64 are available in `exe` folder and it is **very likely** that they already work.
 - [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
 - To compile windows excutables:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
@@ -191,17 +207,17 @@ If you want to give hints by providing candidate species trees or trees similar 
 bin/astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
-Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
-
-```
-bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
-```
-
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
 bin/astral-pro -u 0 -o OUTPUT_FILE INPUT_FILE
 bin/astral-pro -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+
+```
+bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
 ```
 
 If you do not want to compute optimal species tree but instead just want to root and tag gene trees, you can use the following command:

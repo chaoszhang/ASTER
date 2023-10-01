@@ -1,26 +1,41 @@
-# Accurate Species Tree ALgorithm (ASTRAL)
+# Accurate Species Tree ALgorithm (wASTRAL-unweighted)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
-ASTER re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a complementary to the original ASTRAL on datasets for which the original ASTRAL is not suitable (e.g. large datasets, multi-individual, and super-tree construction).
 
-Warning: ASTER implementation may be **slower** and even **less accurate** than ASTRAL-III when input gene trees has fewer than 50 species and 500 genes. Please choose wisely!
-As a supplementary to ASTRAL-III, ASTER lacks of many features of ASTRAL-III (e.g. computing support). You can work around by first computing optimal tree with ASTER and use the ASTER output tree as `-q` option to ASTRAL-III for annotation. 
+`wASTRAL-unweighted` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
+
+As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with wASTRAL-unweighted and use the wASTRAL-unweighted output tree as `-q` option to ASTRAL-III. 
 
 ## Publication
 
-Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
+[1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
 
-Zhang, Chao, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+[2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+
+### Example of usage
+
+We obtained the species tree from gene trees using wASTRAL-unweighted v1.13.2.4 [1] by optimizing the objective function of ASTRAL [2].
+
+
+# Announcements
+
+## Integrated in Phylosuite (NEW)
+
+Many ASTER tools have been integrated in [PhyloSuite](http://phylosuite.jushengwu.com/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
+
+## GUI for Windows users
+
+Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
 ## Bug Reports
 
-Contact ``aster-users@googlegroups.com`` or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
+Contact ``chaozhang@berkeley.edu``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
 - The rest of this TUTORIAL file
-- [README/astral-pro.md](README/astral-pro.md) for ASTRAL and ASTRAL-Pro; [README/wastral.md](README/wastral.md) for weighted ASTRAL series; [README/asterisk.md](README/asterisk.md) for ASTERISK series
-- Forums:
+- Forums (feel free to ask questions or ask for help running ASTER):
   - [User group discussions](https://groups.google.com/forum/#!forum/aster-users)
   - [ASTER issues page](https://github.com/chaoszhang/ASTER/issues)
+  - QQ group: 130635706
 
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
@@ -44,11 +59,12 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum update
       sudo yum install gcc-c++
       ```
-    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`
+    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`.
+  - If you see "error" when running `make`, please try `make astral` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
-- Executables for x86-64 are available in `exe` folder and it is **very likely** that they already work.
+- [Executables](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip) for x86-64 are available in `exe` folder and it is **very likely** that they already work.
 - [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/install) is HIGHLY recommanded if you need to install on your own! Please follow instructions in "For Linux/Unix/WSL users" section.
 - To compile windows excutables:
   1. Download [MinGW](https://sourceforge.net/projects/mingw-w64/) and install ***posix*** version for your architecture (eg. x86-64)
@@ -191,6 +207,13 @@ If you want to give hints by providing candidate species trees or trees similar 
 
 ```
 bin/astral -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
+
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/astral -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/astral -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:

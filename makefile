@@ -1,4 +1,4 @@
-all: dir astral astral-pro astral-hybrid caster-site caster-pair
+all: dir astral astral-pro astral-hybrid caster-site caster-pair waster-site
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral-pro astral-hybrid
@@ -40,6 +40,9 @@ caster-site: dir
 caster-pair: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair
 
+waster-site: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-site.cpp -o bin/waster-site || g++ -std=gnu++17 -O2 -pthread src/waster-site.cpp -o bin/waster-site
+	
 dir:
 	mkdir -p bin
 
