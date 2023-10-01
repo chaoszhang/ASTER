@@ -109,7 +109,7 @@ struct Workflow {
         array<size_t, 4> cnt = {};
         for (int iInd = 0; iInd < nInd; iInd++) {
             size_t pSeq = pos + iInd * offset;
-            for (int iSite = 0; iSite < nSite; iSite++) {
+            for (size_t iSite = 0; iSite < nSite; iSite++) {
                 tripInit.seq.add(pSeq + iSite, cnt);
             }
             gene.species2ind[ind2species[iInd]].push_back(iInd);
