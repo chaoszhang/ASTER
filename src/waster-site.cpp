@@ -14,7 +14,7 @@
 
 #define ROOTING
 #define NAME_MAPPING
-#define BLOCK_BOOTSTRAP
+//#define BLOCK_BOOTSTRAP
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -204,6 +204,10 @@ struct Workflow {
     vector<string>& names = meta.names;
     unordered_map<string, int>& name2id = meta.name2id;
 
+    double GCcontent = 0.5;
+    size_t nSNP = 0;
+    vector<int> ind2species;
+
     void addName(const string& name) {
         if (name2id.count(name) == 0) {
             name2id[name] = names.size();
@@ -211,7 +215,7 @@ struct Workflow {
         }
     }
 
-    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset, double GCcontent){
+    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, size_t pos, size_t nSite, size_t offset){
         int nInd = ind2species.size();
         array<size_t, 4> cnt = {};
         for (int iInd = 0; iInd < nInd; iInd++) {
@@ -228,11 +232,39 @@ struct Workflow {
         gene.pi[3] = 1 - GCcontent;
     }
 
-    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset, double GCcontent) {
+    void formatGene(size_t pos, size_t nSite, size_t offset) {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
-        buildGeneSeq(gene, ind2species, pos, nSite, offset, GCcontent);
+        buildGeneSeq(gene, pos, nSite, offset);
         tripInit.genes.emplace_back(gene);
+    }
+
+    void readFasta(){
+        ifstream fin(ARG.getStringArg("input"));
+        size_t freqAT = 0, freqCG = 0, npos = 0;
+        string line;
+        while (getline(fin, line)){
+            if (line[0] == '>'){
+                string name = line.substr(1);
+                LOG << "Processing " << name << " ...\n";
+                ind2species.push_back(name2id[meta.mappedname(name)]);
+                continue;
+            }
+            npos += line.size();
+            for (const char c: line) {
+                tripInit.seq.append(c);
+                switch (c) {
+                    case 'A': case 'a': freqAT++; break;
+                    case 'C': case 'c': freqCG++; break;
+                    case 'G': case 'g': freqCG++; break;
+                    case 'T': case 't': freqAT++; break;
+                    case 'U': case 'u': freqAT++; break;
+                }
+            }
+        }
+
+        GCcontent = ((double) freqCG) / (freqAT + freqCG);
+        nSNP = npos / ind2species.size();
     }
 
     Workflow(int argc, char** argv){
@@ -240,12 +272,24 @@ struct Workflow {
         meta.initialize(argc, argv);
         if (ARG.getStringArg("root") != "") addName(ARG.getStringArg("root"));
         tripInit.nThreads = meta.nThreads;
-        switch (ARG.getIntArg("kmer")){
-            case 7: init<7>(); break;
-            case 8: init<8>(); break;
-            case 9: init<9>(); break;
-            default: cerr << "Bad k-mer size!\n"; exit(0);
+
+        if (ARG.getIntArg("mode") <= 3){
+            switch (ARG.getIntArg("kmer")){
+                case 7: init<7>(); break;
+                case 8: init<8>(); break;
+                case 9: init<9>(); break;
+                default: cerr << "Bad k-mer size!\n"; exit(0);
+            }
         }
+        else readFasta();
+
+        size_t nChunk = meta.nThreads;
+        size_t pos = 0, len = nSNP;
+        for (int i = 0; i < nChunk; i++) {
+            size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+            formatGene(pos + s, t - s, len);
+        }
+
         tripInit.nSpecies = names.size();
     }
 
@@ -304,10 +348,14 @@ struct Workflow {
             while (fin >> i) freqPatterns.push_back(i);
         }
         
-        LOG << freqPatterns.size() << " SNPs are selected.\n";
+        nSNP = freqPatterns.size();
+        LOG << nSNP << " SNPs are selected.\n";
         
+        if (ARG.getIntArg("mode") == 3){
+            if (ARG.getStringArg("output") != "<standard output>") ofstream fin(ARG.getStringArg("output"));
+        }
+
         SNP<K> snp(freqPatterns);
-        vector<int> ind2species;
         size_t freqAT = 0, freqCG = 0;
         for (size_t i = 0; i < files.size(); i++){
             LOG << "Processing " << files[i] << " ...\n";
@@ -317,13 +365,24 @@ struct Workflow {
             while (getline(fin, line)){
                 if (line[0] == '>'){
                     if (seq != "") snp.add(seq);
+                    seq = "";
                 }
                 else{
                     seq += line;
                 }
             }
             if (seq != "") snp.add(seq);
-            //cerr << ">" << names[i] << "\n" << snp.get() << "\n";
+            
+            if (ARG.getIntArg("mode") == 3){
+                if (ARG.getStringArg("output") == "<standard output>"){
+                    cout << ">" << indNames[i] << endl << snp.get() << endl;
+                }
+                else {
+                    ofstream fout(ARG.getStringArg("output"), ios_base::app);
+                    fout << ">" << indNames[i] << endl << snp.get() << endl;
+                }
+            }
+
             for (const char c: snp.get()) {
                 tripInit.seq.append(c);
                 switch (c) {
@@ -336,12 +395,9 @@ struct Workflow {
             }
             snp.reset();
         }
-        size_t nChunk = meta.nThreads;
-        size_t pos = 0, len = freqPatterns.size();
-        for (int i = 0; i < nChunk; i++) {
-            size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-            formatGene(ind2species, pos + s, t - s, len, ((double) freqCG) / (freqAT + freqCG));
-        }
+
+        if (ARG.getIntArg("mode") == 3) exit(0);
+        GCcontent = ((double) freqCG) / (freqAT + freqCG);
     }
 };
 
@@ -359,7 +415,7 @@ int main(int argc, char** argv){
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
     ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >256 MB memory, 8 (default): >4 GB memory, 9: >64 GB memory", true);
     ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");
-    ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns");
+    ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");
 
     Workflow WF(argc, argv);
