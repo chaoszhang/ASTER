@@ -233,7 +233,7 @@ struct Workflow {
     }
 
     void formatGene(size_t pos, size_t nSite, size_t offset) {
-        int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
+        size_t nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
         buildGeneSeq(gene, pos, nSite, offset);
         tripInit.genes.emplace_back(gene);
@@ -247,6 +247,7 @@ struct Workflow {
             if (line[0] == '>'){
                 string name = line.substr(1);
                 LOG << "Processing " << name << " ...\n";
+                addName(meta.mappedname(name));
                 ind2species.push_back(name2id[meta.mappedname(name)]);
                 continue;
             }
@@ -356,6 +357,7 @@ struct Workflow {
         }
 
         SNP<K> snp(freqPatterns);
+        freqPatterns.clear();
         size_t freqAT = 0, freqCG = 0;
         for (size_t i = 0; i < files.size(); i++){
             LOG << "Processing " << files[i] << " ...\n";
