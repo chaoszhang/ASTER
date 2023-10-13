@@ -32,6 +32,7 @@ typedef int count_t;
 using namespace std;
 
 unsigned char CHAR2BITS[256] = {}, CHAR2MASK[256] = {}, RC[256] = {};
+unsigned char QUALITY2ASCII[95] = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
 
 const string STRING_REVERSE_COMPLEMENT(const string &seq){
     string res;
@@ -41,34 +42,23 @@ const string STRING_REVERSE_COMPLEMENT(const string &seq){
     return res;
 }
 
-template<size_t K> string DISPLAY(size_t bits){
-    string res0, res1;
-    for (int i = K * 2 - 1; i >= K; i--){
-        size_t b = (bits >> (2 * i)) & 3;
-        if (b == 0) res0 += 'A';
-        if (b == 1) res0 += 'C';
-        if (b == 2) res0 += 'G';
-        if (b == 3) res0 += 'T';
-    }
-    for (int i = K - 1; i >= 0; i--){
-        size_t b = (bits >> (2 * i)) & 3;
-        if (b == 0) res1 += 'A';
-        if (b == 1) res1 += 'C';
-        if (b == 2) res1 += 'G';
-        if (b == 3) res1 += 'T';
-    }
-    return res0 + "-" + res1 + "/" + STRING_REVERSE_COMPLEMENT(res1) + "-" + STRING_REVERSE_COMPLEMENT(res0);
-}
-
 template<size_t K> class KmerTable{
     constexpr static const size_t MASK = (1LL << (K * 2)) - 1;
-    constexpr static const size_t LEN = 1LL << (K * 4);
 
     uint8_t* table;
+
 public:
+    constexpr static const size_t LEN = (1LL << (K * 4 - 1)) - (1LL << (K * 2 - 1));
+
+    size_t fillcnt = 0;
 
     static void shift(size_t &bits, size_t &mask, const unsigned char c){
         bits = ((bits << 2) | CHAR2BITS[c]) & MASK;
+        mask = ((mask << 2) | CHAR2MASK[c]) & MASK;
+    }
+
+    static void rshift(size_t &bits, size_t &mask, const unsigned char c){
+        bits = (bits >> 2) | ((3 ^ CHAR2BITS[c]) << (K * 2 - 2));
         mask = ((mask << 2) | CHAR2MASK[c]) & MASK;
     }
 
@@ -87,50 +77,53 @@ public:
         delete table;
     }
 
-    void add(const string &seq, bool bothStrands = true){
+    void add(const string &seqs, const string &seqn, bool bothStrands = true){
         size_t b1 = 0, b2 = 0, b3 = 0, b4 = 0;
         size_t m1 = 0, m2 = 0, m3 = 0, m4 = 0;
-        for (size_t i = 0; i + 3 * K + 1 < seq.size(); i++){
-            shift(b1, m1, seq[i + 0]);
-            shift(b2, m2, seq[i + K]);
-            shift(b3, m3, seq[i + 2 * K + 1]);
-            shift(b4, m4, seq[i + 3 * K + 1]);
-            if (i >= K - 1 && CHAR2BITS[seq[i + K + 1]] < 2 && CHAR2MASK[seq[i + K + 1]] == 0){
-                if (m1 == 0 && m4 == 0) table[(b1 << (K * 2)) | b4] |= 1;
-                if (m2 == 0 && m3 == 0) table[(b2 << (K * 2)) | b3] |= 1;
+        for (size_t i = 0; i + 3 * K + 1 < seqn.size(); i++){
+            shift(b1, m1, seqn[i + 0]);
+            shift(b2, m2, seqn[i + K]);
+            rshift(b3, m3, seqn[i + 2 * K + 1]);
+            rshift(b4, m4, seqn[i + 3 * K + 1]);
+            if (i >= K - 1 && CHAR2MASK[seqs[i + K + 1]] == 0){
+                if (b1 > b4 && m1 == 0 && m4 == 0){
+                    size_t p = b1 * (b1 - 1) / 2 + b4;
+                    if (CHAR2BITS[seqs[i + K + 1]] & 1) table[p] |= 2;
+                    else table[p] |= 1;
+                }
+                if (b2 > b3 && m2 == 0 && m3 == 0){
+                    size_t p = b2 * (b2 - 1) / 2 + b3;
+                    if (CHAR2BITS[seqs[i + K + 1]] & 1) table[p] |= 2;
+                    else table[p] |= 1;
+                }
             }
         }
-        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seq), false);
+        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seqs), STRING_REVERSE_COMPLEMENT(seqn), false);
     }
 
     void postprocess(){
+        fillcnt = 0;
         for (size_t i = 0; i < LEN; i++){
-            if (table[i] & 1){
-                size_t j = REVERSE_COMPLEMENT(i);
-                if (table[j] & 1){
-                    if ((table[i] & 6) == 6) table[i] -= 1;
-                    else table[i] += 1;
-                    if (i == j) continue;
-                    if ((table[j] & 6) == 6) table[j] -= 1;
-                    else table[j] += 1;
-                }
-                else {
-                    if ((table[i] & 248) == 248) table[i] -= 1;
-                    else table[i] += 7;
-                }
-            }
+            if (table[i] == 0) continue; 
+            fillcnt++;
+            if ((table[i] & 3) == 0) continue;
+            if ((table[i] & 3) == 3) continue;
+            table[i] &= 252;
+            if (table[i] < 252) table[i] += 4;
         }
     }
 
-    vector<size_t> frequentPatterns(size_t n) const{
+    double fillProportion() const{
+        return fillcnt / (double) LEN;
+    }
+
+    vector<size_t> frequentPatterns(size_t n, bool optimize4noDownsample = false) const{
         vector<size_t> freq[64];
-        size_t cnt = 0, threshold = 2;
+        size_t cnt = 0, threshold = (optimize4noDownsample) ? 4 : 2;
         for (size_t i = 0; i < LEN; i++){
             if (table[i] == 0) continue;
-            if (table[i] & 6) continue;
-            size_t j = REVERSE_COMPLEMENT(i);
-            if (j <= i || table[j] == 0) continue;
-            size_t level = (table[i] >> 3) + (table[j] >> 3);
+            if (table[i] & 3) continue;
+            size_t level = table[i] / 4;
             if (level < threshold) continue;
             freq[level].push_back(i);
             cnt++;
@@ -144,7 +137,6 @@ public:
             for (size_t i: freq[level]){
                 if (res.size() >= n) break;
                 res.push_back(i);
-                //cerr << DISPLAY<K>(i) << endl;
             }
         }
         return res;
@@ -152,37 +144,54 @@ public:
 };
 
 template<size_t K> class SNP{
-    unordered_map<size_t, size_t> pattern2pos;
+    constexpr static const size_t SHIFT = 6;
+    constexpr static const size_t M = (1LL << (K * 4 - 1 - SHIFT)) - (1LL << (K * 2 - 1 - SHIFT));
     string snps;
 
 public:
-    SNP(const vector<size_t> freqPatterns): pattern2pos(freqPatterns.size()), snps(freqPatterns.size(), (char) 0){
-        for (int i = 0; i < freqPatterns.size(); i++){
-            pattern2pos[freqPatterns[i]] = i;
+    static vector<size_t> sortedPattern, pattern2pos;
+
+    static void staticInit(){
+        sort(sortedPattern.begin(), sortedPattern.end());
+        pattern2pos.reserve(M + 1);
+        size_t n = sortedPattern.size();
+        for (size_t i = 0, j = 0; i < M + 1; i++){
+            while (j < n && sortedPattern[j] < (i << SHIFT)) j++;
+            pattern2pos.push_back(j);
         }
     }
 
+    static size_t locate(size_t pattern){
+        size_t L = pattern2pos[pattern >> SHIFT], R = pattern2pos[(pattern >> SHIFT) + 1];
+        size_t i = L;
+        while (i < R && sortedPattern[i] < pattern) i++;
+        if (sortedPattern[i] == pattern) return i;
+        return -1;
+    }
+
+    SNP(): snps(sortedPattern.size(), (char) 0){}
+
     void add(size_t pattern, char c){
-        if (pattern2pos.count(pattern) == 0) return;
-        size_t pos = pattern2pos.at(pattern);
+        size_t pos = locate(pattern);
+        if (pos == -1) return;
         if (snps[pos] == 0) snps[pos] = c;
         else if (snps[pos] != c) snps[pos] = 'N';
     }
 
-    void add(const string &seq, bool bothStrands = true){
+    void add(const string &seqs, const string &seqn, bool bothStrands = true){
         size_t b1 = 0, b2 = 0, b3 = 0, b4 = 0;
         size_t m1 = 0, m2 = 0, m3 = 0, m4 = 0;
-        for (size_t i = 0; i + 3 * K + 1 < seq.size(); i++){
-            KmerTable<K>::shift(b1, m1, seq[i + 0]);
-            KmerTable<K>::shift(b2, m2, seq[i + K]);
-            KmerTable<K>::shift(b3, m3, seq[i + 2 * K + 1]);
-            KmerTable<K>::shift(b4, m4, seq[i + 3 * K + 1]);
-            if (i >= K - 1 && CHAR2MASK[seq[i + K + 1]] == 0){
-                if (m1 == 0 && m4 == 0) add((b1 << (K * 2)) | b4, seq[i + K + 1]);
-                if (m2 == 0 && m3 == 0) add((b2 << (K * 2)) | b3, seq[i + K + 1]);
+        for (size_t i = 0; i + 3 * K + 1 < seqs.size(); i++){
+            KmerTable<K>::shift(b1, m1, seqn[i + 0]);
+            KmerTable<K>::shift(b2, m2, seqn[i + K]);
+            KmerTable<K>::rshift(b3, m3, seqn[i + 2 * K + 1]);
+            KmerTable<K>::rshift(b4, m4, seqn[i + 3 * K + 1]);
+            if (i >= K - 1 && CHAR2MASK[seqs[i + K + 1]] == 0){
+                if (b1 > b4 && m1 == 0 && m4 == 0) add(b1 * (b1 - 1) / 2 + b4, seqs[i + K + 1]);
+                if (b2 > b3 && m2 == 0 && m3 == 0) add(b2 * (b2 - 1) / 2 + b3, seqs[i + K + 1]);
             }
         }
-        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seq), false);
+        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seqs), STRING_REVERSE_COMPLEMENT(seqn), false);
     }
 
     void reset(){
@@ -196,6 +205,8 @@ public:
         return snps;
     }
 };
+template <size_t K> vector<size_t> SNP<K>::sortedPattern;
+template <size_t K> vector<size_t> SNP<K>::pattern2pos;
 
 struct Workflow {
     MetaAlgorithm meta;
@@ -203,6 +214,9 @@ struct Workflow {
 
     vector<string>& names = meta.names;
     unordered_map<string, int>& name2id = meta.name2id;
+    
+    unsigned char QCS = 0, QCN = 0;
+    bool eofFlag = false;
 
     double GCcontent = 0.5;
     size_t nSNP = 0;
@@ -239,7 +253,46 @@ struct Workflow {
         tripInit.genes.emplace_back(gene);
     }
 
-    void readFasta(){
+    bool getFastaSeq(ifstream& fin, string& seq){
+        if (eofFlag){
+            eofFlag = false;
+            return false;
+        }
+        seq = "";
+        eofFlag = true;
+        string line;
+        while(getline(fin, line)){
+            if (line[0] == '>'){
+                if (seq == "") continue;
+                else {
+                    eofFlag = false;
+                    break;
+                }
+            }
+            seq += line;
+        }
+        return true;
+    }
+
+    bool getFastqSeq(ifstream& fin, string& seqs, string& seqn){
+        string line;
+        if (getline(fin, line)){
+            if (line == "") getline(fin, line);
+            getline(fin, seqs);
+            seqn = seqs;
+            getline(fin, line);
+            getline(fin, line);
+            for (int i = 0; i < seqs.size(); i++){
+                if (line[i] < QCS) seqs[i] = 'N';
+                if (line[i] < QCN) seqn[i] = 'N';
+            }
+
+            return true;
+        }
+        else return false;
+    }
+
+    void readAlignment(){
         ifstream fin(ARG.getStringArg("input"));
         size_t freqAT = 0, freqCG = 0, npos = 0;
         string line;
@@ -275,14 +328,42 @@ struct Workflow {
         tripInit.nThreads = meta.nThreads;
 
         if (ARG.getIntArg("mode") <= 3){
-            switch (ARG.getIntArg("kmer")){
-                case 7: init<7>(); break;
-                case 8: init<8>(); break;
-                case 9: init<9>(); break;
-                default: cerr << "Bad k-mer size!\n"; exit(0);
+            if (ARG.getStringArg("type") == "fastq") {
+                int intqcs = ARG.getIntArg("qcs");
+                if (intqcs >= 94){
+                    cerr << "Bad quality control threshold for SNPs!\n";
+                    exit(0);
+                }
+                QCS = QUALITY2ASCII[intqcs];
+                LOG << "Quality control: Masking all SNP bases with quality lower than '" << QCS << "'\n";
+                int intqcn = ARG.getIntArg("qcn");
+                if (intqcn >= 94){
+                    cerr << "Bad quality control threshold for non-SNPs!\n";
+                    exit(0);
+                }
+                QCN = QUALITY2ASCII[intqcn];
+                LOG << "Quality control: Masking all non-SNP bases with quality lower than '" << QCN << "'\n";
+                switch (ARG.getIntArg("kmer")){
+                    case 7: init<7, false>(); break;
+                    case 8: init<8, false>(); break;
+                    case 9: init<9, false>(); break;
+                    default: cerr << "Bad k-mer size!\n"; exit(0);
+                }
+            }
+            else if (ARG.getStringArg("type") == "fasta") {
+                switch (ARG.getIntArg("kmer")){
+                    case 7: init<7, true>(); break;
+                    case 8: init<8, true>(); break;
+                    case 9: init<9, true>(); break;
+                    default: cerr << "Bad k-mer size!\n"; exit(0);
+                }
+            }
+            else {
+                cerr << "Bad input type!\n";
+                exit(0);
             }
         }
-        else readFasta();
+        else readAlignment();
 
         size_t nChunk = meta.nThreads;
         size_t pos = 0, len = nSNP;
@@ -294,7 +375,7 @@ struct Workflow {
         tripInit.nSpecies = names.size();
     }
 
-    template<size_t K> void init(){
+    template<size_t K, bool useFasta> void init(){
         vector<string> indNames, files;
         {
             ifstream fin(ARG.getStringArg("input"));
@@ -306,7 +387,7 @@ struct Workflow {
                 files.push_back(file);
             }
         }
-        vector<size_t> freqPatterns;
+        vector<size_t> &freqPatterns = SNP<K>::sortedPattern;
         if (ARG.getStringArg("continue") == ""){
             unordered_set<size_t> selected;
             KmerTable<K> table;
@@ -317,20 +398,18 @@ struct Workflow {
                 selected.insert(cur);
                 LOG << "Species " << indNames[cur] << " is selected to count the most frequent patterns.\n";
                 ifstream fin(files[cur]);
-                string seq, line;
-                while (getline(fin, line)){
-                    if (line[0] == '>'){
-                        if (seq != "") table.add(seq);
-                        seq = "";
-                    }
-                    else{
-                        seq += line;
-                    }
+                if (useFasta){
+                    string seq;
+                    while (getFastaSeq(fin, seq)) table.add(seq, seq);
                 }
-                if (seq != "") table.add(seq);
+                else{
+                    string seqs, seqn;
+                    while (getFastqSeq(fin, seqs, seqn)) table.add(seqs, seqn);
+                }
                 table.postprocess();
+                LOG << "Hash table fill rate: " << table.fillProportion() << endl;
             }
-            freqPatterns = table.frequentPatterns((4LL << (4 * K)) / files.size());
+            freqPatterns = table.frequentPatterns(KmerTable<K>::LEN / files.size(), selected.size() == files.size());
 
             if (ARG.getIntArg("mode") == 2){
                 if (ARG.getStringArg("output") == "<standard output>"){
@@ -356,25 +435,22 @@ struct Workflow {
             if (ARG.getStringArg("output") != "<standard output>") ofstream fin(ARG.getStringArg("output"));
         }
 
-        SNP<K> snp(freqPatterns);
-        freqPatterns.clear();
+        SNP<K>::staticInit();
+        SNP<K> snp;
+        //freqPatterns.clear();
         size_t freqAT = 0, freqCG = 0;
         for (size_t i = 0; i < files.size(); i++){
             LOG << "Processing " << files[i] << " ...\n";
             ind2species.push_back(name2id[meta.mappedname(indNames[i])]);
             ifstream fin(files[i]);
-            string seq, line;
-            while (getline(fin, line)){
-                if (line[0] == '>'){
-                    if (seq != "") snp.add(seq);
-                    seq = "";
-                }
-                else{
-                    seq += line;
-                }
+            if (useFasta){
+                string seq;
+                while (getFastaSeq(fin, seq)) snp.add(seq, seq);
             }
-            if (seq != "") snp.add(seq);
-            
+            else{
+                string seqs, seqn;
+                while (getFastqSeq(fin, seqs, seqn)) snp.add(seqs, seqn);
+            }
             if (ARG.getIntArg("mode") == 3){
                 if (ARG.getStringArg("output") == "<standard output>"){
                     cout << ">" << indNames[i] << endl << snp.get() << endl;
@@ -415,10 +491,13 @@ int main(int argc, char** argv){
     RC['A'] = 'T'; RC['C'] = 'G'; RC['G'] = 'C'; RC['T'] = 'A'; RC['U'] = 'A'; 
 
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
-    ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >256 MB memory, 8 (default): >4 GB memory, 9: >64 GB memory", true);
-    ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");
+    ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >128 MB memory, 8 (default): >2 GB memory, 9: >32 GB memory", true);
+    ARG.addIntArg(0, "sampled", 16, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
+    ARG.addStringArg('y', "type", "fastq", "Input file type: fastq (default) or fasta", true);
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");
+    ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP base (between 0-93, 30 by default)");
+    ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");
 
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;

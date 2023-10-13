@@ -96,8 +96,8 @@ struct Tripartition{
                 Q[y][j] -= M[i][j] * M[i][j];
             }
             if (x != -1){
-                S[y][j] += M[i][j];
-                Q[y][j] += M[i][j] * M[i][j];
+                S[x][j] += M[i][j];
+                Q[x][j] += M[i][j] * M[i][j];
             }
         }
 	}

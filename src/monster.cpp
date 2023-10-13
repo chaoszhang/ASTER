@@ -1,7 +1,5 @@
 #define DRIVER_VERSION "0"
 
-#define ROOTING
-
 #include<iostream>
 #include<fstream>
 #include<sstream>
@@ -10,6 +8,9 @@
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
+
+#define ROOTING
+#define NAME_MAPPING
 
 typedef double score_t;
 
@@ -40,7 +41,8 @@ int main(int argc, char** argv){
     ifstream fin(ARG.getStringArg("input"));
     string line;
     unordered_map<string, int> axisName2axis;
-    int m;
+    int m = 0;
+    vector<unordered_map<string, vector<double> > > axisInd2Array(3);
     while (getline(fin, line)){
         stringstream strin(line);
         double v;
@@ -48,12 +50,35 @@ int main(int argc, char** argv){
         vector<double> arr;
         strin >> indName >> axisName;
         while (strin >> v) arr.push_back(v);
-        
+        if (m == 0) m = arr.size();
+        if (axisName2axis.count(axisName) == 0){
+            axisName2axis[axisName] = axisName2axis.size();
+        }
+        addName(meta.mappedname(indName));
+        axisInd2Array[axisName2axis[axisName]][indName] = arr;
+    }
+    tripInit.M.resize(names.size(), vector<Vector>(m));
+    for (auto &e: axisInd2Array[0]){
+        string indName = e.first;
+        int speciesID = name2id[meta.mappedname(indName)];
+        for (int i = 0; i < m; i++){
+            if (axisName2axis.size() == 2){
+                Vector vec(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], 0, true);
+                tripInit.M[speciesID][i] += vec;
+            }
+            if (axisName2axis.size() == 3){
+                Vector vec(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], axisInd2Array[2][indName][i], true);
+                tripInit.M[speciesID][i] += vec;
+            }
+        }
     }
 
-    exit(0);
-    //auto res = meta.run();
-    //LOG << "Score: " << (double) res.first << endl;
+    LOG << "#Dimensions: " << axisName2axis.size() << endl;
+    LOG << "#Lanmarks: " << m << endl;
+    LOG << "#Samples: " << axisInd2Array[0].size() << endl;
+    
+    auto res = meta.run();
+    LOG << "Score: " << (double) res.first << endl;
     
     return 0;
 }
