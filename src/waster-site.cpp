@@ -347,6 +347,7 @@ struct Workflow {
                     case 7: init<7, false>(); break;
                     case 8: init<8, false>(); break;
                     case 9: init<9, false>(); break;
+                    case 10: init<10, false>(); break;
                     default: cerr << "Bad k-mer size!\n"; exit(0);
                 }
             }
@@ -355,6 +356,7 @@ struct Workflow {
                     case 7: init<7, true>(); break;
                     case 8: init<8, true>(); break;
                     case 9: init<9, true>(); break;
+                    case 10: init<10, true>(); break;
                     default: cerr << "Bad k-mer size!\n"; exit(0);
                 }
             }
@@ -407,7 +409,10 @@ struct Workflow {
                     while (getFastqSeq(fin, seqs, seqn)) table.add(seqs, seqn);
                 }
                 table.postprocess();
-                LOG << "Hash table fill rate: " << table.fillProportion() << endl;
+                LOG << "Hash table " << (int) (table.fillProportion() * 100) << "% filled." << endl;
+                if (i >= 3 && table.fillProportion() > 0.5){
+                    LOG << "Early termination of k-mer search due to high fill rate. You may consider increasing K for larger Hash table." << endl;
+                }
             }
             freqPatterns = table.frequentPatterns(KmerTable<K>::LEN / files.size(), selected.size() == files.size());
 
@@ -491,7 +496,7 @@ int main(int argc, char** argv){
     RC['A'] = 'T'; RC['C'] = 'G'; RC['G'] = 'C'; RC['T'] = 'A'; RC['U'] = 'A'; 
 
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
-    ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >128 MB memory, 8 (default): >2 GB memory, 9: >32 GB memory", true);
+    ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >128 MB memory, 8 (default): >2 GB memory, 9: >32 GB memory, 10: >512 GB memory", true);
     ARG.addIntArg(0, "sampled", 16, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg('y', "type", "fastq", "Input file type: fastq (default) or fasta", true);
