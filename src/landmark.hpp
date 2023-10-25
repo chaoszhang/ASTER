@@ -74,6 +74,7 @@ struct TripartitionInitializer{
 struct Tripartition{
 	vector<char> color;
 	vector<vector<Vector> > &M;
+    vector<int> cnt[3];
     vector<Vector> S[3]; // partition sum
     vector<double> Q[3]; // partition sum of self-dots
     int n, m;
@@ -92,10 +93,12 @@ struct Tripartition{
 		color[i] = x;
 		for (int j = 0; j < m; j++){
             if (y != -1){
+                cnt[y][j]--;
                 S[y][j] -= M[i][j];
                 Q[y][j] -= M[i][j] * M[i][j];
             }
             if (x != -1){
+                cnt[x][j]++;
                 S[x][j] += M[i][j];
                 Q[x][j] += M[i][j] * M[i][j];
             }

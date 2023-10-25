@@ -12,3 +12,4 @@ g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astra
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/caster-site.cpp -o exe/caster-site.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/caster-pair.cpp -o exe/caster-pair.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/waster-site.cpp -o exe/waster-site.exe
+g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/sister.cpp -o exe/sister.exe

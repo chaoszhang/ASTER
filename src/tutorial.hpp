@@ -79,7 +79,7 @@ Our results suggest that CASTER-site and CASTER-pair can fulfill the need for la
 
 ## Publication
 
-TBD
+Chao Zhang, Rasmus Nielsen, Siavash Mirarab, CASTER: Direct species tree inference from whole-genome alignments, bioRxiv 2023.10.04.560884, https://doi.org/10.1101/2023.10.04.560884
 
 ## Notice
 

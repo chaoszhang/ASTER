@@ -42,10 +42,15 @@ caster-pair: dir
 
 waster-site: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-site.cpp -o bin/waster-site || g++ -std=gnu++17 -O2 -pthread src/waster-site.cpp -o bin/waster-site
+
+sister: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/sister.cpp -o bin/sister || g++ -std=gnu++17 -O2 -pthread src/sister.cpp -o bin/sister
 	
 dir:
 	mkdir -p bin
-
+	echo 'If installation failed, please ensure g++ version >= 11.'
+	g++ -v 2>&1 | tail -n 1
+	
 clean:
 	rm bin/*
 

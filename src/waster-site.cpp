@@ -258,6 +258,16 @@ struct Workflow {
         tripInit.genes.emplace_back(gene);
     }
 
+    static string getFormat(const string fileName){
+        ifstream fin(fileName);
+        string s;
+        getline(fin, s);
+        if (s.size() == 0) return "";
+        if (s[0] == '@') return "fastq";
+        if (s[0] == '>') return "fasta";
+        return "";
+    }
+
     bool getFastaSeq(ifstream& fin, string& seq){
         if (eofFlag){
             eofFlag = false;
@@ -333,43 +343,28 @@ struct Workflow {
         tripInit.nThreads = meta.nThreads;
 
         if (ARG.getIntArg("mode") <= 3){
-            if (ARG.getStringArg("type") == "fastq") {
-                int intqcs = ARG.getIntArg("qcs");
-                if (intqcs >= 94){
-                    cerr << "Bad quality control threshold for SNPs!\n";
-                    exit(0);
-                }
-                QCS = QUALITY2ASCII[intqcs];
-                LOG << "Quality control: Masking all SNP bases with quality lower than '" << QCS << "'\n";
-                int intqcn = ARG.getIntArg("qcn");
-                if (intqcn >= 94){
-                    cerr << "Bad quality control threshold for non-SNPs!\n";
-                    exit(0);
-                }
-                QCN = QUALITY2ASCII[intqcn];
-                LOG << "Quality control: Masking all non-SNP bases with quality lower than '" << QCN << "'\n";
-                switch (ARG.getIntArg("kmer")){
-                    case 7: init<7, false>(); break;
-                    case 8: init<8, false>(); break;
-                    case 9: init<9, false>(); break;
-                    case 10: init<10, false>(); break;
-                    default: cerr << "Bad k-mer size!\n"; exit(0);
-                }
-            }
-            else if (ARG.getStringArg("type") == "fasta") {
-                switch (ARG.getIntArg("kmer")){
-                    case 7: init<7, true>(); break;
-                    case 8: init<8, true>(); break;
-                    case 9: init<9, true>(); break;
-                    case 10: init<10, true>(); break;
-                    default: cerr << "Bad k-mer size!\n"; exit(0);
-                }
-            }
-            else {
-                cerr << "Bad input type!\n";
+            int intqcs = ARG.getIntArg("qcs");
+            if (intqcs >= 94){
+                cerr << "Bad quality control threshold for SNPs!\n";
                 exit(0);
             }
-        }
+            QCS = QUALITY2ASCII[intqcs];
+            LOG << "Quality control: Masking all SNP bases with quality lower than '" << QCS << "' for FASTQ inputs.\n";
+            int intqcn = ARG.getIntArg("qcn");
+            if (intqcn >= 94){
+                cerr << "Bad quality control threshold for non-SNPs!\n";
+                exit(0);
+            }
+            QCN = QUALITY2ASCII[intqcn];
+            LOG << "Quality control: Masking all non-SNP bases with quality lower than '" << QCN << "' for FASTQ inputs.\n";
+            switch (ARG.getIntArg("kmer")){
+                case 7: init<7>(); break;
+                case 8: init<8>(); break;
+                case 9: init<9>(); break;
+                case 10: init<10>(); break;
+                default: cerr << "Bad k-mer size!\n"; exit(0);
+            }
+    }
         else readAlignment();
 
         size_t nChunk = meta.nThreads;
@@ -382,7 +377,7 @@ struct Workflow {
         tripInit.nSpecies = names.size();
     }
 
-    template<size_t K, bool useFasta> void init(){
+    template<size_t K> void init(){
         vector<string> indNames, files;
         {
             ifstream fin(ARG.getStringArg("input"));
@@ -404,14 +399,19 @@ struct Workflow {
                 while (selected.count(cur)) cur = rand() % files.size();
                 selected.insert(cur);
                 LOG << "Species " << indNames[cur] << " is selected to count the most frequent patterns.\n";
+                string format = getFormat(files[cur]);
                 ifstream fin(files[cur]);
-                if (useFasta){
+                if (format == "fasta"){
                     string seq;
                     while (getFastaSeq(fin, seq)) table.add(seq, seq);
                 }
-                else{
+                else if (format == "fastq"){
                     string seqs, seqn;
                     while (getFastqSeq(fin, seqs, seqn)) table.add(seqs, seqn);
+                }
+                else {
+                    cerr << "File " << files[cur] << " bad format!\n";
+                    exit(0);
                 }
                 table.postprocess();
                 LOG << "Hash table " << (int) (table.fillProportion() * 100) << "% filled." << endl;
@@ -452,14 +452,19 @@ struct Workflow {
         for (size_t i = 0; i < files.size(); i++){
             LOG << "Processing " << files[i] << " ...\n";
             ind2species.push_back(name2id[meta.mappedname(indNames[i])]);
+            string format = getFormat(files[i]);
             ifstream fin(files[i]);
-            if (useFasta){
+            if (format == "fasta"){
                 string seq;
                 while (getFastaSeq(fin, seq)) snp.add(seq, seq);
             }
-            else{
+            else if (format == "fastq"){
                 string seqs, seqn;
                 while (getFastqSeq(fin, seqs, seqn)) snp.add(seqs, seqn);
+            }
+            else {
+                cerr << "File " << files[i] << " bad format!\n";
+                exit(0);
             }
             if (ARG.getIntArg("mode") == 3){
                 if (ARG.getStringArg("output") == "<standard output>"){

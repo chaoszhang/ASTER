@@ -9,7 +9,8 @@ A family of optimatization algorithms for species tree inference:
 4. [CASTER-site](tutorial/caster-site.md)
 5. [CASTER-pair](tutorial/caster-site.md)
 6. WASTER-site
-7. MONSTER
+7. SISTER
+8. MONSTER
 
 # Announcements
 

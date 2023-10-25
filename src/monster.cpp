@@ -62,13 +62,26 @@ int main(int argc, char** argv){
         string indName = e.first;
         int speciesID = name2id[meta.mappedname(indName)];
         for (int i = 0; i < m; i++){
+            int j = (i == 0) ? m - 1 : i - 1;
             if (axisName2axis.size() == 2){
-                Vector vec(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], 0, true);
-                tripInit.M[speciesID][i] += vec;
+                Vector vd(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], 0, true);
+                /*
+                Vector vi(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], 0);
+                Vector vj(axisInd2Array[0][indName][j], axisInd2Array[1][indName][j], 0);
+                Vector vd = vi - vj;
+                vd.normalize();
+                */
+                tripInit.M[speciesID][i] += vd;
             }
             if (axisName2axis.size() == 3){
-                Vector vec(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], axisInd2Array[2][indName][i], true);
-                tripInit.M[speciesID][i] += vec;
+                Vector vd(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], axisInd2Array[2][indName][i], true);
+                /*
+                Vector vi(axisInd2Array[0][indName][i], axisInd2Array[1][indName][i], axisInd2Array[2][indName][i]);
+                Vector vj(axisInd2Array[0][indName][j], axisInd2Array[1][indName][j], axisInd2Array[2][indName][j]);
+                Vector vd = vi - vj;
+                vd.normalize();
+                */
+                tripInit.M[speciesID][i] += vd;
             }
         }
     }
