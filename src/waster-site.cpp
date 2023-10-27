@@ -507,10 +507,9 @@ int main(int argc, char** argv){
     RC['A'] = 'T'; RC['C'] = 'G'; RC['G'] = 'C'; RC['T'] = 'A'; RC['U'] = 'A'; 
 
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
-    ARG.addIntArg('k', "kmer", 8, "k-mer size; 7: require >128 MB memory, 8 (default): >2 GB memory, 9: >32 GB memory, 10: >512 GB memory", true);
+    ARG.addIntArg('k', "kmer", 9, "k-mer size; 7: require >128 MB memory, 8: >2 GB memory, 9 (default): >32 GB memory, 10: >512 GB memory", true);
     ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
-    ARG.addStringArg('y', "type", "fastq", "Input file type: fastq (default) or fasta", true);
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");
     ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP base (between 0-93, 30 by default)");
     ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");

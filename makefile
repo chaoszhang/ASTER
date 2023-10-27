@@ -48,7 +48,7 @@ sister: dir
 	
 dir:
 	mkdir -p bin
-	echo 'If installation failed, please ensure g++ version >= 11.'
+	echo 'If installation failed, please ensure g++ version >= 7.5.0'
 	g++ -v 2>&1 | tail -n 1
 	
 clean:
