@@ -1,5 +1,9 @@
 #define DRIVER_VERSION "0"
 
+/* CHANGE LOG
+ * 1: Modified the logic in parsing FASTA names 
+ */
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -32,6 +36,27 @@ typedef int count_t;
 using namespace std;
 
 int GENE_ID = 0;
+
+string getFastaName(const string &fasta){
+    int i = 0;
+    string res;
+    while (i < fasta.size() && fasta[i] == ' ') i++;
+    if (i == fasta.size() || fasta[i] != '>'){
+        cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+        exit(0);
+    }
+    i++;
+    while (i < fasta.size() && fasta[i] == ' ') i++;
+    while (i < fasta.size() && fasta[i] != ' ') {
+        res += fasta[i];
+        i++;
+    }
+    if (res.size() == 0){
+        cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+        exit(0);
+    }
+    return res;
+}
 
 string recode(const string &AA){
 	string NA;
@@ -169,18 +194,18 @@ struct Workflow {
             vector<array<unsigned short, 4> > freq;
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             while (name != "") {
-                addName(meta.mappedname(name.substr(1)));
+                addName(meta.mappedname(getFastaName(name)));
                 name = "";
                 string seq, line;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
                 if (freq.size() != seq.size()) {
                     if (freq.size() == 0) freq.resize(seq.size());
-                    else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
+                    else { cerr << "File '" << file << "' is ill-formated.\n"; exit(0); }
                 }
 				if (ARG.getIntArg("datatype") == 1) seq = recode(seq);
                 for (int i = 0; i < seq.size(); i++) {
@@ -211,15 +236,15 @@ struct Workflow {
         {
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             vector<int> ind2species;
             long long pos = tripInit.seq.len();
 			long long offset = 3 * sitepair.size() + sitepair2.size();
             while (name != "") {
-                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
+                ind2species.push_back(name2id[meta.mappedname(getFastaName(name))]);
                 name = "";
                 string line, seq;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
@@ -260,7 +285,7 @@ struct Workflow {
             for (int i = 0; i < nTaxa; i++){
                 string name, seq;
                 fin >> name >> seq;
-                if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
+                if (seq.size() != nSites) { cerr << "The input is ill-formated.\n"; exit(0); }
                 addName(meta.mappedname(name));
                 for (int j = 0; j < nSites; j++) {
                     switch (seq[j]) {

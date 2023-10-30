@@ -1,4 +1,8 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
+
+/* CHANGE LOG
+ * 1: Modified the logic in parsing FASTA names 
+ */
 
 #include<iostream>
 #include<fstream>
@@ -32,6 +36,27 @@ typedef int count_t;
 using namespace std;
 
 int GENE_ID = 0;
+
+string getFastaName(const string &fasta){
+    int i = 0;
+    string res;
+    while (i < fasta.size() && fasta[i] == ' ') i++;
+    if (i == fasta.size() || fasta[i] != '>'){
+        cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+        exit(0);
+    }
+    i++;
+    while (i < fasta.size() && fasta[i] == ' ') i++;
+    while (i < fasta.size() && fasta[i] != ' ') {
+        res += fasta[i];
+        i++;
+    }
+    if (res.size() == 0){
+        cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+        exit(0);
+    }
+    return res;
+}
 
 pair<string, string> resolveDiploid(const string &seq){
 	pair<string, string> res;
@@ -135,18 +160,18 @@ struct Workflow {
             vector<array<unsigned short, 4> > freq;
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             while (name != "") {
-                addName(meta.mappedname(name.substr(1)));
+                addName(meta.mappedname(getFastaName(name)));
                 name = "";
                 string seq, line;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
                 if (freq.size() != seq.size()) {
                     if (freq.size() == 0) freq.resize(seq.size());
-                    else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
+                    else { cerr << "File '" << file << "' is ill-formated.\n"; exit(0); }
                 }
                 for (size_t i = 0; i < seq.size(); i++) {
                     switch (seq[i]) {
@@ -171,14 +196,14 @@ struct Workflow {
         {
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             vector<int> ind2species;
             size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
             while (name != "") {
-                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
+                ind2species.push_back(name2id[meta.mappedname(getFastaName(name))]);
                 name = "";
                 string line, seq;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
@@ -201,18 +226,18 @@ struct Workflow {
             vector<array<unsigned short, 4> > freq;
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             while (name != "") {
-                addName(meta.mappedname(name.substr(1)));
+                addName(meta.mappedname(getFastaName(name)));
                 name = "";
                 string seq, line;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
                 if (freq.size() != seq.size()) {
                     if (freq.size() == 0) freq.resize(seq.size());
-                    else { cerr << "File '" << file << "' is ill-formated."; exit(0); }
+                    else { cerr << "File '" << file << "' is ill-formated.\n"; exit(0); }
                 }
 				pair<string, string> seqs = resolveDiploid(seq);
                 for (size_t i = 0; i < seq.size(); i++) {
@@ -245,15 +270,15 @@ struct Workflow {
         {
             ifstream fin(file);
             string name;
-            fin >> name;
+            getline(fin, name);
             vector<int> ind2species;
             size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
             while (name != "") {
-                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
-                ind2species.push_back(name2id[meta.mappedname(name.substr(1))]);
+                ind2species.push_back(name2id[meta.mappedname(getFastaName(name))]);
+                ind2species.push_back(name2id[meta.mappedname(getFastaName(name))]);
                 name = "";
                 string line, seq;
-                while (fin >> line) {
+                while (getline(fin, line)) {
                     if (line[0] == '>') { name = line; break; }
                     seq += line;
                 }
@@ -283,7 +308,7 @@ struct Workflow {
             for (int i = 0; i < nTaxa; i++){
                 string name, seq;
                 fin >> name >> seq;
-                if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
+                if (seq.size() != nSites) { cerr << "The input is ill-formated.\n"; exit(0); }
                 addName(meta.mappedname(name));
                 for (int j = 0; j < seq.size(); j++) {
                     switch (seq[j]) {
@@ -335,7 +360,7 @@ struct Workflow {
             for (int i = 0; i < nTaxa; i++){
                 string name, seq;
                 fin >> name >> seq;
-                if (seq.size() != nSites) { cerr << "The input is ill-formated."; exit(0); }
+                if (seq.size() != nSites) { cerr << "The input is ill-formated.\n"; exit(0); }
                 addName(meta.mappedname(name));
 				pair<string, string> seqs = resolveDiploid(seq);
                 for (int j = 0; j < seq.size(); j++) {
