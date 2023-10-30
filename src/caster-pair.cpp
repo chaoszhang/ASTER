@@ -1,4 +1,4 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
 
 /* CHANGE LOG
  * 1: Modified the logic in parsing FASTA names 
