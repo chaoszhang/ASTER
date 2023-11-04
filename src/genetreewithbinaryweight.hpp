@@ -399,7 +399,7 @@ struct Quadrupartition{
 			w.aZcd = u.aZcd + v.aZcd + (u.cdX - u.cdY) * v.a + (v.cdX - v.cdY) * u.a;
 			w.bZcd = u.bZcd + v.bZcd + (u.cdX - u.cdY) * v.b + (v.cdX - v.cdY) * u.b;
 			w.acZb = u.acZb + v.acZb + (u.acX - u.acY) * v.b + (v.acX - v.acY) * u.b;
-			w.aZbd = u.acZb + v.aZbd + (u.bdX - u.bdY) * v.a + (v.bdX - v.bdY) * u.a;
+			w.aZbd = u.aZbd + v.aZbd + (u.bdX - u.bdY) * v.a + (v.bdX - v.bdY) * u.a;
 			w.acZd = u.acZd + v.acZd + (u.acX - u.acY) * v.d + (v.acX - v.acY) * u.d;
 			w.bdZc = u.bdZc + v.bdZc + (u.bdX - u.bdY) * v.c + (v.bdX - v.bdY) * u.c;
 			w.aZbc = u.aZbc + v.aZbc + (u.bcX - u.bcY) * v.a + (v.bcX - v.bcY) * u.a;
@@ -437,7 +437,7 @@ struct Quadrupartition{
 			w.annot.ad_bc.sumLengthA = u.Ad_c * v.b + v.Ad_c * u.b + u.Ad_b * v.c + v.Ad_b * u.c + u.A_bc * v.d + v.A_bc * u.d + u.A * v.bc_d + v.A * u.bc_d + u.a * v.Ad_bc + v.a * u.Ad_bc + u.Adx * v.bcx - u.Ady * v.bcy + v.Adx * u.bcx - v.Ady * u.bcy;
             w.annot.ad_bc.sumLengthD = u.Da_c * v.b + v.Da_c * u.b + u.Da_b * v.c + v.Da_b * u.c + u.D_bc * v.a + v.D_bc * u.a + u.D * v.a_bc + v.D * u.a_bc + u.d * v.Da_bc + v.d * u.Da_bc + u.Dax * v.bcx - u.Day * v.bcy + v.Dax * u.bcx - v.Day * u.bcy;
             w.annot.ad_bc.sumLengthC = u.Cb_a * v.d + v.Cb_a * u.d + u.Cb_d * v.a + v.Cb_d * u.a + u.C_ad * v.b + v.C_ad * u.b + u.C * v.ad_b + v.C * u.ad_b + u.c * v.Cb_ad + v.c * u.Cb_ad + u.Cbx * v.adx - u.Cby * v.ady + v.Cbx * u.adx - v.Cby * u.ady;
-            w.annot.ad_bc.sumLengthB = u.Bc_a * v.d + v.Bc_a * u.d + u.Bc_d * v.a + v.Bc_d * u.A + u.B_ad * v.c + v.B_ad * u.c + u.B * v.ad_c + v.B * u.ad_c + u.b * v.Bc_ad + v.b * u.Bc_ad + u.Bcx * v.adx - u.Bcy * v.ady + v.Bcx * u.adx - v.Bcy * u.ady;
+            w.annot.ad_bc.sumLengthB = u.Bc_a * v.d + v.Bc_a * u.d + u.Bc_d * v.a + v.Bc_d * u.a + u.B_ad * v.c + v.B_ad * u.c + u.B * v.ad_c + v.B * u.ad_c + u.b * v.Bc_ad + v.b * u.Bc_ad + u.Bcx * v.adx - u.Bcy * v.ady + v.Bcx * u.adx - v.Bcy * u.ady;
 			w.annot.ad_bc.sumInternalLength = u.adZb * v.c + v.adZb * u.c + u.adZc * v.b + v.adZc * u.b + u.aZbc * v.d + v.aZbc * u.d + u.a * v.bcZd + v.a * u.bcZd
 											+ u.adX * v.bcx - u.adY * v.bcy + u.adx * v.bcX - u.ady * v.bcY + v.adX * u.bcx - v.adY * u.bcy + v.adx * u.bcX - v.ady * u.bcY;
 

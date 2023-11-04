@@ -364,7 +364,7 @@ struct Workflow {
                 case 10: init<10>(); break;
                 default: cerr << "Bad k-mer size!\n"; exit(0);
             }
-    }
+        }
         else readAlignment();
 
         size_t nChunk = meta.nThreads;
@@ -419,7 +419,8 @@ struct Workflow {
                     LOG << "Early termination of k-mer search due to high fill rate after processing" << i + 1 << " samples. You may consider increasing K for a larger Hash table if this number is too low." << endl;
                 }
             }
-            freqPatterns = table.frequentPatterns(KmerTable<K>::LEN / files.size(), selected.size() == files.size());
+            size_t patternCnt = min(KmerTable<K>::LEN * 4 / files.size(), KmerTable<K>::LEN / 8);
+            freqPatterns = table.frequentPatterns(patternCnt, selected.size() == files.size());
 
             if (ARG.getIntArg("mode") == 2){
                 if (ARG.getStringArg("output") == "<standard output>"){
