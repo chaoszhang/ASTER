@@ -87,6 +87,18 @@ Since CASTER-site and CASTER-pair assume different models, please run both and c
 
 )V0G0N";
 
+const string WASTER_UNIQUE_INTRO = R"V0G0N(# Without-Alignment/Assembly Species Tree EstimatoR † (WASTER)
+
+WASTER is a coalesence-aware ***de novo*** species tree inference tool, which means it can take as inputs raw reads in FASTQ format.
+Paticularly, WASTER can accurately infer species tree even from Illumina reads with only ***1.5X depth***.
+WASTER infers the species tree by first calling SNPs from reads/assembies and then invoking CASTER to reconstruct the species tree from the SNPs.
+
+## Publication
+
+TBA
+
+)V0G0N";
+
 const string SHARED_INTRO = R"V0G0N(
 # Announcements
 
@@ -251,8 +263,8 @@ Please make sure you removed paralogous alignment regions using `RepeatMasker` o
 * The input can also be a text file containing a list of Fasta files (one file per line) if you add `-f list` to input arguments
 * The input can also be a single Phylip files or vertically concatenated Phylip files in one file by adding `-f phylip` to input arguments
 * The input files can have missing taxa and multiple individuals/copies per species.
-* When individuals/copies/genes from the same species are available, you need to let CASTER to know that they are frome the same species. You can do this in two ways.
-  1. You can give multiple individuals/copies/genes from the same species the same name in the input gene trees.
+* When individuals/copies/genes from the same species are available, you need to let CASTER to know that they are from the same species. You can do this in two ways.
+  1. You can give multiple individuals/copies/genes from the same species the same name in the input alignment.
   2. OR, a mapping file needs to be provided using the `-a` option.
 ```
 individual_A1 species_name_A
@@ -362,6 +374,44 @@ CG
 >species_A
 TG
 ```
+
+# OUTPUT
+The output in is Newick format and gives:
+
+* the species tree topology
+* branch supports measured as local bootstrap support (>95.0 means good)
+* It can also annotate branches with other quantities, such as quartet scores and local bootstraps for all three topologies.
+)V0G0N";
+
+const string WASTER_IO = R"V0G0N(
+# STOP!
+If you have ***overlapping*** paired-end sequencing reads, please make sure you have merged them using [`BBMerge`](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbmerge-guide/) or alike.
+This will improve the accuracy of WASTER on biological datasets!
+If you have non-overlapping paired-end sequencing reads, great!
+With the same sequencing depth, WASTER prefers non-overlapping reads.
+
+# INPUT
+The input is a text file containing a list of species names each followed by a Fasta/Fastq file (one species name and one file per line). For example:
+```
+speciesA	example/waster/filename1.fa
+speciesB	example/waster/filename2.fa
+speciesC	example/waster/filename3.fq
+speciesD	example/waster/filename4.fq
+```
+Make sure input files are ***not zipped***.
+
+
+When multiple individuals from the same species are available, you need to let WASTER to know that they are from the same species.
+  1. You can give multiple individuals from the same species the same name in the input list.
+```
+speciesA	example/waster/filename1.fa
+speciesA	example/waster/filename2.fa
+speciesB	example/waster/filename3.fq
+speciesB	example/waster/filename4.fq
+...
+```
+***WARNING: Never use this method to input pair-end reads files!!!***
+If your pair-end reads overlap, then merge them using [`BBMerge`](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbmerge-guide/) or alike; otherwise `cat` them into one file.
 
 # OUTPUT
 The output in is Newick format and gives:
@@ -498,6 +548,15 @@ bin/astral-hybrid -a example/genetree.map example/genetree.nw
 When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
 )V0G0N";
 
+const string WASTER_UNIQUE_EXE = R"V0G0N(
+***Notice:*** By default, WASTER will create a 32 GB look-up table to find SNPs. So, if you are running on a machine with <64 GB memory, you need to shrink the look-up table size using `-k 8` or `-k 7` even for the example run.
+Using `-k 8` requires about 4 GB memory and `-k 7` only requires <1 GB memory.
+Try the following example run:
+```
+bin/waster-site -k 7 example/waster/input_list.txt
+```
+)V0G0N";
+
 const string SHARED_ADV = R"V0G0N(
 ## Advanced Options
 
@@ -556,6 +615,7 @@ bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
 If you do not want to compute optimal species tree but instead just want to root and tag gene trees, you can use the following command:
 
 ```
+make astral-pro_int128
 bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 ```
 )V0G0N";
@@ -571,6 +631,7 @@ bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 
 ```
+make astral_int128
 bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
 ```
 )V0G0N";
@@ -586,6 +647,7 @@ bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 Species tree with more than **2000** taxa may cause **floating point underflow or precision issue**. Use the following command instead:
 
 ```
+make astral-weighted_precise
 bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
 ```
 )V0G0N";
@@ -593,6 +655,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
     const string ASTRAL = "astral";
     const string WASTRAL = "astral-hybrid";
     const string CASTER = "caster-site";
+    const string WASTER = "waster-site";
 
     string replace(string txt, string from, string to){
         return regex_replace(txt, regex(from), to);
@@ -604,6 +667,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) rawtext = ASTRAL_UNIQUE_INTRO;
         if (programName == WASTRAL) rawtext = WASTRAL_UNIQUE_INTRO;
         if (programName == CASTER) rawtext = CASTER_UNIQUE_INTRO;
+        if (programName == WASTER) rawtext = WASTER_UNIQUE_INTRO;
         return replace(rawtext, "VERSION", version);
     }
 
@@ -612,6 +676,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral");
         if (programName == WASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral-hybrid");
         if (programName == CASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "caster-site");
+        if (programName == WASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "waster-site");
         return SHARED_INTRO;
     }
 
@@ -620,6 +685,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return ASTRAL_IO;
         if (programName == WASTRAL) return WASTRAL_IO;
         if (programName == CASTER) return CASTER_IO;
+        if (programName == WASTER) return WASTER_IO;
         return "";
     }
 
@@ -628,6 +694,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == CASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
+        if (programName == WASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "waster-site"), "EXAMPLE_INPUT", "waster/input_list.txt");
         return SHARED_EXE;
     }
 
@@ -635,6 +702,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == APRO) return APRO_UNIQUE_EXE;
         if (programName == ASTRAL) return ASTRAL_UNIQUE_EXE;
         if (programName == WASTRAL) return WASTRAL_UNIQUE_EXE;
+        if (programName == WASTER) return WASTER_UNIQUE_EXE;
         return "";
     }
 
@@ -643,6 +711,7 @@ bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral-hybrid"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == CASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
+        if (programName == WASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "waster-site"), "EXAMPLE_INPUT", "waster/input_list.txt");
         return SHARED_ADV;
     }
 

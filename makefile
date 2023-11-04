@@ -47,9 +47,9 @@ sister: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/sister.cpp -o bin/sister || g++ -std=gnu++17 -O2 -pthread src/sister.cpp -o bin/sister
 	
 dir:
-	mkdir -p bin
-	echo 'If installation failed, please ensure g++ version >= 7.5.0'
 	g++ -v 2>&1 | tail -n 1
+	echo 'If installation failed, please ensure g++ version >= 7.5.0'
+	mkdir -p bin
 	
 clean:
 	rm bin/*
@@ -65,3 +65,4 @@ tutorial: all
 	bin/astral-pro -H
 	bin/astral-hybrid -H
 	bin/caster-site -H
+	bin/waster-site -H

@@ -1,0 +1,4 @@
+speciesA	example/waster/filename1.fa
+speciesB	example/waster/filename2.fa
+speciesC	example/waster/filename3.fq
+speciesD	example/waster/filename4.fq
