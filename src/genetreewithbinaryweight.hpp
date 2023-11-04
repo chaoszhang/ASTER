@@ -1,6 +1,7 @@
-#define OBJECTIVE_VERSION "2"
+#define OBJECTIVE_VERSION "3"
 
 /* CHANGE LOG
+ * 3. code refactoring
  * 2. add customized annotation for branch lengths
  * 1. replace genetree.hpp as the default objective for astral.cpp
  */
@@ -18,11 +19,21 @@ using namespace std;
 struct CustomizedAnnotation{
 	struct Quadrupartition{
 		score_t quartetCnt = 0;
-		double sumInternalLength = 0;
-		double sumLengthA = 0;
-		double sumLengthB = 0;
-		double sumLengthC = 0;
-		double sumLengthD = 0;
+		length_t sumInternalLength = 0;
+		length_t sumLengthA = 0;
+		length_t sumLengthB = 0;
+		length_t sumLengthC = 0;
+		length_t sumLengthD = 0;
+
+		void numericalBalancing(){
+			if (quartetCnt == 0){
+				sumInternalLength = 0;
+				sumLengthA = 0;
+				sumLengthB = 0;
+				sumLengthC = 0;
+				sumLengthD = 0;
+			}
+		}
 
 		Quadrupartition operator+ (const Quadrupartition& o) const{
 			Quadrupartition r;
@@ -32,6 +43,7 @@ struct CustomizedAnnotation{
 			r.sumLengthB = sumLengthB + o.sumLengthB;
 			r.sumLengthC = sumLengthC + o.sumLengthC;
 			r.sumLengthD = sumLengthD + o.sumLengthD;
+			r.numericalBalancing();
 			return r;
 		}
 
@@ -42,6 +54,7 @@ struct CustomizedAnnotation{
 			sumLengthB += o.sumLengthB;
 			sumLengthC += o.sumLengthC;
 			sumLengthD += o.sumLengthD;
+			numericalBalancing();
 			return *this;
 		}
 
@@ -53,6 +66,7 @@ struct CustomizedAnnotation{
 			r.sumLengthB = sumLengthB - o.sumLengthB;
 			r.sumLengthC = sumLengthC - o.sumLengthC;
 			r.sumLengthD = sumLengthD - o.sumLengthD;
+			r.numericalBalancing();
 			return r;
 		}
 	} ab_cd, ac_bd, ad_bc;
@@ -86,7 +100,7 @@ struct TripartitionInitializer{
 	struct Node{
 		int up = -1, small = -1, large = -1;
 		bool isGhostBranch = 1;
-		double length = 0;
+		length_t length = 0;
 	};
 	
 	vector<vector<Node> > nodes;
@@ -203,243 +217,145 @@ struct Tripartition{
 struct Quadrupartition{
 	struct Partition{
 		struct Node{
+			struct Topology{
+				score_t pq_r = 0, pq_s = 0, p_rs = 0, q_rs = 0;
+				score_t pqx = 0, rsx = 0, pqy = 0, rsy = 0;
+				score_t pq_rs = 0;
+				length_t Pqx = 0, Qpx = 0, Rsx = 0, Srx = 0;
+				length_t Pqy = 0, Qpy = 0, Rsy = 0, Sry = 0;
+				length_t pqX = 0, rsX = 0;
+				length_t pqY = 0, prY = 0, psY = 0, qrY = 0, qsY = 0, rsY = 0; 
+				length_t Pq_r = 0, Pq_s = 0, P_rs = 0;
+				length_t Qp_r = 0, Qp_s = 0, Q_rs = 0;
+				length_t Rs_q = 0, Rs_p = 0, R_pq = 0;
+				length_t Sr_q = 0, Sr_p = 0, S_pq = 0;
+				length_t pqZr = 0, pqZs = 0, pZrs = 0, qZrs = 0;
+				length_t Pq_rs = 0, Qp_rs = 0, Rs_pq = 0, Sr_pq = 0;
+			} ab_cd, ac_bd, ad_bc;
+
 			score_t a = 0, b = 0, c = 0, d = 0;
-			score_t ab_c = 0, ab_d = 0, a_cd = 0, b_cd = 0;
-			score_t ac_b = 0, a_bd = 0, ac_d = 0, bd_c = 0;
-			score_t a_bc = 0, ad_b = 0, ad_c = 0, bc_d = 0;
-			score_t abx = 0, acx = 0, adx = 0, bcx = 0, bdx = 0, cdx = 0;
-			score_t aby = 0, acy = 0, ady = 0, bcy = 0, bdy = 0, cdy = 0;
-			
-			score_t ab_cd = 0, ac_bd = 0, ad_bc = 0;
-			
+			length_t A = 0, B = 0, C = 0, D = 0;
 			int up = -1, small = -1, large = -1; // -1 for dummy!
 			bool isGhostBranch = 1;
-			double length = 0;
-
-			double A = 0, B = 0, C = 0, D = 0;
-			double Abx = 0, Acx = 0, Adx = 0, Bax = 0, Bcx = 0, Bdx = 0, Cax = 0, Cbx = 0, Cdx = 0, Dax = 0, Dbx = 0, Dcx = 0;
-			double Aby = 0, Acy = 0, Ady = 0, Bay = 0, Bcy = 0, Bdy = 0, Cay = 0, Cby = 0, Cdy = 0, Day = 0, Dby = 0, Dcy = 0;
-			double abX = 0, acX = 0, adX = 0, bcX = 0, bdX = 0, cdX = 0;
-			double abY = 0, acY = 0, adY = 0, bcY = 0, bdY = 0, cdY = 0; 
-			double Ab_c = 0, Ab_d = 0, Ac_b = 0, Ac_d = 0, Ad_b = 0, Ad_c = 0, A_bc = 0, A_bd = 0, A_cd = 0;
-			double Ba_c = 0, Ba_d = 0, Bc_a = 0, Bc_d = 0, Bd_a = 0, Bd_c = 0, B_ac = 0, B_ad = 0, B_cd = 0;
-			double Cb_a = 0, Cb_d = 0, Ca_b = 0, Ca_d = 0, Cd_b = 0, Cd_a = 0, C_ab = 0, C_bd = 0, C_ad = 0;
-			double Db_c = 0, Db_a = 0, Dc_b = 0, Dc_a = 0, Da_b = 0, Da_c = 0, D_bc = 0, D_ab = 0, D_ac = 0;
-			double abZc = 0, abZd = 0, aZcd = 0, bZcd = 0;
-			double acZb = 0, aZbd = 0, acZd = 0, bdZc = 0;
-			double aZbc = 0, adZb = 0, adZc = 0, bcZd = 0;
-			double Ab_cd = 0, Ac_bd = 0, Ad_bc = 0;
-			double Ba_cd = 0, Bc_ad = 0, Bd_ac = 0;
-			double Ca_bd = 0, Cb_ad = 0, Cd_ab = 0;
-			double Da_bc = 0, Db_ac = 0, Dc_ab = 0;
-
+			length_t length = 0;
 			CustomizedAnnotation annot;
 		};
-		
-		array<score_t, 3> normal(Node& w){
+
+		template<int T> void extended(Node& w, Node& u, Node& v){
+			Node::Topology& U = ((T == 0) ? u.ab_cd : (T == 1) ? u.ac_bd : u.ad_bc);
+			Node::Topology& V = ((T == 0) ? v.ab_cd : (T == 1) ? v.ac_bd : v.ad_bc);
+			Node::Topology& W = ((T == 0) ? w.ab_cd : (T == 1) ? w.ac_bd : w.ad_bc);
+			score_t up = u.a, vp = v.a;
+			score_t uq = ((T == 0) ? u.b : (T == 1) ? u.c : u.d);
+			score_t ur = ((T == 0) ? u.c : (T == 1) ? u.b : u.b);
+			score_t us = ((T == 0) ? u.d : (T == 1) ? u.d : u.c);
+			score_t vq = ((T == 0) ? v.b : (T == 1) ? v.c : v.d);
+			score_t vr = ((T == 0) ? v.c : (T == 1) ? v.b : v.b);
+			score_t vs = ((T == 0) ? v.d : (T == 1) ? v.d : v.c);
+			length_t uP = u.A, vP = v.A;
+			length_t uQ = ((T == 0) ? u.B : (T == 1) ? u.C : u.D);
+			length_t uR = ((T == 0) ? u.C : (T == 1) ? u.B : u.B);
+			length_t uS = ((T == 0) ? u.D : (T == 1) ? u.D : u.C);
+			length_t vQ = ((T == 0) ? v.B : (T == 1) ? v.C : v.D);
+			length_t vR = ((T == 0) ? v.C : (T == 1) ? v.B : v.B);
+			length_t vS = ((T == 0) ? v.D : (T == 1) ? v.D : v.C);
+			CustomizedAnnotation::Quadrupartition& annot = ((T == 0) ? w.annot.ab_cd : (T == 1) ? w.annot.ac_bd : w.annot.ad_bc);
+			
+			W.pqx = U.pqx + V.pqx + up * vq + vp * uq;
+			W.rsx = U.rsx + V.rsx + ur * vs + vr * us;
+
+			if (w.isGhostBranch) {
+				W.pqy = U.pqy + V.pqy + up * vq + vp * uq;
+				W.rsy = U.rsy + V.rsy + ur * vs + vr * us;
+			}
+			else {
+				W.pqy = W.rsy = 0;
+			}
+
+			W.pq_r = U.pq_r + V.pq_r + ur * (V.pqx - V.pqy) + (U.pqx - U.pqy) * vr;
+			W.pq_s = U.pq_s + V.pq_s + us * (V.pqx - V.pqy) + (U.pqx - U.pqy) * vs;
+			W.p_rs = U.p_rs + V.p_rs + up * (V.rsx - V.rsy) + (U.rsx - U.rsy) * vp;
+			W.q_rs = U.q_rs + V.q_rs + uq * (V.rsx - V.rsy) + (U.rsx - U.rsy) * vq;
+			
+			W.pq_rs = U.pqx * V.rsx - U.pqy * V.rsy + V.pqx * U.rsx - V.pqy * U.rsy
+					+ U.pq_r * vs + V.pq_r * us
+					+ U.pq_s * vr + V.pq_s * ur
+					+ U.p_rs * vq + V.p_rs * uq
+					+ U.q_rs * vp + V.q_rs * up;
+			
+			W.Pqx = U.Pqx + V.Pqx + uP * vq + vP * uq;
+			W.Qpx = U.Qpx + V.Qpx + uQ * vp + vQ * up;
+			W.Rsx = U.Rsx + V.Rsx + uR * vs + vR * us;
+			W.Srx = U.Srx + V.Srx + uS * vr + vS * ur;
+
+			W.pqX = U.pqX + V.pqX + W.pqx * w.length;
+			W.rsX = U.rsX + V.rsX + W.rsx * w.length;
+
+			if (w.isGhostBranch) {
+				W.Pqy = U.Pqy + V.Pqy + uP * vq + vP * uq;
+				W.Qpy = U.Qpy + V.Qpy + uQ * vp + vQ * up;
+				W.Rsy = U.Rsy + V.Rsy + uR * vs + vR * us;
+				W.Sry = U.Sry + V.Sry + uS * vr + vS * ur;
+				W.pqY = U.pqY + V.pqY + W.pqy * w.length;
+				W.rsY = U.rsY + V.rsY + W.rsy * w.length;
+			}
+			else {
+				W.Pqy = W.Qpy = W.Rsy = W.Sry = 0;
+				W.pqY = W.rsY = 0;
+			}
+
+			W.Pq_r = U.Pq_r + V.Pq_r + (U.Pqx - U.Pqy) * vr + (V.Pqx - V.Pqy) * ur;
+			W.Pq_s = U.Pq_s + V.Pq_s + (U.Pqx - U.Pqy) * vs + (V.Pqx - V.Pqy) * us;
+			W.Qp_r = U.Qp_r + V.Qp_r + (U.Qpx - U.Qpy) * vr + (V.Qpx - V.Qpy) * ur;
+			W.Qp_s = U.Qp_s + V.Qp_s + (U.Qpx - U.Qpy) * vs + (V.Qpx - V.Qpy) * us;
+			W.Rs_p = U.Rs_p + V.Rs_p + (U.Rsx - U.Rsy) * vp + (V.Rsx - V.Rsy) * up;
+			W.Rs_q = U.Rs_q + V.Rs_q + (U.Rsx - U.Rsy) * vq + (V.Rsx - V.Rsy) * uq;
+			W.Sr_p = U.Sr_p + V.Sr_p + (U.Srx - U.Sry) * vp + (V.Srx - V.Sry) * up;
+			W.Sr_q = U.Sr_q + V.Sr_q + (U.Srx - U.Sry) * vq + (V.Srx - V.Sry) * uq;
+			
+			W.P_rs = U.P_rs + V.P_rs + uP * (V.rsx - V.rsy) + vP * (U.rsx - U.rsy);
+			W.Q_rs = U.Q_rs + V.Q_rs + uQ * (V.rsx - V.rsy) + vQ * (U.rsx - U.rsy);
+			W.R_pq = U.R_pq + V.R_pq + uR * (V.pqx - V.pqy) + vR * (U.pqx - U.pqy);
+			W.S_pq = U.S_pq + V.S_pq + uS * (V.pqx - V.pqy) + vS * (U.pqx - U.pqy);
+			
+			W.pqZr = U.pqZr + V.pqZr + (U.pqX - U.pqY) * vr + (V.pqX - V.pqY) * ur;
+			W.pqZs = U.pqZs + V.pqZs + (U.pqX - U.pqY) * vs + (V.pqX - V.pqY) * us;
+			W.pZrs = U.pZrs + V.pZrs + (U.rsX - U.rsY) * vp + (V.rsX - V.rsY) * up;
+			W.qZrs = U.qZrs + V.qZrs + (U.rsX - U.rsY) * vq + (V.rsX - V.rsY) * uq;
+
+			W.Pq_rs = U.Pq_rs + V.Pq_rs + W.q_rs * w.length;
+			W.Qp_rs = U.Qp_rs + V.Qp_rs + W.p_rs * w.length;
+			W.Rs_pq = U.Rs_pq + V.Rs_pq + W.pq_s * w.length;
+			W.Sr_pq = U.Sr_pq + V.Sr_pq + W.pq_r * w.length;
+
+			annot.quartetCnt = W.pq_rs;
+			annot.sumLengthA = U.Pq_r * vs + V.Pq_r * us + U.Pq_s * vr + V.Pq_s * ur + U.P_rs * vq + V.P_rs * uq + uP * V.q_rs + vP * U.q_rs + up * V.Pq_rs + vp * U.Pq_rs + U.Pqx * V.rsx - U.Pqy * V.rsy + V.Pqx * U.rsx - V.Pqy * U.rsy;
+			annot.sumLengthB = U.Qp_r * vs + V.Qp_r * us + U.Qp_s * vr + V.Qp_s * ur + U.Q_rs * vp + V.Q_rs * up + uQ * V.p_rs + vQ * U.p_rs + uq * V.Qp_rs + vq * U.Qp_rs + U.Qpx * V.rsx - U.Qpy * V.rsy + V.Qpx * U.rsx - V.Qpy * U.rsy;
+			annot.sumLengthC = U.Rs_p * vq + V.Rs_p * uq + U.Rs_q * vp + V.Rs_q * up + U.R_pq * vs + V.R_pq * us + uR * V.pq_s + vR * U.pq_s + ur * V.Rs_pq + vr * U.Rs_pq + U.Rsx * V.pqx - U.Rsy * V.pqy + V.Rsx * U.pqx - V.Rsy * U.pqy;
+			annot.sumLengthD = U.Sr_p * vq + V.Sr_p * uq + U.Sr_q * vp + V.Sr_q * up + U.S_pq * vr + V.S_pq * ur + uS * V.pq_r + vS * U.pq_r + us * V.Sr_pq + vs * U.Sr_pq + U.Srx * V.pqx - U.Sry * V.pqy + V.Srx * U.pqx - V.Sry * U.pqy;
+			annot.sumInternalLength = U.pqZr * vs + V.pqZr * us + U.pqZs * vr + V.pqZs * ur + U.pZrs * vq + V.pZrs * uq + up * V.qZrs + vp * U.qZrs
+									+ U.pqX * V.rsx - U.pqY * V.rsy + U.pqx * V.rsX - U.pqy * V.rsY + V.pqX * U.rsx - V.pqY * U.rsy + V.pqx * U.rsX - V.pqy * U.rsY;
+		}
+
+		CustomizedAnnotation extended(Node& w){
+			CustomizedAnnotation old = w.annot;
+
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
-			
+
 			w.a = u.a + v.a;
 			w.b = u.b + v.b;
 			w.c = u.c + v.c;
 			w.d = u.d + v.d;
-			w.abx = u.abx + v.abx + u.a * v.b + v.a * u.b;
-			w.acx = u.acx + v.acx + u.a * v.c + v.a * u.c;
-			w.adx = u.adx + v.adx + u.a * v.d + v.a * u.d;
-			w.bcx = u.bcx + v.bcx + u.b * v.c + v.b * u.c;
-			w.bdx = u.bdx + v.bdx + u.b * v.d + v.b * u.d;
-			w.cdx = u.cdx + v.cdx + u.c * v.d + v.c * u.d;
 			
-			if (w.isGhostBranch) {
-				w.aby = u.aby + v.aby + u.a * v.b + v.a * u.b;
-				w.acy = u.acy + v.acy + u.a * v.c + v.a * u.c;
-				w.ady = u.ady + v.ady + u.a * v.d + v.a * u.d;
-				w.bcy = u.bcy + v.bcy + u.b * v.c + v.b * u.c;
-				w.bdy = u.bdy + v.bdy + u.b * v.d + v.b * u.d;
-				w.cdy = u.cdy + v.cdy + u.c * v.d + v.c * u.d;
-			}
-			else w.aby = w.acy = w.ady = w.bcy = w.bdy = w.cdy = 0;
-			
-			w.ab_c = u.ab_c + v.ab_c + u.c * (v.abx - v.aby) + (u.abx - u.aby) * v.c;
-			w.ab_d = u.ab_d + v.ab_d + u.d * (v.abx - v.aby) + (u.abx - u.aby) * v.d;
-			w.a_cd = u.a_cd + v.a_cd + u.a * (v.cdx - v.cdy) + (u.cdx - u.cdy) * v.a;
-			w.b_cd = u.b_cd + v.b_cd + u.b * (v.cdx - v.cdy) + (u.cdx - u.cdy) * v.b;
-			
-			w.ac_b = u.ac_b + v.ac_b + u.b * (v.acx - v.acy) + (u.acx - u.acy) * v.b;
-			w.ac_d = u.ac_d + v.ac_d + u.d * (v.acx - v.acy) + (u.acx - u.acy) * v.d;
-			w.a_bd = u.a_bd + v.a_bd + u.a * (v.bdx - v.bdy) + (u.bdx - u.bdy) * v.a;
-			w.bd_c = u.bd_c + v.bd_c + u.c * (v.bdx - v.bdy) + (u.bdx - u.bdy) * v.c;
-			
-			w.ad_b = u.ad_b + v.ad_b + u.b * (v.adx - v.ady) + (u.adx - u.ady) * v.b;
-			w.ad_c = u.ad_c + v.ad_c + u.c * (v.adx - v.ady) + (u.adx - u.ady) * v.c;
-			w.a_bc = u.a_bc + v.a_bc + u.a * (v.bcx - v.bcy) + (u.bcx - u.bcy) * v.a;
-			w.bc_d = u.bc_d + v.bc_d + u.d * (v.bcx - v.bcy) + (u.bcx - u.bcy) * v.d;
-			
-			score_t ab_cd = w.ab_cd, ac_bd = w.ac_bd, ad_bc = w.ad_bc;
-			w.ab_cd = u.abx * v.cdx - u.aby * v.cdy + v.abx * u.cdx - v.aby * u.cdy
-					+ u.ab_c * v.d + v.ab_c * u.d
-					+ u.ab_d * v.c + v.ab_d * u.c
-					+ u.a_cd * v.b + v.a_cd * u.b
-					+ u.b_cd * v.a + v.b_cd * u.a;
-			w.ac_bd = u.acx * v.bdx - u.acy * v.bdy + v.acx * u.bdx - v.acy * u.bdy
-					+ u.ac_b * v.d + v.ac_b * u.d
-					+ u.a_bd * v.c + v.a_bd * u.c
-					+ u.ac_d * v.b + v.ac_d * u.b
-					+ u.bd_c * v.a + v.bd_c * u.a;
-			w.ad_bc = u.adx * v.bcx - u.ady * v.bcy + v.adx * u.bcx - v.ady * u.bcy
-					+ u.a_bc * v.d + v.a_bc * u.d
-					+ u.ad_b * v.c + v.ad_b * u.c
-					+ u.ad_c * v.b + v.ad_c * u.b
-					+ u.bc_d * v.a + v.bc_d * u.a;
-
-			return {w.ab_cd - ab_cd, w.ac_bd - ac_bd, w.ad_bc - ad_bc};
-		}
-
-		CustomizedAnnotation extended(Node& w){
-			Node& u = nodes[w.small];
-			Node& v = nodes[w.large];
-			
-			array<score_t, 3> normalArray = normal(w);
-			CustomizedAnnotation old = w.annot;
-			old.ab_cd.quartetCnt = -normalArray[0];
-			old.ac_bd.quartetCnt = -normalArray[1];
-			old.ad_bc.quartetCnt = -normalArray[2];
-
 			w.A = u.A + v.A + w.a * w.length;
 			w.B = u.B + v.B + w.b * w.length;
 			w.C = u.C + v.C + w.c * w.length;
 			w.D = u.D + v.D + w.d * w.length;
-			
-			w.Abx = u.Abx + v.Abx + u.A * v.b + v.A * u.b;
-			w.Acx = u.Acx + v.Acx + u.A * v.c + v.A * u.c;
-			w.Adx = u.Adx + v.Adx + u.A * v.d + v.A * u.d;
-			w.Bax = u.Bax + v.Bax + u.B * v.a + v.B * u.a;
-			w.Bcx = u.Bcx + v.Bcx + u.B * v.c + v.B * u.c;
-			w.Bdx = u.Bdx + v.Bdx + u.B * v.d + v.B * u.d;
-			w.Cax = u.Cax + v.Cax + u.C * v.a + v.C * u.a;
-			w.Cbx = u.Cbx + v.Cbx + u.C * v.b + v.C * u.b;
-			w.Cdx = u.Cdx + v.Cdx + u.C * v.d + v.C * u.d;
-			w.Dax = u.Dax + v.Dax + u.D * v.a + v.D * u.a;
-			w.Dbx = u.Dbx + v.Dbx + u.D * v.b + v.D * u.b;
-			w.Dcx = u.Dcx + v.Dcx + u.D * v.c + v.D * u.c;
 
-			w.abX = u.abX + v.abX + w.abx * w.length;
-			w.acX = u.acX + v.acX + w.acx * w.length;
-			w.adX = u.adX + v.adX + w.adx * w.length;
-			w.bcX = u.bcX + v.bcX + w.bcx * w.length;
-			w.bdX = u.bdX + v.bdX + w.bdx * w.length;
-			w.cdX = u.cdX + v.cdX + w.cdx * w.length;
-			
-			if (w.isGhostBranch) {
-				w.Aby = u.Aby + v.Aby + u.A * v.b + v.A * u.b;
-				w.Acy = u.Acy + v.Acy + u.A * v.c + v.A * u.c;
-				w.Ady = u.Ady + v.Ady + u.A * v.d + v.A * u.d;
-				w.Bay = u.Bay + v.Bay + u.B * v.a + v.B * u.a;
-				w.Bcy = u.Bcy + v.Bcy + u.B * v.c + v.B * u.c;
-				w.Bdy = u.Bdy + v.Bdy + u.B * v.d + v.B * u.d;
-				w.Cay = u.Cay + v.Cay + u.C * v.a + v.C * u.a;
-				w.Cby = u.Cby + v.Cby + u.C * v.b + v.C * u.b;
-				w.Cdy = u.Cdy + v.Cdy + u.C * v.d + v.C * u.d;
-				w.Day = u.Day + v.Day + u.D * v.a + v.D * u.a;
-				w.Dby = u.Dby + v.Dby + u.D * v.b + v.D * u.b;
-				w.Dcy = u.Dcy + v.Dcy + u.D * v.c + v.D * u.c;
-				w.abY = u.abY + v.abY + w.aby * w.length;
-				w.acY = u.acY + v.acY + w.acy * w.length;
-				w.adY = u.adY + v.adY + w.ady * w.length;
-				w.bcY = u.bcY + v.bcY + w.bcy * w.length;
-				w.bdY = u.bdY + v.bdY + w.bdy * w.length;
-				w.cdY = u.cdY + v.cdY + w.cdy * w.length;
-			}
-			else {
-				w.Aby = w.Acy = w.Ady = w.Bay = w.Bcy = w.Bdy = w.Cay = w.Cby = w.Cdy = w.Day = w.Dby = w.Dcy = 0;
-				w.abY = w.acY = w.adY = w.bcY = w.bdY = w.cdY = 0;
-			}
-
-			w.Ab_c = u.Ab_c + v.Ab_c + (u.Abx - u.Aby) * v.c + (v.Abx - v.Aby) * u.c;
-			w.Ab_d = u.Ab_d + v.Ab_d + (u.Abx - u.Aby) * v.d + (v.Abx - v.Aby) * u.d;
-			w.Ac_b = u.Ac_b + v.Ac_b + (u.Acx - u.Acy) * v.b + (v.Acx - v.Acy) * u.b;
-			w.Ac_d = u.Ac_d + v.Ac_d + (u.Acx - u.Acy) * v.d + (v.Acx - v.Acy) * u.d;
-			w.Ad_b = u.Ad_b + v.Ad_b + (u.Adx - u.Ady) * v.b + (v.Adx - v.Ady) * u.b;
-			w.Ad_c = u.Ad_c + v.Ad_c + (u.Adx - u.Ady) * v.c + (v.Adx - v.Ady) * u.c;
-			w.Ba_c = u.Ba_c + v.Ba_c + (u.Bax - u.Bay) * v.c + (v.Bax - v.Bay) * u.c;
-			w.Ba_d = u.Ba_d + v.Ba_d + (u.Bax - u.Bay) * v.d + (v.Bax - v.Bay) * u.d;
-			w.Bc_a = u.Bc_a + v.Bc_a + (u.Bcx - u.Bcy) * v.a + (v.Bcx - v.Bcy) * u.a;
-			w.Bc_d = u.Bc_d + v.Bc_d + (u.Bcx - u.Bcy) * v.d + (v.Bcx - v.Bcy) * u.d;
-			w.Bd_a = u.Bd_a + v.Bd_a + (u.Bdx - u.Bdy) * v.a + (v.Bdx - v.Bdy) * u.a;
-			w.Bd_c = u.Bd_c + v.Bd_c + (u.Bdx - u.Bdy) * v.c + (v.Bdx - v.Bdy) * u.c;
-			w.Ca_b = u.Ca_b + v.Ca_b + (u.Cax - u.Cay) * v.b + (v.Cax - v.Cay) * u.b;
-			w.Ca_d = u.Ca_d + v.Ca_d + (u.Cax - u.Cay) * v.d + (v.Cax - v.Cay) * u.d;
-			w.Cb_a = u.Cb_a + v.Cb_a + (u.Cbx - u.Cby) * v.a + (v.Cbx - v.Cby) * u.a;
-			w.Cb_d = u.Cb_d + v.Cb_d + (u.Cbx - u.Cby) * v.d + (v.Cbx - v.Cby) * u.d;
-			w.Cd_a = u.Cd_a + v.Cd_a + (u.Cdx - u.Cdy) * v.a + (v.Cdx - v.Cdy) * u.a;
-			w.Cd_b = u.Cd_b + v.Cd_b + (u.Cdx - u.Cdy) * v.b + (v.Cdx - v.Cdy) * u.b;
-			w.Da_b = u.Da_b + v.Da_b + (u.Dax - u.Day) * v.b + (v.Dax - v.Day) * u.b;
-			w.Da_c = u.Da_c + v.Da_c + (u.Dax - u.Day) * v.c + (v.Dax - v.Day) * u.c;
-			w.Db_a = u.Db_a + v.Db_a + (u.Dbx - u.Dby) * v.a + (v.Dbx - v.Dby) * u.a;
-			w.Db_c = u.Db_c + v.Db_c + (u.Dbx - u.Dby) * v.c + (v.Dbx - v.Dby) * u.c;
-			w.Dc_a = u.Dc_a + v.Dc_a + (u.Dcx - u.Dcy) * v.a + (v.Dcx - v.Dcy) * u.a;
-			w.Dc_b = u.Dc_b + v.Dc_b + (u.Dcx - u.Dcy) * v.b + (v.Dcx - v.Dcy) * u.b;
-			
-			w.A_bc = u.A_bc + v.A_bc + u.A * (v.bcx - v.bcy) + v.A * (u.bcx - u.bcy);
-			w.A_bd = u.A_bd + v.A_bd + u.A * (v.bdx - v.bdy) + v.A * (u.bdx - u.bdy);
-			w.A_cd = u.A_cd + v.A_cd + u.A * (v.cdx - v.cdy) + v.A * (u.cdx - u.cdy);
-			w.B_ac = u.B_ac + v.B_ac + u.B * (v.acx - v.acy) + v.B * (u.acx - u.acy);
-			w.B_ad = u.B_ad + v.B_ad + u.B * (v.adx - v.ady) + v.B * (u.adx - u.ady);
-			w.B_cd = u.B_cd + v.B_cd + u.B * (v.cdx - v.cdy) + v.B * (u.cdx - u.cdy);
-			w.C_ab = u.C_ab + v.C_ab + u.C * (v.abx - v.aby) + v.C * (u.abx - u.aby);
-			w.C_ad = u.C_ad + v.C_ad + u.C * (v.adx - v.ady) + v.C * (u.adx - u.ady);
-			w.C_bd = u.C_bd + v.C_bd + u.C * (v.bdx - v.bdy) + v.C * (u.bdx - u.bdy);
-			w.D_ab = u.D_ab + v.D_ab + u.D * (v.abx - v.aby) + v.D * (u.abx - u.aby);
-			w.D_ac = u.D_ac + v.D_ac + u.D * (v.acx - v.acy) + v.D * (u.acx - u.acy);
-			w.D_bc = u.D_bc + v.D_bc + u.D * (v.bcx - v.bcy) + v.D * (u.bcx - u.bcy);
-
-			w.abZc = u.abZc + v.abZc + (u.abX - u.abY) * v.c + (v.abX - v.abY) * u.c;
-			w.abZd = u.abZd + v.abZd + (u.abX - u.abY) * v.d + (v.abX - v.abY) * u.d;
-			w.aZcd = u.aZcd + v.aZcd + (u.cdX - u.cdY) * v.a + (v.cdX - v.cdY) * u.a;
-			w.bZcd = u.bZcd + v.bZcd + (u.cdX - u.cdY) * v.b + (v.cdX - v.cdY) * u.b;
-			w.acZb = u.acZb + v.acZb + (u.acX - u.acY) * v.b + (v.acX - v.acY) * u.b;
-			w.aZbd = u.aZbd + v.aZbd + (u.bdX - u.bdY) * v.a + (v.bdX - v.bdY) * u.a;
-			w.acZd = u.acZd + v.acZd + (u.acX - u.acY) * v.d + (v.acX - v.acY) * u.d;
-			w.bdZc = u.bdZc + v.bdZc + (u.bdX - u.bdY) * v.c + (v.bdX - v.bdY) * u.c;
-			w.aZbc = u.aZbc + v.aZbc + (u.bcX - u.bcY) * v.a + (v.bcX - v.bcY) * u.a;
-			w.adZb = u.adZb + v.adZb + (u.adX - u.adY) * v.b + (v.adX - v.adY) * u.b;
-			w.adZc = u.adZc + v.adZc + (u.adX - u.adY) * v.c + (v.adX - v.adY) * u.c;
-			w.bcZd = u.bcZd + v.bcZd + (u.bcX - u.bcY) * v.d + (v.bcX - v.bcY) * u.d;
-
-			w.Ab_cd = u.Ab_cd + v.Ab_cd + w.b_cd * w.length;
-			w.Ac_bd = u.Ac_bd + v.Ac_bd + w.bd_c * w.length;
-			w.Ad_bc = u.Ad_bc + v.Ad_bc + w.bc_d * w.length;
-			w.Ba_cd = u.Ba_cd + v.Ba_cd + w.a_cd * w.length;
-			w.Bc_ad = u.Bc_ad + v.Bc_ad + w.ad_c * w.length;
-			w.Bd_ac = u.Bd_ac + v.Bd_ac + w.ac_d * w.length;
-			w.Ca_bd = u.Ca_bd + v.Ca_bd + w.a_bd * w.length;
-			w.Cb_ad = u.Cb_ad + v.Cb_ad + w.ad_b * w.length;
-			w.Cd_ab = u.Cd_ab + v.Cd_ab + w.ab_d * w.length;
-			w.Da_bc = u.Da_bc + v.Da_bc + w.a_bc * w.length;
-			w.Db_ac = u.Db_ac + v.Db_ac + w.ac_b * w.length;
-			w.Dc_ab = u.Dc_ab + v.Dc_ab + w.ab_c * w.length;
-
-			w.annot.ab_cd.sumLengthA = u.Ab_c * v.d + v.Ab_c * u.d + u.Ab_d * v.c + v.Ab_d * u.c + u.A_cd * v.b + v.A_cd * u.b + u.A * v.b_cd + v.A * u.b_cd + u.a * v.Ab_cd + v.a * u.Ab_cd + u.Abx * v.cdx - u.Aby * v.cdy + v.Abx * u.cdx - v.Aby * u.cdy;
-			w.annot.ab_cd.sumLengthB = u.Ba_c * v.d + v.Ba_c * u.d + u.Ba_d * v.c + v.Ba_d * u.c + u.B_cd * v.a + v.B_cd * u.a + u.B * v.a_cd + v.B * u.a_cd + u.b * v.Ba_cd + v.b * u.Ba_cd + u.Bax * v.cdx - u.Bay * v.cdy + v.Bax * u.cdx - v.Bay * u.cdy;
-			w.annot.ab_cd.sumLengthC = u.Cd_a * v.b + v.Cd_a * u.b + u.Cd_b * v.a + v.Cd_b * u.a + u.C_ab * v.d + v.C_ab * u.d + u.C * v.ab_d + v.C * u.ab_d + u.c * v.Cd_ab + v.c * u.Cd_ab + u.Cdx * v.abx - u.Cdy * v.aby + v.Cdx * u.abx - v.Cdy * u.aby;
-			w.annot.ab_cd.sumLengthD = u.Dc_a * v.b + v.Dc_a * u.b + u.Dc_b * v.a + v.Dc_b * u.a + u.D_ab * v.c + v.D_ab * u.c + u.D * v.ab_c + v.D * u.ab_c + u.d * v.Dc_ab + v.d * u.Dc_ab + u.Dcx * v.abx - u.Dcy * v.aby + v.Dcx * u.abx - v.Dcy * u.aby;
-			w.annot.ab_cd.sumInternalLength = u.abZc * v.d + v.abZc * u.d + u.abZd * v.c + v.abZd * u.c + u.aZcd * v.b + v.aZcd * u.b + u.a * v.bZcd + v.a * u.bZcd
-											+ u.abX * v.cdx - u.abY * v.cdy + u.abx * v.cdX - u.aby * v.cdY + v.abX * u.cdx - v.abY * u.cdy + v.abx * u.cdX - v.aby * u.cdY;
-
-			w.annot.ac_bd.sumLengthA = u.Ac_b * v.d + v.Ac_b * u.d + u.Ac_d * v.b + v.Ac_d * u.b + u.A_bd * v.c + v.A_bd * u.c + u.A * v.bd_c + v.A * u.bd_c + u.a * v.Ac_bd + v.a * u.Ac_bd + u.Acx * v.bdx - u.Acy * v.bdy + v.Acx * u.bdx - v.Acy * u.bdy;
-            w.annot.ac_bd.sumLengthC = u.Ca_b * v.d + v.Ca_b * u.d + u.Ca_d * v.b + v.Ca_d * u.b + u.C_bd * v.a + v.C_bd * u.a + u.C * v.a_bd + v.C * u.a_bd + u.c * v.Ca_bd + v.c * u.Ca_bd + u.Cax * v.bdx - u.Cay * v.bdy + v.Cax * u.bdx - v.Cay * u.bdy;
-            w.annot.ac_bd.sumLengthB = u.Bd_a * v.c + v.Bd_a * u.c + u.Bd_c * v.a + v.Bd_c * u.a + u.B_ac * v.d + v.B_ac * u.d + u.B * v.ac_d + v.B * u.ac_d + u.b * v.Bd_ac + v.b * u.Bd_ac + u.Bdx * v.acx - u.Bdy * v.acy + v.Bdx * u.acx - v.Bdy * u.acy;
-            w.annot.ac_bd.sumLengthD = u.Db_a * v.c + v.Db_a * u.c + u.Db_c * v.a + v.Db_c * u.a + u.D_ac * v.b + v.D_ac * u.b + u.D * v.ac_b + v.D * u.ac_b + u.d * v.Db_ac + v.d * u.Db_ac + u.Dbx * v.acx - u.Dby * v.acy + v.Dbx * u.acx - v.Dby * u.acy;
-			w.annot.ac_bd.sumInternalLength = u.acZb * v.d + v.acZb * u.d + u.acZd * v.b + v.acZd * u.b + u.aZbd * v.c + v.aZbd * u.c + u.a * v.bdZc + v.a * u.bdZc
-											+ u.acX * v.bdx - u.acY * v.bdy + u.acx * v.bdX - u.acy * v.bdY + v.acX * u.bdx - v.acY * u.bdy + v.acx * u.bdX - v.acy * u.bdY;
-
-			w.annot.ad_bc.sumLengthA = u.Ad_c * v.b + v.Ad_c * u.b + u.Ad_b * v.c + v.Ad_b * u.c + u.A_bc * v.d + v.A_bc * u.d + u.A * v.bc_d + v.A * u.bc_d + u.a * v.Ad_bc + v.a * u.Ad_bc + u.Adx * v.bcx - u.Ady * v.bcy + v.Adx * u.bcx - v.Ady * u.bcy;
-            w.annot.ad_bc.sumLengthD = u.Da_c * v.b + v.Da_c * u.b + u.Da_b * v.c + v.Da_b * u.c + u.D_bc * v.a + v.D_bc * u.a + u.D * v.a_bc + v.D * u.a_bc + u.d * v.Da_bc + v.d * u.Da_bc + u.Dax * v.bcx - u.Day * v.bcy + v.Dax * u.bcx - v.Day * u.bcy;
-            w.annot.ad_bc.sumLengthC = u.Cb_a * v.d + v.Cb_a * u.d + u.Cb_d * v.a + v.Cb_d * u.a + u.C_ad * v.b + v.C_ad * u.b + u.C * v.ad_b + v.C * u.ad_b + u.c * v.Cb_ad + v.c * u.Cb_ad + u.Cbx * v.adx - u.Cby * v.ady + v.Cbx * u.adx - v.Cby * u.ady;
-            w.annot.ad_bc.sumLengthB = u.Bc_a * v.d + v.Bc_a * u.d + u.Bc_d * v.a + v.Bc_d * u.a + u.B_ad * v.c + v.B_ad * u.c + u.B * v.ad_c + v.B * u.ad_c + u.b * v.Bc_ad + v.b * u.Bc_ad + u.Bcx * v.adx - u.Bcy * v.ady + v.Bcx * u.adx - v.Bcy * u.ady;
-			w.annot.ad_bc.sumInternalLength = u.adZb * v.c + v.adZb * u.c + u.adZc * v.b + v.adZc * u.b + u.aZbc * v.d + v.aZbc * u.d + u.a * v.bcZd + v.a * u.bcZd
-											+ u.adX * v.bcx - u.adY * v.bcy + u.adx * v.bcX - u.ady * v.bcY + v.adX * u.bcx - v.adY * u.bcy + v.adx * u.bcX - v.ady * u.bcY;
+			extended<0>(w, u, v);
+			extended<1>(w, u, v);
+			extended<2>(w, u, v);
 
 			return w.annot - old;
 		}
@@ -482,7 +398,7 @@ struct Quadrupartition{
 					w = nodes[u].up;
 				}
 				score_t t = score1[u] + score2[u] + score3[u];
-				double dt = t;
+				length_t dt = t;
 				if (t > 0){
 					totalScore1 -= score1[u] / dt;
 					totalScore2 -= score2[u] / dt;

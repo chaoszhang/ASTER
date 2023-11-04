@@ -9,6 +9,8 @@
 
 #define ROOTING
 
+//#define ASTRALIV
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -22,6 +24,7 @@ using namespace std;
 //#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef __int128 score_t;
+typedef long double length_t;
 
 string to_string(const __int128 x){
 	return to_string((double) x);
@@ -32,6 +35,7 @@ ostream& operator<<(ostream& cout, __int128 x){
 }
 #else
 typedef long long score_t;
+typedef double length_t;
 #endif
 
 double from_string(const string s){
