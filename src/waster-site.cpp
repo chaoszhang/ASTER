@@ -416,8 +416,9 @@ struct Workflow {
                 }
                 table.postprocess();
                 LOG << "Hash table " << (int) (table.fillProportion() * 100) << "% filled." << endl;
-                if (i >= 3 && table.fillProportion() > 0.5){
+                if (i >= 3 && table.fillProportion() > 0.33){
                     LOG << "Early termination of k-mer search due to high fill rate after processing" << i + 1 << " samples. You may consider increasing K for a larger Hash table if this number is too low." << endl;
+                    break;
                 }
             }
             size_t patternCnt = min(KmerTable<K>::LEN * 4 / files.size(), KmerTable<K>::LEN / 8);
