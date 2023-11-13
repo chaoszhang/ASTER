@@ -98,4 +98,4 @@ Q: I have gene trees but they do not satisfy the requirements for Weighted ASTRA
 A: You can still use **ASTRAL**. By the way, this version of ASTRAL is also useful for finding the supertree.
 
 # ACKNOWLEGEMENT
-ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab.
+ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab and Rasmus Nielsen.
