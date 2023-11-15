@@ -63,7 +63,7 @@ We obtained the species tree from gene trees using wASTRAL-hybird VERSION [1].
 
 const string CASTER_UNIQUE_INTRO = R"V0G0N(# Coalescence-aware Alignment-based Species Tree EstimatoR (CASTER)
 
-[<img src="misc/CASTER.png" width="500"/>](misc/CASTER.png)
+[<img src="../misc/CASTER.png" width="500"/>](misc/CASTER.png)
 
 Genome-wide data have the promise of dramatically improving phylogenetic inferences. Yet, inferring the true phylogeny remains a challenge, mainly because the evolutionary histories of different genomic regions differ. The traditional concatenation approach ignores such differences, resulting in both theoretical and empirical shortcomings. In response, many discordance-aware inference methods have been developed. Yet, all have their own weaknesses. Many methods rely on short recombination-free genomic segments to build gene trees and thus suffer from a lack of signals for gene tree reconstruction, resulting in poor species tree. Some methods wrongly assume that the rate of evolution is uniform across the species tree. Yet, others lack enough scalability to analyze phylogenomic data.
 
@@ -91,7 +91,7 @@ Since CASTER-site and CASTER-pair assume different models, please run both and c
 
 const string WASTER_UNIQUE_INTRO = R"V0G0N(# Without-Alignment/Assembly Species Tree EstimatoR † (WASTER)
 
-[<img src="misc/WASTER.png" width="500"/>](misc/WASTER.png)
+[<img src="../misc/WASTER.png" width="500"/>](misc/WASTER.png)
 
 WASTER is a coalesence-aware ***de novo*** species tree inference tool, which means it can take as inputs raw reads in FASTQ format.
 Paticularly, WASTER can accurately infer species tree even from Illumina reads with only ***1.5X depth***.
