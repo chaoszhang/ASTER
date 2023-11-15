@@ -74,8 +74,13 @@ Please click the link below:
 3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
 4. [CASTER-site](tutorial/caster-site.md)
 5. [CASTER-pair](tutorial/caster-site.md)
+6. [WASTER-site](tutorial/waster-site.md)
 
 # HELP ME CHOOSE A SUITABLE TOOL
+
+Q: I have want to reconstruct a phylogenetic tree without alignments.
+
+A: I recommend **WASTER-site**, which can accurately infer family-level species tree with short reads with even 1.5X coverage. This tool can also be used to build an adequate order-level guide tree for CACTUS. (You will be amazed by how accurate this "guide tree" is!)
 
 Q: I have a supermatrix of SNPs in fasta/phylip format and I want a "quick-and-dirty" run to get an adequate phylogenetic tree.
 
