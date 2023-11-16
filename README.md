@@ -78,7 +78,7 @@ Please click the link below:
 
 # HELP ME CHOOSE A SUITABLE TOOL
 
-Q: I have want to reconstruct a phylogenetic tree without alignments.
+Q: I want to reconstruct a phylogenetic tree without alignments.
 
 A: I recommend **WASTER-site**, which can accurately infer family-level species tree with short reads with even 1.5X coverage. This tool can also be used to build an adequate order-level guide tree for CACTUS. (You will be amazed by how accurate this "guide tree" is!)
 
