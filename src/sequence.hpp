@@ -10,11 +10,14 @@
 
 #define CUSTOMIZED_ANNOTATION
 #define LOCAL_BOOTSTRAP
+#define CUSTOMIZED_ANNOTATION_LENGTH
+//#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 
 using namespace std;
 
 struct CustomizedAnnotation{
 	vector<array<score_t,3> > bs;
+	array<array<score_t,2>, 6> dist = {};
 
 	CustomizedAnnotation(){}
 	CustomizedAnnotation(int len): bs(len){}
@@ -29,11 +32,31 @@ struct CustomizedAnnotation{
 		return result;
 	}
 
+	array<score_t, 5> lengths(){
+		score_t ab = dist[0][0] / dist[0][1];
+		score_t axc = dist[1][0] / dist[1][1];
+		score_t axd = dist[2][0] / dist[2][1];
+		score_t bxc = dist[3][0] / dist[3][1];
+		score_t bxd = dist[4][0] / dist[4][1];
+		score_t cd = dist[5][0] / dist[5][1];
+		score_t x = max((axc + axd + bxc + bxd - 2 * ab - 2 * cd) / 4, (score_t) 0);
+		score_t a = max((axc + axd - cd) / 2 - x, (score_t) 0);
+		score_t b = max((bxc + bxd - cd) / 2 - x, (score_t) 0);
+		score_t c = max((axc + bxc - ab) / 2 - x, (score_t) 0);
+		score_t d = max((axd + bxd - ab) / 2 - x, (score_t) 0);
+		return {x, a, b, c, d};
+	}
+
 	CustomizedAnnotation operator+ (const CustomizedAnnotation& o) const{
 		CustomizedAnnotation r(bs.size());
 		for (int i = 0; i < bs.size(); i++){
 			for (int j = 0; j < 3; j++){
 				r.bs[i][j] = bs[i][j] + o.bs[i][j];
+			}
+		}
+		for (int i = 0; i < 6; i++){
+			for (int j = 0; j < 2; j++){
+				r.dist[i][j] = dist[i][j] + o.dist[i][j];
 			}
 		}
 		return r;
@@ -43,6 +66,11 @@ struct CustomizedAnnotation{
 		for (int i = 0; i < bs.size(); i++){
 			for (int j = 0; j < 3; j++){
 				bs[i][j] += o.bs[i][j];
+			}
+		}
+		for (int i = 0; i < 6; i++){
+			for (int j = 0; j < 2; j++){
+				dist[i][j] += o.dist[i][j];
 			}
 		}
 		return *this;
@@ -380,6 +408,17 @@ inline array<score_t, 3> quadPos(const array<array<unsigned short, 4>, 4> &cnt, 
 			quadPos(cnt[0], cnt[3], cnt[1], cnt[2], pi)};
 }
 
+inline array<unsigned, 2> blCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
+	unsigned SAB = 0, SA = 0, SB = 0;
+	for (int i = 0; i < 4; i++){
+		unsigned A = a[i], B = b[i];
+		SAB += A * B;
+		SA += A;
+		SB += B;
+	}
+	return {SAB, SA * SB};
+}
+
 struct Quadrupartition{
 	struct Gene{
 		struct Kernal {
@@ -458,6 +497,31 @@ struct Quadrupartition{
 			return scoreCache;
 		}
 
+		void blCnt(array<score_t, 2> &res, int i, int j){
+			long long S0 = 0, S1 = 0;
+			for (int iKernal = 0; iKernal < nKernal; iKernal++){
+				array<unsigned, 2> cnt = blCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
+				S0 += cnt[0];
+				S1 += cnt[1];
+			}
+			score_t SP2 = 0;
+			for (int i = 0; i < 4; i++){
+				SP2 += pi[i] * pi[i];
+			}
+			#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+			score_t num = S0 - S1 * SP2;
+			score_t denom = S1 * (1 - SP2);
+			cerr << SP2 << "\t" << S0 << "\t" << S1 << "\t" << num << "\t" << denom << "\t" << -log(num / denom) << endl;
+			if (denom < 1 || num < 0 || num > denom || denom > 20 * num) return;
+			res[0] += -denom * log(num / denom) * weight;
+			res[1] += denom * weight;
+			#endif
+			#ifdef CUSTOMIZED_ANNOTATION_LENGTH
+			res[0] += S1 - S0;
+			res[1] += S1;
+			#endif
+		}
+
 		void annotate(CustomizedAnnotation &annot){
 		#ifdef BLOCK_BOOTSTRAP
 			scoreCnt();
@@ -483,6 +547,12 @@ struct Quadrupartition{
 				}
 			}
 		#endif
+			blCnt(annot.dist[0], 0, 1);
+			blCnt(annot.dist[1], 0, 2);
+			blCnt(annot.dist[2], 0, 3);
+			blCnt(annot.dist[3], 1, 2);
+			blCnt(annot.dist[4], 1, 3);
+			blCnt(annot.dist[5], 2, 3);
 		}
 
 		void clearCntScore(){
@@ -530,7 +600,7 @@ struct Quadrupartition{
 			genes[a].annotate(local_result);
 		}
 		result = local_result;
-	}
+	} 
 
 	void update(int x, int i){
 		vector<thread> thrds;

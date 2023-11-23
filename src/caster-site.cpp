@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "1"
+#define DRIVER_VERSION "2"
 
 /* CHANGE LOG
+ * 2: Adding basic branch length functionality
  * 1: Modified the logic in parsing FASTA names 
  */
 

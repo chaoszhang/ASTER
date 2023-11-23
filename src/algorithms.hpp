@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.15"
+#define ALG_VERSION "v1.16"
 
 /* CHANGE LOG
+ * 1.16: adding support for annotations for branch lengths
  * 1.15: adding rooting option
  * 1.14: adding more information in -u 2 option
  * 1.13: adding species tree annotation functionality
@@ -1331,16 +1332,16 @@ struct ConstrainedOptimizationAlgorithm{
 			return names[i];
 		}
 		//r|u|c0c1|-
-		string res = "(";
+		string res;
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//ru|c1|c0|-
 		switchSubtree(quad, u, 1, 0);
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res += printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(node)) + ",";
+		string resL = printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(node));
 		//ru|c0|c1|-
 		switchSubtree(quad, get<0>(c), 2, 1);
 		switchSubtree(quad, get<1>(c), 1, 2);
-		res += printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(node)) + ")";
+		string resR = printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(node));
 		//r|u|c1|c0
 		switchSubtree(quad, u, 0, 1);
 		switchSubtree(quad, get<0>(c), 1, 3);
@@ -1406,14 +1407,28 @@ struct ConstrainedOptimizationAlgorithm{
 		#endif
 		#ifdef CUSTOMIZED_LENGTH
 		node->len = quad.length(score);
-		if (support != 0) res += ":" + to_string(node->len);
+		if (support != 0) res += string(":") + to_string(node->len);
+		#endif
+		#ifdef CUSTOMIZED_ANNOTATION_LENGTH
+		if (support != 0) {
+			array<score_t, 5> lengths = node->annot.lengths();
+			res += string(":") + to_string(lengths[0]);
+		}
+		#endif
+		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+		if (support != 0) {
+			array<score_t, 5> lengths = node->annot.lengths();
+			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(lengths[4]);
+			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(lengths[3]);
+			res += string(":") + to_string(lengths[0]);
+		}
 		#endif
 		#ifdef SUPPORT
 		if (3 * score[0] > tscore) node->len = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
 		else node->len = 0;
 		res += ":" + to_string(node->len);
 		#endif
-		return res;
+		return string("(") + resL + "," + resR + ")" + res;
 	}
 	
 	void printFreqQuadCSV(int v, int u, string top, ostream &fcsv, unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo){
