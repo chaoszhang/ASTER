@@ -1,4 +1,8 @@
-#define OBJECTIVE_VERSION "0"
+#define OBJECTIVE_VERSION "1"
+
+/* CHANGE LOG
+ * 1: add basic branch length function
+ */
 
 #include<vector>
 #include<array>

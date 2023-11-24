@@ -1,4 +1,8 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
+
+/* CHANGE LOG
+ * 4: add weighting by tree and other options
+ */
 
 #define ROOTING
 
@@ -51,6 +55,7 @@ unordered_map<string, int> &name2id = meta.name2id;
 vector<int> &nameCnts = meta.tripInit.nameCnts;
 score_t maxv = 100, minv = 0, defaultv = 0;
 double lengthFactor = -1;
+bool useSupport = true, useLength = true;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -75,20 +80,26 @@ int MAPPING(int begin, int end){
 }
 
 score_t WEIGHT_S(int begin, int end){
+	if (!useSupport) return 1;
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == begin) return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 	else return max((score_t)0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
 }
 
+score_t DEFAULT_WEIGHT_S(){
+	if (!useSupport) return 0;
+	else return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
+}
 score_t WEIGHT_L(int begin, int end){
+	if (!useLength) return 1;
 	int i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 1;
 	else return exp(lengthFactor * from_string(TEXT.substr(i + 1, end - i - 1)));
 }
 
-void parse(int parent = -1, bool isLeft = true){
+void parse(score_t treeweight, int parent = -1, bool isLeft = true){
 	int cur = tripInit.nodes[part].size();
 	tripInit.nodes[part].emplace_back();
 	tripInit.nodes[part][cur].up = parent;
@@ -97,21 +108,23 @@ void parse(int parent = -1, bool isLeft = true){
 	
 	if (TEXT[pos] == '(') { 
 		pos++;
-		parse(cur, true); 
+		parse(treeweight, cur, true); 
 		pos++;
-		parse(cur, false);
+		parse(treeweight, cur, false);
 		vector<int> lst;
 		lst.push_back(cur);
-		tripInit.nodes[part][cur].weight = max((score_t)0.0, (defaultv - minv) / (maxv - minv));
+		tripInit.nodes[part][cur].weight = DEFAULT_WEIGHT_S();
 		tripInit.nodes[part][cur].length = 1;
+		tripInit.nodes[part][cur].treeweight = treeweight;
 		while (TEXT[pos] != ')'){
 			int left = lst[rand() % lst.size()];
 			int up = tripInit.nodes[part].size();
 			tripInit.nodes[part].emplace_back();
 			lst.push_back(up);
 			if (cur == left) cur = up;
-			tripInit.nodes[part][up].weight = max((score_t)0.0, (defaultv - minv) / (maxv - minv));
+			tripInit.nodes[part][up].weight = DEFAULT_WEIGHT_S();
 			tripInit.nodes[part][up].length = 1;
+			tripInit.nodes[part][up].treeweight = treeweight;
 			int g = tripInit.nodes[part][left].up;
 			if (g != -1){
 				if (tripInit.nodes[part][g].small == left) tripInit.nodes[part][g].small = up;
@@ -121,12 +134,13 @@ void parse(int parent = -1, bool isLeft = true){
 			tripInit.nodes[part][left].up = up; 
 			tripInit.nodes[part][up].small = left;
 			pos++;
-			parse(up, false);
+			parse(treeweight, up, false);
 		}
 		int i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		tripInit.nodes[part][cur].weight = WEIGHT_S(i, pos);
 		tripInit.nodes[part][cur].length = WEIGHT_L(i, pos);
+		tripInit.nodes[part][cur].treeweight = treeweight;
 	} 
 	else {
 		int i = pos;
@@ -134,10 +148,11 @@ void parse(int parent = -1, bool isLeft = true){
 		tripInit.leafParent[part][MAPPING(i, pos)].push_back(cur);
 		tripInit.nodes[part][cur].weight = 1;
 		tripInit.nodes[part][cur].length = WEIGHT_L(i, pos);
+		tripInit.nodes[part][cur].treeweight = treeweight;
 	}
 }
 
-void readInputTrees(string input, string mapping) {
+void readInputTrees(string input, string mapping, string treeweights) {
 	if (mapping != ""){
 		ifstream fmap(mapping);
 		string gname, sname;
@@ -146,14 +161,18 @@ void readInputTrees(string input, string mapping) {
 			leafname_mapping[gname] = sname;
 		}
 	}
-	ifstream fin(input);
+	ifstream fin(input), ftw;
+	if (treeweights != "") ftw.open(treeweights);
+
 	string line;
 	while (getline(fin, line)) TEXT += line;
 	while (pos < TEXT.size()){
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
 		if (pos < TEXT.size()) {
 			part = K % tripInit.nodes.size();
-			parse();
+			score_t tw = 1;
+			if (treeweights != "") ftw >> tw;
+			parse(tw);
 			K++;
 		}
 	}
@@ -184,6 +203,8 @@ int main(int argc, char** argv){
 		ARG.getDoubleArg("max") = 1; ARG.getDoubleArg("min") = 0.333; ARG.getDoubleArg("default") = 0.333;
 	}, true);
 	ARG.addDoubleArg('w', "weight", -1, "Weight factor of total terminal branch lengths");
+	ARG.addIntArg(0, "mode", 1, "1: hybrid weighting, 2: support only, 3: length only, 4: unweighted");
+	ARG.addStringArg(0, "treeweights", "", "A list of gene tree weights, space/tab/new-line separated (default: uniform weights)");
 
 	int dupType = 1;
 	string mappingFile;
@@ -194,16 +215,9 @@ int main(int argc, char** argv){
 	defaultv = ARG.getDoubleArg("default");
 	lengthFactor = ARG.getDoubleArg("weight");
 	
-	/*
-	for (int i = 1; i < argc - 1; i += 2){
-		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-		else if (strcmp(argv[i], "-m") == 0) dupType = from_string(argv[i + 1]);
-		else if (strcmp(argv[i], "-x") == 0) maxv = from_string(argv[i + 1]);
-		else if (strcmp(argv[i], "-n") == 0) minv = from_string(argv[i + 1]);
-		else if (strcmp(argv[i], "-d") == 0) defaultv = from_string(argv[i + 1]);
-		else if (!meta.opt.isValid(argv[i])) {LOG << "Error: Failed to parse input arguments. Please try -h for correct formating.\n"; exit(0);}
-	}
-	*/
+	int mode = ARG.getIntArg("mode");
+	useSupport = (mode == 1 || mode == 2);
+	useLength = (mode == 1 || mode == 3);
 
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
@@ -219,7 +233,7 @@ int main(int argc, char** argv){
 			}
 		}
 	}
-	readInputTrees(ARG.getStringArg("input"), mappingFile);
+	readInputTrees(ARG.getStringArg("input"), mappingFile, ARG.getStringArg("treeweights"));
 	
 	if (dupType == 2){
 		for (string s: names){

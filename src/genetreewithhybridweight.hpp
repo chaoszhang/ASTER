@@ -1,4 +1,8 @@
-#define OBJECTIVE_VERSION "2"
+#define OBJECTIVE_VERSION "3"
+
+/* CHANGE LOG
+ * 3: add weighting by tree
+ */
 
 #include<vector>
 #include<array>
@@ -13,7 +17,7 @@ using namespace std;
 struct TripartitionInitializer{
 	struct Node{
 		int up = -1, small = -1, large = -1;
-		score_t weight = 1, length = 1;
+		score_t weight = 1, length = 1, treeweight = 1;
 	};
 	
 	vector<int> nameCnts;
@@ -29,7 +33,7 @@ struct Tripartition{
 			score_t x2b = 0, y2b = 0, z2b = 0, xyb = 0, xzb = 0, yzb = 0;
 			
 			int up = -1, small = -1, large = -1; // -1 for dummy!
-			score_t weight = 1, length = 1;
+			score_t weight = 1, length = 1, treeweight = 1;
 		};
 		
 		score_t normal(Node& w){
@@ -78,72 +82,10 @@ struct Tripartition{
 				nodes[i].large = init.nodes[p][i].large;
 				nodes[i].weight = init.nodes[p][i].weight;
 				nodes[i].length = init.nodes[p][i].length;
+				nodes[i].treeweight = init.nodes[p][i].treeweight;
 			}
 		}
-		/*
-		void reset(){
-			totalScore = 0;
-			version++;
-		}
-		
-		void addTotal(int i){
-			for (int w: leafParent[i]){
-				totalZ[w].z += totalZ[w].length;
-				w = totalZ[w].up;
-				while (w != -1){
-					Node& u = totalZ[totalZ[w].small];
-					Node& v = totalZ[totalZ[w].large];
-					totalZ[w].z = (u.z + v.z) * totalZ[w].length;
-					totalZ[w].z2a = u.z2a + v.z2a + u.z * v.z;
-					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * (1 - totalZ[w].weight);
-					w = totalZ[w].up;
-				}
-			}
-		}
-		
-		void rmvTotal(int i){
-			for (int w: leafParent[i]){
-				totalZ[w].z -= totalZ[w].length;
-				w = totalZ[w].up;
-				while (w != -1){
-					Node& u = totalZ[totalZ[w].small];
-					Node& v = totalZ[totalZ[w].large];
-					totalZ[w].z = (u.z + v.z) * totalZ[w].length;
-					totalZ[w].z2a = u.z2a + v.z2a + u.z * v.z;
-					totalZ[w].z2b = (u.z2b + v.z2b + u.z * v.z) * (1 - totalZ[w].weight);
-					w = totalZ[w].up;
-				}
-			}
-		}
-		
-		void add(int x, int i){
-			for (int u: leafParent[i]){
-				nodes[u].update(version, totalZ[u]);
-				((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y) += nodes[u].length;
-				int w = nodes[u].up;
-				while (w != -1){
-					nodes[w].update(version, totalZ[w]);
-					totalScore += normal(nodes[w]);
-					u = w;
-					w = nodes[u].up;
-				}
-			}
-		}
-		
-		void rmv(int x, int i){
-			for (int u: leafParent[i]){
-				nodes[u].update(version, totalZ[u]);
-				((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y) -= nodes[u].length;
-				int w = nodes[u].up;
-				while (w != -1){
-					nodes[w].update(version, totalZ[w]);
-					totalScore += normal(nodes[w]);
-					u = w;
-					w = nodes[u].up;
-				}
-			}
-		}
-		*/
+
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
@@ -152,7 +94,7 @@ struct Tripartition{
 				if (x != -1) ((x == 0) ? nodes[u].z : (x == 1) ? nodes[u].x : nodes[u].y) += nodes[u].length;
 				int w = nodes[u].up;
 				while (w != -1){
-					totalScore += normal(nodes[w]);
+					totalScore += normal(nodes[w]) * nodes[w].treeweight;
 					u = w;
 					w = nodes[u].up;
 				}
