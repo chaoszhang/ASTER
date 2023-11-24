@@ -1,7 +1,7 @@
 #define OBJECTIVE_VERSION "1"
 
 /* CHANGE LOG
- * 1: add basic branch length function
+ * 1: add branch length
  */
 
 #include<vector>
@@ -14,8 +14,6 @@
 
 #define CUSTOMIZED_ANNOTATION
 #define LOCAL_BOOTSTRAP
-#define CUSTOMIZED_ANNOTATION_LENGTH
-//#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 
 using namespace std;
 
@@ -515,9 +513,9 @@ struct Quadrupartition{
 			#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 			score_t num = S0 - S1 * SP2;
 			score_t denom = S1 * (1 - SP2);
-			cerr << SP2 << "\t" << S0 << "\t" << S1 << "\t" << num << "\t" << denom << "\t" << -log(num / denom) << endl;
+			// cerr << SP2 << "\t" << S0 << "\t" << S1 << "\t" << num << "\t" << denom << "\t" << -log(num / denom) << endl;
 			if (denom < 1 || num < 0 || num > denom || denom > 20 * num) return;
-			res[0] += -denom * log(num / denom) * weight;
+			res[0] += -log(num / denom) * (1 - SP2) * denom * weight;
 			res[1] += denom * weight;
 			#endif
 			#ifdef CUSTOMIZED_ANNOTATION_LENGTH

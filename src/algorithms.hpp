@@ -868,6 +868,7 @@ struct ConstrainedOptimizationAlgorithm{
 	int ROUND_NN = -1;
 
 	shared_ptr<AnnotatedTree> annotTree;
+	score_t tempSibling, tempRoot;
 
 	ConstrainedOptimizationAlgorithm(const int ntaxa, TripartitionInitializer &tripInit, const vector<string> &names, ThreadPool &TP, int ROUND_NN, const int seed = rand()):
 			ntaxa(ntaxa), tripInit(tripInit), names(names), TP(TP), ROUND_NN(ROUND_NN) {
@@ -1322,7 +1323,7 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 
 	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda,
-			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo, double weight, shared_ptr<AnnotatedTree::Node> node){
+			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo, double weight, shared_ptr<AnnotatedTree::Node> node, bool toplevel = false){
 		if (nodes[v].leafId != -1) {
 			int i = nodes[v].leafId;
 			array<double, 3> t;
@@ -1421,6 +1422,10 @@ struct ConstrainedOptimizationAlgorithm{
 			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(lengths[4]);
 			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(lengths[3]);
 			res += string(":") + to_string(lengths[0]);
+			if (toplevel) {
+				tempRoot = lengths[1];
+				tempSibling = lengths[2];
+			}
 		}
 		#endif
 		#ifdef SUPPORT
@@ -1447,6 +1452,9 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	string printOptimalTreeWithSupport(int support, double lambda, double weight){
+		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+		score_t siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
+		#endif
 		annotTree.reset(new AnnotatedTree());
 		shared_ptr<AnnotatedTree::Node> root = annotTree->addRoot();
 		shared_ptr<AnnotatedTree::Node> left = annotTree->addLeft(root);
@@ -1455,7 +1463,7 @@ struct ConstrainedOptimizationAlgorithm{
 		right->name = names[0];
 
 		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > qInfo;
-		string res;
+		
 		Quadrupartition quad(tripInit);
 		quad.update(0, 0);
 		for (int i = 1; i < names.size(); i++) quad.update(2, i);
@@ -1463,17 +1471,38 @@ struct ConstrainedOptimizationAlgorithm{
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-
 		switchSubtree(quad, get<1>(c), 2, 1);
-		res = "((" + printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(left));
+		string resL = printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(left), true);
+		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+		if (nodes[get<0>(c)].leafId == -1) {
+			siblingL = tempSibling;
+			rootSum += tempRoot;
+			rootCount++;
+		}
+		#endif
 		//0|c0|c1|-
 		switchSubtree(quad, get<1>(c), 1, 2);
 		switchSubtree(quad, get<0>(c), 2, 1);
-		res += "," + printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(left));
+		string resR = printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(left), true);
+		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+		if (nodes[get<1>(c)].leafId == -1) {
+			siblingR = tempSibling;
+			rootSum += tempRoot;
+			rootCount++;
+		}
+		if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(siblingR);
+		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
+		string res = string(":") + to_string(rootSum/rootCount/2) + "," + names[0] + ":" + to_string(rootSum/rootCount/2);
+		#else
+		string res = string(",") + names[0];
+		#endif
+
+
 		if (support == 3) {
 			ofstream fcsv("freqQuad.csv");
 			printFreqQuadCSV(get<0>(c), get<1>(c), names[0], fcsv, qInfo);
 			printFreqQuadCSV(get<1>(c), get<0>(c), names[0], fcsv, qInfo);
 		}
-		return res + ")," + names[0] + ");";
+		return string("((") + resL + "," + resR + ")" + res + ");";
 	}
 #endif
 };

@@ -1,7 +1,7 @@
 #define DRIVER_VERSION "2"
 
 /* CHANGE LOG
- * 2: Adding basic branch length functionality
+ * 2: Adding branch length functionality
  * 1: Modified the logic in parsing FASTA names 
  */
 
@@ -20,6 +20,11 @@
 #define ROOTING
 #define NAME_MAPPING
 #define BLOCK_BOOTSTRAP
+
+//#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+#ifndef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+#define CUSTOMIZED_ANNOTATION_LENGTH
+#endif
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -191,7 +196,11 @@ struct Workflow {
                     if (freq[i][j] >= 2) cnt++;
                     if (freq[i][j] == 1) cnt1++;
                 }
+                #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                keep[i] = true;
+                #else
                 keep[i] = (cnt >= 2 || cnt1 >= 2);
+                #endif
             }
         }
         {
@@ -265,7 +274,11 @@ struct Workflow {
                     if (freq[i][j] >= 2) cnt++;
                     if (freq[i][j] == 1) cnt1++;
                 }
+                #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                keep[i] = true;
+                #else
                 keep[i] = (cnt >= 2 || cnt1 >= 2);
+                #endif
             }
         }
         {
@@ -327,7 +340,11 @@ struct Workflow {
                     if (freq[i][j] >= 2) cnt++;
                     if (freq[i][j] == 1) cnt1++;
                 }
+                #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                keep[i] = true;
+                #else
                 keep[i] = (cnt >= 2 || cnt1 >= 2);
+                #endif
             }
         }
         {
@@ -387,7 +404,11 @@ struct Workflow {
                     if (freq[i][j] >= 2) cnt++;
                     if (freq[i][j] == 1) cnt1++;
                 }
+                #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                keep[i] = true;
+                #else
                 keep[i] = (cnt >= 2 || cnt1 >= 2);
+                #endif
             }
         }
         {
@@ -487,6 +508,10 @@ int main(int argc, char** argv){
 	ARG.addIntArg(0, "ambiguity", 0, "0 (default): ambiguity codes are treated as N, 1: ambiguity codes are treated as diploid unphased sites");
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
     
+    #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+    cerr << "Warning: This version can be much slower and require much more memory than the regular version. You might want to compute the correct topology first and add branch lengths with this version on fix topology.\n";
+    #endif
+
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
