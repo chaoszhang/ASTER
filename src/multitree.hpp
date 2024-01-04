@@ -1,4 +1,8 @@
-#define OBJECTIVE_VERSION "1"
+#define OBJECTIVE_VERSION "2"
+
+/* CHANGE LOG
+ * 2. add customized annotation for branch lengths
+ */
 
 #include <vector>
 #include <array>
@@ -6,15 +10,97 @@
 #include "threadpool.hpp"
 
 #define SUPPORT
+#define CUSTOMIZED_ANNOTATION
 
 using namespace std;
 
 score_t NUM_EQ_CLASSES = 0;
 
+struct CustomizedAnnotation{
+	struct Quadrupartition{
+		score_t quartetCnt = 0;
+		length_t sumInternalLength = 0;
+		length_t sumLengthA = 0;
+		length_t sumLengthB = 0;
+		length_t sumLengthC = 0;
+		length_t sumLengthD = 0;
+
+		void numericalBalancing(){
+			if (quartetCnt == 0){
+				sumInternalLength = 0;
+				sumLengthA = 0;
+				sumLengthB = 0;
+				sumLengthC = 0;
+				sumLengthD = 0;
+			}
+		}
+
+		Quadrupartition operator+ (const Quadrupartition& o) const{
+			Quadrupartition r;
+			r.quartetCnt = quartetCnt + o.quartetCnt;
+			r.sumInternalLength = sumInternalLength + o.sumInternalLength;
+			r.sumLengthA = sumLengthA + o.sumLengthA;
+			r.sumLengthB = sumLengthB + o.sumLengthB;
+			r.sumLengthC = sumLengthC + o.sumLengthC;
+			r.sumLengthD = sumLengthD + o.sumLengthD;
+			return r;
+		}
+
+		Quadrupartition& operator+= (const Quadrupartition& o){
+			quartetCnt += o.quartetCnt;
+			sumInternalLength += o.sumInternalLength;
+			sumLengthA += o.sumLengthA;
+			sumLengthB += o.sumLengthB;
+			sumLengthC += o.sumLengthC;
+			sumLengthD += o.sumLengthD;
+			return *this;
+		}
+
+		Quadrupartition operator- (const Quadrupartition& o) const{
+			Quadrupartition r;
+			r.quartetCnt = quartetCnt - o.quartetCnt;
+			r.sumInternalLength = sumInternalLength - o.sumInternalLength;
+			r.sumLengthA = sumLengthA - o.sumLengthA;
+			r.sumLengthB = sumLengthB - o.sumLengthB;
+			r.sumLengthC = sumLengthC - o.sumLengthC;
+			r.sumLengthD = sumLengthD - o.sumLengthD;
+			return r;
+		}
+	} ab_cd, ac_bd, ad_bc;
+	// a: left child, b: right child, c: sibling, d: outgroup
+
+	CustomizedAnnotation operator+ (const CustomizedAnnotation& o) const{
+		CustomizedAnnotation r;
+		r.ab_cd = ab_cd + o.ab_cd;
+		r.ac_bd = ac_bd + o.ac_bd;
+		r.ad_bc = ad_bc + o.ad_bc;
+		return r;
+	}
+
+	CustomizedAnnotation& operator+= (const CustomizedAnnotation& o){
+		ab_cd += o.ab_cd;
+		ac_bd += o.ac_bd;
+		ad_bc += o.ad_bc;
+		return *this;
+	}
+
+	CustomizedAnnotation operator- (const CustomizedAnnotation& o) const{
+		CustomizedAnnotation r;
+		r.ab_cd = ab_cd - o.ab_cd;
+		r.ac_bd = ac_bd - o.ac_bd;
+		r.ad_bc = ad_bc - o.ad_bc;
+		return r;
+	}
+};
+
 struct TripartitionInitializer{
 	struct Node{
 		int up = -1, small = -1, large = -1;
 		bool dup = false;
+
+		#ifdef CUSTOMIZED_ANNOTATION
+		length_t length;
+		#endif
 	};
 	
 	vector<vector<Node> > nodes;
@@ -159,6 +245,28 @@ struct Tripartition{
 struct Quadrupartition{
 	struct Partition{
 		struct Node{
+			#ifdef CUSTOMIZED_ANNOTATION
+			struct Topology{
+				score_t pq_r = 0, pq_s = 0, p_rs = 0, q_rs = 0;
+				score_t pq = 0, rs = 0;
+				score_t pq_rs = 0;
+				length_t Pq = 0, Qp = 0, Rs = 0, Sr = 0;
+				length_t pqX = 0, rsX = 0;
+				length_t Pq_r = 0, Pq_s = 0, P_rs = 0;
+				length_t Qp_r = 0, Qp_s = 0, Q_rs = 0;
+				length_t Rs_q = 0, Rs_p = 0, R_pq = 0;
+				length_t Sr_q = 0, Sr_p = 0, S_pq = 0;
+				length_t pqXr = 0, pqXs = 0, pXrs = 0, qXrs = 0;
+				length_t Pq_rs = 0, Qp_rs = 0, Rs_pq = 0, Sr_pq = 0;
+			} T_ab_cd, T_ac_bd, T_ad_bc;
+
+			score_t aa = 0, bb = 0, cc = 0, dd = 0;
+			length_t A = 0, B = 0, C = 0, D = 0;
+			// bool isGhostBranch = 1;
+			length_t length = 0;
+			CustomizedAnnotation annot;
+			#endif
+
 			score_t a = 0, b = 0, c = 0, d = 0;
 			score_t ab_c = 0, ab_d = 0, a_cd = 0, b_cd = 0;
 			score_t ac_b = 0, a_bd = 0, ac_d = 0, c_bd = 0;
@@ -168,7 +276,157 @@ struct Quadrupartition{
 			int up = -1, small = -1, large = -1; // -1 for dummy!
 			bool dup = false;
 		};
-		
+		#ifdef CUSTOMIZED_ANNOTATION
+		template<int T> void extended(Node& w, Node& u, Node& v){
+			Node::Topology& U = ((T == 0) ? u.T_ab_cd : (T == 1) ? u.T_ac_bd : u.T_ad_bc);
+			Node::Topology& V = ((T == 0) ? v.T_ab_cd : (T == 1) ? v.T_ac_bd : v.T_ad_bc);
+			Node::Topology& W = ((T == 0) ? w.T_ab_cd : (T == 1) ? w.T_ac_bd : w.T_ad_bc);
+			score_t up = u.aa, vp = v.aa;
+			score_t uq = ((T == 0) ? u.bb : (T == 1) ? u.cc : u.dd);
+			score_t ur = ((T == 0) ? u.cc : (T == 1) ? u.bb : u.bb);
+			score_t us = ((T == 0) ? u.dd : (T == 1) ? u.dd : u.cc);
+			score_t vq = ((T == 0) ? v.bb : (T == 1) ? v.cc : v.dd);
+			score_t vr = ((T == 0) ? v.cc : (T == 1) ? v.bb : v.bb);
+			score_t vs = ((T == 0) ? v.dd : (T == 1) ? v.dd : v.cc);
+			length_t uP = u.A, vP = v.A;
+			length_t uQ = ((T == 0) ? u.B : (T == 1) ? u.C : u.D);
+			length_t uR = ((T == 0) ? u.C : (T == 1) ? u.B : u.B);
+			length_t uS = ((T == 0) ? u.D : (T == 1) ? u.D : u.C);
+			length_t vQ = ((T == 0) ? v.B : (T == 1) ? v.C : v.D);
+			length_t vR = ((T == 0) ? v.C : (T == 1) ? v.B : v.B);
+			length_t vS = ((T == 0) ? v.D : (T == 1) ? v.D : v.C);
+			CustomizedAnnotation::Quadrupartition& annot = ((T == 0) ? w.annot.ab_cd : (T == 1) ? w.annot.ac_bd : w.annot.ad_bc);
+
+			if (w.dup == false){
+				W.pq = U.pq + V.pq + up * vq + vp * uq;
+				W.rs = U.rs + V.rs + ur * vs + vr * us;
+
+				W.pq_r = U.pq_r + V.pq_r + ur * V.pq + U.pq * vr;
+				W.pq_s = U.pq_s + V.pq_s + us * V.pq + U.pq * vs;
+				W.p_rs = U.p_rs + V.p_rs + up * V.rs + U.rs * vp;
+				W.q_rs = U.q_rs + V.q_rs + uq * V.rs + U.rs * vq;
+				
+				W.pq_rs = U.pq * V.rs + V.pq * U.rs
+						+ U.pq_r * vs + V.pq_r * us
+						+ U.pq_s * vr + V.pq_s * ur
+						+ U.p_rs * vq + V.p_rs * uq
+						+ U.q_rs * vp + V.q_rs * up;
+				
+				W.Pq = U.Pq + V.Pq + uP * vq + vP * uq;
+				W.Qp = U.Qp + V.Qp + uQ * vp + vQ * up;
+				W.Rs = U.Rs + V.Rs + uR * vs + vR * us;
+				W.Sr = U.Sr + V.Sr + uS * vr + vS * ur;
+
+				W.pqX = U.pqX + V.pqX + W.pq * w.length;
+				W.rsX = U.rsX + V.rsX + W.rs * w.length;
+
+				W.Pq_r = U.Pq_r + V.Pq_r + U.Pq * vr + V.Pq * ur;
+				W.Pq_s = U.Pq_s + V.Pq_s + U.Pq * vs + V.Pq * us;
+				W.Qp_r = U.Qp_r + V.Qp_r + U.Qp * vr + V.Qp * ur;
+				W.Qp_s = U.Qp_s + V.Qp_s + U.Qp * vs + V.Qp * us;
+				W.Rs_p = U.Rs_p + V.Rs_p + U.Rs * vp + V.Rs * up;
+				W.Rs_q = U.Rs_q + V.Rs_q + U.Rs * vq + V.Rs * uq;
+				W.Sr_p = U.Sr_p + V.Sr_p + U.Sr * vp + V.Sr * up;
+				W.Sr_q = U.Sr_q + V.Sr_q + U.Sr * vq + V.Sr * uq;
+				
+				W.P_rs = U.P_rs + V.P_rs + uP * V.rs + vP * U.rs;
+				W.Q_rs = U.Q_rs + V.Q_rs + uQ * V.rs + vQ * U.rs;
+				W.R_pq = U.R_pq + V.R_pq + uR * V.pq + vR * U.pq;
+				W.S_pq = U.S_pq + V.S_pq + uS * V.pq + vS * U.pq;
+				
+				W.pqXr = U.pqXr + V.pqXr + U.pqX * vr + V.pqX * ur;
+				W.pqXs = U.pqXs + V.pqXs + U.pqX * vs + V.pqX * us;
+				W.pXrs = U.pXrs + V.pXrs + U.rsX * vp + V.rsX * up;
+				W.qXrs = U.qXrs + V.qXrs + U.rsX * vq + V.rsX * uq;
+
+				W.Pq_rs = U.Pq_rs + V.Pq_rs + W.q_rs * w.length;
+				W.Qp_rs = U.Qp_rs + V.Qp_rs + W.p_rs * w.length;
+				W.Rs_pq = U.Rs_pq + V.Rs_pq + W.pq_s * w.length;
+				W.Sr_pq = U.Sr_pq + V.Sr_pq + W.pq_r * w.length;
+
+				annot.quartetCnt = W.pq_rs;
+				annot.sumLengthA = U.Pq_r * vs + V.Pq_r * us + U.Pq_s * vr + V.Pq_s * ur + U.P_rs * vq + V.P_rs * uq + uP * V.q_rs + vP * U.q_rs + up * V.Pq_rs + vp * U.Pq_rs + U.Pq * V.rs + V.Pq * U.rs;
+				annot.sumLengthB = U.Qp_r * vs + V.Qp_r * us + U.Qp_s * vr + V.Qp_s * ur + U.Q_rs * vp + V.Q_rs * up + uQ * V.p_rs + vQ * U.p_rs + uq * V.Qp_rs + vq * U.Qp_rs + U.Qp * V.rs + V.Qp * U.rs;
+				annot.sumLengthC = U.Rs_p * vq + V.Rs_p * uq + U.Rs_q * vp + V.Rs_q * up + U.R_pq * vs + V.R_pq * us + uR * V.pq_s + vR * U.pq_s + ur * V.Rs_pq + vr * U.Rs_pq + U.Rs * V.pq + V.Rs * U.pq;
+				annot.sumLengthD = U.Sr_p * vq + V.Sr_p * uq + U.Sr_q * vp + V.Sr_q * up + U.S_pq * vr + V.S_pq * ur + uS * V.pq_r + vS * U.pq_r + us * V.Sr_pq + vs * U.Sr_pq + U.Sr * V.pq + V.Sr * U.pq;
+				annot.sumInternalLength = U.pqXr * vs + V.pqXr * us + U.pqXs * vr + V.pqXs * ur + U.pXrs * vq + V.pXrs * uq + up * V.qXrs + vp * U.qXrs
+										+ U.pqX * V.rs + U.pq * V.rsX + V.pqX * U.rs + V.pq * U.rsX;
+			}
+			else {
+				W.pq = U.pq + V.pq;
+				W.rs = U.rs + V.rs;
+
+				W.pq_r = U.pq_r + V.pq_r;
+				W.pq_s = U.pq_s + V.pq_s;
+				W.p_rs = U.p_rs + V.p_rs;
+				W.q_rs = U.q_rs + V.q_rs;
+				
+				W.pq_rs = 0;
+				
+				W.Pq = U.Pq + V.Pq;
+				W.Qp = U.Qp + V.Qp;
+				W.Rs = U.Rs + V.Rs;
+				W.Sr = U.Sr + V.Sr;
+
+				W.pqX = U.pqX + V.pqX + W.pq * w.length;
+				W.rsX = U.rsX + V.rsX + W.rs * w.length;
+
+				W.Pq_r = U.Pq_r + V.Pq_r;
+				W.Pq_s = U.Pq_s + V.Pq_s;
+				W.Qp_r = U.Qp_r + V.Qp_r;
+				W.Qp_s = U.Qp_s + V.Qp_s;
+				W.Rs_p = U.Rs_p + V.Rs_p;
+				W.Rs_q = U.Rs_q + V.Rs_q;
+				W.Sr_p = U.Sr_p + V.Sr_p;
+				W.Sr_q = U.Sr_q + V.Sr_q;
+				
+				W.P_rs = U.P_rs + V.P_rs;
+				W.Q_rs = U.Q_rs + V.Q_rs;
+				W.R_pq = U.R_pq + V.R_pq;
+				W.S_pq = U.S_pq + V.S_pq;
+				
+				W.pqXr = U.pqXr + V.pqXr;
+				W.pqXs = U.pqXs + V.pqXs;
+				W.pXrs = U.pXrs + V.pXrs;
+				W.qXrs = U.qXrs + V.qXrs;
+
+				W.Pq_rs = U.Pq_rs + V.Pq_rs + W.q_rs * w.length;
+				W.Qp_rs = U.Qp_rs + V.Qp_rs + W.p_rs * w.length;
+				W.Rs_pq = U.Rs_pq + V.Rs_pq + W.pq_s * w.length;
+				W.Sr_pq = U.Sr_pq + V.Sr_pq + W.pq_r * w.length;
+
+				annot.quartetCnt = 0;
+				annot.sumLengthA = 0;
+				annot.sumLengthB = 0;
+				annot.sumLengthC = 0;
+				annot.sumLengthD = 0;
+				annot.sumInternalLength = 0;
+			}
+		}
+
+		CustomizedAnnotation extended(Node& w){
+			CustomizedAnnotation old = w.annot;
+
+			Node& u = nodes[w.small];
+			Node& v = nodes[w.large];
+
+			w.aa = u.aa + v.aa;
+			w.bb = u.bb + v.bb;
+			w.cc = u.cc + v.cc;
+			w.dd = u.dd + v.dd;
+			
+			w.A = u.A + v.A + w.aa * w.length;
+			w.B = u.B + v.B + w.bb * w.length;
+			w.C = u.C + v.C + w.cc * w.length;
+			w.D = u.D + v.D + w.dd * w.length;
+
+			extended<0>(w, u, v);
+			extended<1>(w, u, v);
+			extended<2>(w, u, v);
+
+			return w.annot - old;
+		}
+		#endif
 		array<score_t, 3> normal(Node& w){
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
@@ -231,6 +489,7 @@ struct Quadrupartition{
 		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {};
 		vector<Node> nodes;
 		vector<int> color;
+		CustomizedAnnotation annot;
 		
 		Partition(const TripartitionInitializer &init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1){
 			for (int i = 0; i < nodes.size(); i++){
@@ -238,6 +497,9 @@ struct Quadrupartition{
 				nodes[i].small = init.nodes[p][i].small;
 				nodes[i].large = init.nodes[p][i].large;
 				nodes[i].dup = init.nodes[p][i].dup;
+				#ifdef CUSTOMIZED_ANNOTATION
+				nodes[i].length = init.nodes[p][i].length;
+				#endif
 			}
 		}
 		
@@ -247,6 +509,7 @@ struct Quadrupartition{
 			if (y != -1) cnt[y]--;
 			if (x != -1) cnt[x]++;
 			for (int u: leafParent[i]){
+				int oldu = u;
 				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d)--;
 				if (x != -1) ((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d)++;
 				int w = nodes[u].up;
@@ -264,6 +527,22 @@ struct Quadrupartition{
 				if (w != -1){
 					special(nodes[w]);
 				}
+
+				#ifdef CUSTOMIZED_ANNOTATION
+				u = oldu;
+				if (nodes[u].dup == false){
+					if (y != -1) ((y == 0) ? nodes[u].aa : (y == 1) ? nodes[u].bb : (y == 2) ? nodes[u].cc : nodes[u].dd)--;
+					if (x != -1) ((x == 0) ? nodes[u].aa : (x == 1) ? nodes[u].bb : (x == 2) ? nodes[u].cc : nodes[u].dd)++;
+					if (y != -1) ((y == 0) ? nodes[u].A : (y == 1) ? nodes[u].B : (y == 2) ? nodes[u].C : nodes[u].D) -= nodes[u].length;
+					if (x != -1) ((x == 0) ? nodes[u].A : (x == 1) ? nodes[u].B : (x == 2) ? nodes[u].C : nodes[u].D) += nodes[u].length;
+					w = nodes[u].up;
+					while (w != -1){
+						CustomizedAnnotation diff = extended(nodes[w]);
+						annot += diff;
+						w = nodes[w].up;
+					}
+				}
+				#endif
 			}
 			color[i] = x;
 		}
@@ -273,6 +552,15 @@ struct Quadrupartition{
 			double prod = cnt[0] * cnt[1] * cnt[2] * cnt[3];
 			return {totalScore1 / prod, totalScore2 / prod, totalScore3 / prod};
 		}
+
+		#ifdef CUSTOMIZED_ANNOTATION
+		CustomizedAnnotation annotate(){
+			annot.ab_cd.numericalBalancing();
+			annot.ac_bd.numericalBalancing();
+			annot.ad_bc.numericalBalancing();
+			return annot;
+		}
+		#endif
 	};
 	
 	vector<Partition> parts;
@@ -301,4 +589,16 @@ struct Quadrupartition{
 		}
 		return res;
 	}
+
+	#ifdef CUSTOMIZED_ANNOTATION
+	CustomizedAnnotation annotate(){
+		CustomizedAnnotation res;
+		for (int p = 0; p < parts.size(); p++){
+			res += parts[p].annotate();
+		}
+		return res;
+	}
+	#endif
 };
+
+

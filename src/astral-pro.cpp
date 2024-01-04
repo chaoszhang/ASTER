@@ -1,10 +1,13 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
 
 /* CHANGE LOG
+ * 4: Add support for CASTLES
  * 3: Add support for polytomies
  */
 
 #define ROOTING
+
+//#define CASTLES
 
 #include<iostream>
 #include<fstream>
@@ -19,6 +22,7 @@ using namespace std;
 //#define LARGE_DATA
 #ifdef LARGE_DATA
 typedef __int128 score_t;
+typedef long double length_t;
 
 string to_string(const __int128 x){
 	return to_string((double) x);
@@ -29,7 +33,12 @@ ostream& operator<<(ostream& cout, __int128 x){
 }
 #else
 typedef long long score_t;
+typedef double length_t;
 #endif
+
+double from_string(const string s){
+	return stold(s);
+}
 
 #include "argparser.hpp"
 #include "multitree.hpp"
@@ -39,7 +48,6 @@ const bool VERBOSE = true;
 
 MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
-vector<TripartitionInitializer> &batchInit = meta.batchInit;
 
 unordered_map<string, string> leafname_mapping;
 string TEXT;
@@ -157,14 +165,17 @@ private:
 		int score = -1;
 		int leafId = -1;
 		string name;
+		length_t length = 0;
 	};
 	
 	vector<Node> node;
 	
-	tuple<int, int, int> createSubtree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const long long cur, vector<int> &rootId){
+	tuple<int, int, int> createSubtree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, 
+			const unordered_map<long long, length_t> &edgelength, const long long cur, vector<int> &rootId){
 		if (children.count(cur) == 0){
 			int curId = node.size();
 			node.emplace_back();
+			node[curId].length = edgelength.at(cur);
 			node[curId].isLeaf = true;
 			node[curId].score = 0;
 			node[curId].name = leafname.at(cur);
@@ -181,13 +192,18 @@ private:
 			return make_tuple(curId, -1, -1);
 		}
 		
-		tuple<int, int, int> left = createSubtree(leafname, children, get<0>(children.at(cur)), rootId), right = createSubtree(leafname, children, get<1>(children.at(cur)), rootId);
+		tuple<int, int, int> left = createSubtree(leafname, children, edgelength, get<0>(children.at(cur)), rootId), right = createSubtree(leafname, children, edgelength, get<1>(children.at(cur)), rootId);
 		int cur0 = node.size();
 		node.emplace_back();
 		int cur1 = node.size();
 		node.emplace_back();
 		int cur2 = node.size();
 		node.emplace_back();
+		
+		node[cur0].length = edgelength.at(cur);
+		node[cur1].length = edgelength.at(get<1>(children.at(cur)));
+		node[cur2].length = edgelength.at(get<0>(children.at(cur)));
+
 		node[cur0].leftChildId = get<0>(left);
 		node[cur0].rightChildId = get<0>(right);
 		
@@ -233,9 +249,14 @@ public:
 		return id2name;
 	}
 	
-	int annotateTree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const long long root){
+	int annotateTree(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const unordered_map<long long, length_t> &edgelength, const long long root){
 		vector<int> rootId;
-		tuple<int, int, int> left = createSubtree(leafname, children, get<0>(children.at(root)), rootId), right = createSubtree(leafname, children, get<1>(children.at(root)), rootId);
+		tuple<int, int, int> left = createSubtree(leafname, children, edgelength, get<0>(children.at(root)), rootId), right = createSubtree(leafname, children, edgelength, get<1>(children.at(root)), rootId);
+	
+		length_t length = node[get<0>(left)].length + node[get<0>(right)].length;
+		node[get<0>(left)].length = length;
+		node[get<0>(right)].length = length;
+
 		if (get<1>(left) != -1) node[get<1>(left)].rightChildId = get<0>(right);
 		if (get<2>(left) != -1) node[get<2>(left)].rightChildId = get<0>(right);
 		if (get<1>(right) != -1) node[get<1>(right)].rightChildId = get<0>(left);
@@ -264,55 +285,53 @@ public:
 		return bestroot;
 	}
 	
-	int buildTree(int cur, int p) const{
+	int buildTree(int cur, int p, int depth = 0) const{
 		int w = tripInit.nodes[p].size();
 		tripInit.nodes[p].emplace_back();
 		
-		if (node[cur].isLeaf){
-			tripInit.leafParent[p][node[cur].leafId].push_back(w);
-			//LOG << id2name[node[cur].leafId];
-			return w;
+		if (node[cur].isLeaf) tripInit.leafParent[p][node[cur].leafId].push_back(w);
+		else{
+			int left = node[cur].leftChildId, right = node[cur].rightChildId;
+			int large, small;
+			if (node[left].label.setBits().size() > node[right].label.setBits().size()){
+				large = left;
+				small = right;
+			}
+			else {
+				large = right;
+				small = left;
+			}
+			int u = buildTree(small, p, depth + 1);
+			int v = buildTree(large, p, depth + 1);
+			tripInit.nodes[p][w].small = u;
+			tripInit.nodes[p][w].large = v;
+			tripInit.nodes[p][u].up = w;
+			tripInit.nodes[p][v].up = w;
+			if (node[cur].isDuplication){
+				tripInit.nodes[p][w].dup = true;
+				for (int i: (node[cur].label - node[large].label).setBits()){
+					tripInit.leafParent[p][i].push_back(w);
+				}
+			}
+			else {
+				tripInit.nodes[p][w].dup = false;
+			}
 		}
-		int left = node[cur].leftChildId, right = node[cur].rightChildId;
-		int large, small;
-		if (node[left].label.setBits().size() > node[right].label.setBits().size()){
-			large = left;
-			small = right;
-		}
-		else {
-			large = right;
-			small = left;
-		}
-		//LOG << "(";
-		int u = buildTree(small, p);
-		//LOG << ",";
-		int v = buildTree(large, p);
-		//LOG << ")";
-		tripInit.nodes[p][w].small = u;
-		tripInit.nodes[p][w].large = v;
-		tripInit.nodes[p][u].up = w;
-		tripInit.nodes[p][v].up = w;
-		if (node[cur].isDuplication){
-			tripInit.nodes[p][w].dup = true;
-			for (int i: (node[cur].label - node[large].label).setBits()){
-				tripInit.leafParent[p][i].push_back(w);
-			} //LOG << "+";
-		}
-		else {
-			tripInit.nodes[p][w].dup = false;
-		}
+		tripInit.nodes[p][w].length = ((depth == 1) ? node[cur].length / 2 : node[cur].length);
 		return w;
 	}
 
-	string printTree(int cur, bool isRoot = true) const{
-		if (node[cur].isLeaf){
-			if (isRoot) return node[cur].name + ";";
-			return node[cur].name;
+	string printTree(int cur, int depth = 0) const{
+		string res;
+		if (node[cur].isLeaf) res = node[cur].name;
+		else {
+			int left = node[cur].leftChildId, right = node[cur].rightChildId;
+			res = string("(") + printTree(left, depth + 1) + "," + printTree(right, depth + 1) + ")";
+			if (node[cur].isDuplication) res += "D";
 		}
-		int left = node[cur].leftChildId, right = node[cur].rightChildId;
-		string res = string("(") + printTree(left, false) + "," + printTree(right, false) + ")";
-		if (node[cur].isDuplication) res += "D";
-		if (isRoot) res += ";";
+		if (depth == 0) res += ";";
+		else if (depth == 1) res += string(":") + to_string(node[cur].length / 2);
+		else res += string(":") + to_string(node[cur].length);
 		return res;
 	}
 };
@@ -334,30 +353,39 @@ string GET_NAME(int begin, int end){
 	return s;
 }
 
-long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, tuple<long long, long long, bool> > &children, bool isRoot = false){
+double LENGTH(int begin, int end){
+	int i = begin;
+	while (i < end && TEXT[i] != ':') i++;
+	if (i == end) return 0;
+	else return from_string(TEXT.substr(i + 1, end - i - 1));
+}
+
+long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, tuple<long long, long long, bool> > &children, unordered_map<long long, length_t> &edgelength, bool isRoot = false){
 	int i = pos;
 	long long cur;
 	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
 	if (TEXT[pos] != '(') {
 		cur = nodecnt++;
 		leafname[cur] = GET_NAME(i, pos);
+		edgelength[cur] = LENGTH(i, pos);
 		return cur;
 	}
 	else {
-		pos++; // (
-		cur = parse(leafname, children);
+		pos++;
+		cur = parse(leafname, children, edgelength);
 		while (TEXT[pos] != ',') pos++;
 		vector<long long> lst, plst;
 		lst.push_back(cur);
 		while (TEXT[pos] != ')'){
-			pos++; // ,
+			pos++;
 			long long temp = lst[rand() % lst.size()];
-			long long left = nodecnt++, right = parse(leafname, children);
+			long long left = nodecnt++, right = parse(leafname, children, edgelength);
 			if (leafname.count(temp)) {
 				leafname[left] = leafname[temp];
 				leafname.erase(temp);
 			}
 			else children[left] = children[temp];
+			edgelength[left] = edgelength[temp];
 			children[temp] = make_tuple<long long, long long, bool>((long long) left, (long long) right, true);
 			plst.push_back(temp);
 			lst.push_back(left);
@@ -367,17 +395,19 @@ long long parse(unordered_map<long long, string> &leafname, unordered_map<long l
 			for (long long temp: plst) get<2>(children[temp]) = false;
 		}
 		while (TEXT[pos] != ')') pos++;
-		pos++; // )
+		pos++;
+		i = pos;
 		while (TEXT[pos] != ',' && TEXT[pos] != ')' && TEXT[pos] != ';') pos++;
+		edgelength[cur] = LENGTH(i, pos);
 		return cur;
 	}
 }
 
-string convert2string(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, long long node){
-	if (leafname.count(node)) return leafname.at(node);
+string convert2string(const unordered_map<long long, string> &leafname, const unordered_map<long long, tuple<long long, long long, bool> > &children, const unordered_map<long long, length_t> &edgelength, long long node){
+	if (leafname.count(node)) return leafname.at(node) + ":" + to_string(edgelength.at(node));
 	const tuple<long long, long long, bool> &e = children.at(node);
-	return string("(") + convert2string(leafname, children, get<0>(e)) + "," + convert2string(leafname, children, get<1>(e)) + ")"
-		+ (get<2>(children.at(node)) ? "P" : "");
+	return string("(") + convert2string(leafname, children, edgelength, get<0>(e)) + "," + convert2string(leafname, children, edgelength, get<1>(e)) + ")"
+		+ (get<2>(children.at(node)) ? "P" : "") + ":" + to_string(edgelength.at(node));
 }
 
 void annotate(string input, string mapping){
@@ -408,10 +438,12 @@ void annotate(string input, string mapping){
 			
 			unordered_map<long long, string> leafname;
 			unordered_map<long long, tuple<long long, long long, bool> > children;
-			long long root = parse(leafname, children, true);
+			unordered_map<long long, length_t> edgelength;
+			long long root = parse(leafname, children, edgelength, true);
 			GenetreeAnnotator ga;
-			//LOG << convert2string(leafname, children, root) << endl;
-			int iroot = ga.annotateTree(leafname, children, root);
+			// LOG << convert2string(leafname, children, edgelength, root) << endl;
+			int iroot = ga.annotateTree(leafname, children, edgelength, root);
+			// LOG << ga.printTree(iroot) << "\n";
 			if (rootNtag) rootNtagTrees += ga.printTree(iroot) + "\n";
 			else ga.buildTree(iroot, K % tripInit.nodes.size());
 			K++;
@@ -420,10 +452,24 @@ void annotate(string input, string mapping){
 	}
 }
 
-string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab 
--e  0(default): exit when input contains polytomies; 1: resolve polytomies (no guarentee on accuracy)
-inputGeneTrees: the path to a file containing all gene trees in Newick format
-)V0G0N";
+void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
+	if (node->isLeaf()){
+		cout << node->taxonName();
+	}
+	else {
+		cout << "(";
+		examplePrintSubtreeWithSupport(node->leftChild());
+		cout << ",";
+		examplePrintSubtreeWithSupport(node->rightChild());
+		cout << ")'{support:" << node->support() << ",length:" << node->length()
+			<< ",LR_SO:{quartetCnt:" << node->annotation().ab_cd.quartetCnt << ",sumInternal:" <<  node->annotation().ab_cd.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ab_cd.sumLengthD << ",sumR:" <<  node->annotation().ab_cd.sumLengthC << ",sumS:" <<  node->annotation().ab_cd.sumLengthB << ",sumO:" <<  node->annotation().ab_cd.sumLengthA << "}"
+			<< ",LS_RO:{quartetCnt:" << node->annotation().ac_bd.quartetCnt << ",sumInternal:" <<  node->annotation().ac_bd.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ac_bd.sumLengthD << ",sumR:" <<  node->annotation().ac_bd.sumLengthC << ",sumS:" <<  node->annotation().ac_bd.sumLengthB << ",sumO:" <<  node->annotation().ac_bd.sumLengthA << "}"
+			<< ",LO_RS:{quartetCnt:" << node->annotation().ad_bc.quartetCnt << ",sumInternal:" <<  node->annotation().ad_bc.sumInternalLength
+			<< ",sumL:" <<  node->annotation().ad_bc.sumLengthD << ",sumR:" <<  node->annotation().ad_bc.sumLengthC << ",sumS:" <<  node->annotation().ad_bc.sumLengthB << ",sumO:" <<  node->annotation().ad_bc.sumLengthA << "}}'";
+	}
+}
 
 int main(int argc, char** argv){
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
@@ -436,17 +482,10 @@ int main(int argc, char** argv){
 			ARG.getIntArg("exit") = 2;
 	});
 	string mappingFile;
-	meta.initialize(argc, argv, " -a taxonNameMaps", HELP_TEXT);
+	meta.initialize(argc, argv);
 	mappingFile = ARG.getStringArg("mapping");
 	resolvePolytomies = (ARG.getIntArg("exit") != 0);
 	rootNtag = (ARG.getIntArg("exit") == 2);
-	/*
-	for (int i = 1; i < argc; i += 2){
-		if (strcmp(argv[i], "-y") == 0) {i--; continue;}
-		if (strcmp(argv[i], "-e") == 0) resolvePolytomies = stoi(argv[i + 1]);
-		if (strcmp(argv[i], "-a") == 0) mappingFile = argv[i + 1];
-	}
-	*/
 
 	for (int i = 0; i < meta.nThread2; i++){
 		tripInit.nodes.emplace_back();
@@ -476,5 +515,10 @@ int main(int argc, char** argv){
 	score_t score = meta.run().first;
 	LOG << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
 	LOG << "Score: " << score << endl;
+
+	#ifdef CASTLES
+	examplePrintSubtreeWithSupport(meta.annotTree->root());
+	cout << ";\n";
+	#endif
 	return 0;
 }

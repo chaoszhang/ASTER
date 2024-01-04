@@ -34,7 +34,7 @@ struct CustomizedAnnotation{
 				sumLengthD = 0;
 			}
 		}
-
+		
 		Quadrupartition operator+ (const Quadrupartition& o) const{
 			Quadrupartition r;
 			r.quartetCnt = quartetCnt + o.quartetCnt;
@@ -43,7 +43,6 @@ struct CustomizedAnnotation{
 			r.sumLengthB = sumLengthB + o.sumLengthB;
 			r.sumLengthC = sumLengthC + o.sumLengthC;
 			r.sumLengthD = sumLengthD + o.sumLengthD;
-			r.numericalBalancing();
 			return r;
 		}
 
@@ -54,7 +53,6 @@ struct CustomizedAnnotation{
 			sumLengthB += o.sumLengthB;
 			sumLengthC += o.sumLengthC;
 			sumLengthD += o.sumLengthD;
-			numericalBalancing();
 			return *this;
 		}
 
@@ -66,7 +64,6 @@ struct CustomizedAnnotation{
 			r.sumLengthB = sumLengthB - o.sumLengthB;
 			r.sumLengthC = sumLengthC - o.sumLengthC;
 			r.sumLengthD = sumLengthD - o.sumLengthD;
-			r.numericalBalancing();
 			return r;
 		}
 	} ab_cd, ac_bd, ad_bc;
@@ -224,7 +221,7 @@ struct Quadrupartition{
 				length_t Pqx = 0, Qpx = 0, Rsx = 0, Srx = 0;
 				length_t Pqy = 0, Qpy = 0, Rsy = 0, Sry = 0;
 				length_t pqX = 0, rsX = 0;
-				length_t pqY = 0, prY = 0, psY = 0, qrY = 0, qsY = 0, rsY = 0; 
+				length_t pqY = 0, rsY = 0; 
 				length_t Pq_r = 0, Pq_s = 0, P_rs = 0;
 				length_t Qp_r = 0, Qp_s = 0, Q_rs = 0;
 				length_t Rs_q = 0, Rs_p = 0, R_pq = 0;
@@ -421,6 +418,9 @@ struct Quadrupartition{
 		}
 
 		CustomizedAnnotation annotate(){
+			annot.ab_cd.numericalBalancing();
+			annot.ac_bd.numericalBalancing();
+			annot.ad_bc.numericalBalancing();
 			return annot;
 		}
 	};

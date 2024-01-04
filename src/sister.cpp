@@ -59,7 +59,7 @@ int main(int argc, char** argv){
             cnt.emplace_back(m);
         }
         for (int j = 0; j < m; j++){
-            if (arr[j] <= 0) continue;
+            if (arr[j] == -1) continue;
             M[i][j] += arr[j];
             cnt[i][j]++;
         }
