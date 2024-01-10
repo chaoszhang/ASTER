@@ -247,9 +247,9 @@ struct Quadrupartition{
 		struct Node{
 			#ifdef CUSTOMIZED_ANNOTATION
 			struct Topology{
-				score_t pq_r = 0, pq_s = 0, p_rs = 0, q_rs = 0;
-				score_t pq = 0, rs = 0;
-				score_t pq_rs = 0;
+				length_t pq_r = 0, pq_s = 0, p_rs = 0, q_rs = 0;
+				length_t pq = 0, rs = 0;
+				length_t pq_rs = 0;
 				length_t Pq = 0, Qp = 0, Rs = 0, Sr = 0;
 				length_t pqX = 0, rsX = 0;
 				length_t Pq_r = 0, Pq_s = 0, P_rs = 0;
@@ -260,7 +260,7 @@ struct Quadrupartition{
 				length_t Pq_rs = 0, Qp_rs = 0, Rs_pq = 0, Sr_pq = 0;
 			} T_ab_cd, T_ac_bd, T_ad_bc;
 
-			score_t aa = 0, bb = 0, cc = 0, dd = 0;
+			length_t aa = 0, bb = 0, cc = 0, dd = 0;
 			length_t A = 0, B = 0, C = 0, D = 0;
 			// bool isGhostBranch = 1;
 			length_t length = 0;
@@ -353,8 +353,8 @@ struct Quadrupartition{
 										+ U.pqX * V.rs + U.pq * V.rsX + V.pqX * U.rs + V.pq * U.rsX;
 			}
 			else {
-				W.pq = U.pq + V.pq;
-				W.rs = U.rs + V.rs;
+				W.pq = (U.pq + V.pq) / 2;
+				W.rs = (U.rs + V.rs) / 2;
 
 				W.pq_r = U.pq_r + V.pq_r;
 				W.pq_s = U.pq_s + V.pq_s;
@@ -363,13 +363,13 @@ struct Quadrupartition{
 				
 				W.pq_rs = 0;
 				
-				W.Pq = U.Pq + V.Pq;
-				W.Qp = U.Qp + V.Qp;
-				W.Rs = U.Rs + V.Rs;
-				W.Sr = U.Sr + V.Sr;
+				W.Pq = (U.Pq + V.Pq) / 2;
+				W.Qp = (U.Qp + V.Qp) / 2;
+				W.Rs = (U.Rs + V.Rs) / 2;
+				W.Sr = (U.Sr + V.Sr) / 2;
 
-				W.pqX = U.pqX + V.pqX + W.pq * w.length;
-				W.rsX = U.rsX + V.rsX + W.rs * w.length;
+				W.pqX = (U.pqX + V.pqX) / 2 + W.pq * w.length;
+				W.rsX = (U.rsX + V.rsX) / 2 + W.rs * w.length;
 
 				W.Pq_r = U.Pq_r + V.Pq_r;
 				W.Pq_s = U.Pq_s + V.Pq_s;
@@ -410,16 +410,28 @@ struct Quadrupartition{
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
 
-			w.aa = u.aa + v.aa;
-			w.bb = u.bb + v.bb;
-			w.cc = u.cc + v.cc;
-			w.dd = u.dd + v.dd;
-			
-			w.A = u.A + v.A + w.aa * w.length;
-			w.B = u.B + v.B + w.bb * w.length;
-			w.C = u.C + v.C + w.cc * w.length;
-			w.D = u.D + v.D + w.dd * w.length;
-
+			if (w.dup == false){
+				w.aa = u.aa + v.aa;
+				w.bb = u.bb + v.bb;
+				w.cc = u.cc + v.cc;
+				w.dd = u.dd + v.dd;
+				
+				w.A = u.A + v.A + w.aa * w.length;
+				w.B = u.B + v.B + w.bb * w.length;
+				w.C = u.C + v.C + w.cc * w.length;
+				w.D = u.D + v.D + w.dd * w.length;
+			}
+			else {
+				w.aa = (u.aa + v.aa) / 2;
+				w.bb = (u.bb + v.bb) / 2;
+				w.cc = (u.cc + v.cc) / 2;
+				w.dd = (u.dd + v.dd) / 2;
+				
+				w.A = (u.A + v.A) / 2 + w.aa * w.length;
+				w.B = (u.B + v.B) / 2 + w.bb * w.length;
+				w.C = (u.C + v.C) / 2 + w.cc * w.length;
+				w.D = (u.D + v.D) / 2 + w.dd * w.length;
+			}
 			extended<0>(w, u, v);
 			extended<1>(w, u, v);
 			extended<2>(w, u, v);
