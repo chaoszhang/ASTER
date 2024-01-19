@@ -11,7 +11,7 @@ ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for es
 
 ### Example of usage
 
-We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 v1.13.1.3 [1] by optimizing the objective function of ASTRAL-Pro [2].
+We obtained the species tree from muti-copy gene family trees using ASTRAL-Pro2 v1.16.2.4 [1] by optimizing the objective function of ASTRAL-Pro [2].
 
 
 # Announcements
@@ -210,8 +210,8 @@ bin/astral-pro -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
-bin/astral-pro -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral-pro -u 2 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
@@ -223,5 +223,6 @@ bin/astral-pro_int128 -o OUTPUT_FILE INPUT_FILE
 If you do not want to compute optimal species tree but instead just want to root and tag gene trees, you can use the following command:
 
 ```
+make astral-pro_int128
 bin/astral-pro -T -o OUTPUT_FILE INPUT_FILE
 ```

@@ -13,7 +13,7 @@ Weighted ASTRAL series introduce threshold-free weighting schemes for the quarte
 
 ### Example of usage
 
-We obtained the species tree from gene trees using wASTRAL-hybird v1.13.2.3 [1]. 
+We obtained the species tree from gene trees using wASTRAL-hybird v1.16.3.4 [1]. 
 (OPTIONAL) This method reimplements ASTRAL-III [2] and takes into account phylogenetic uncertainty by intergrating signals from branch length and branch support in gene trees.
 
 
@@ -261,12 +261,13 @@ bin/astral-hybrid -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
-bin/astral-hybrid -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral-hybrid -u 2 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
 Species tree with more than **2000** taxa may cause **floating point underflow or precision issue**. Use the following command instead:
 
 ```
+make astral-weighted_precise
 bin/astral-hybrid_precise -o OUTPUT_FILE INPUT_FILE
 ```

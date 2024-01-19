@@ -13,7 +13,7 @@ As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some featur
 
 ### Example of usage
 
-We obtained the species tree from gene trees using wASTRAL-unweighted v1.13.2.4 [1] by optimizing the objective function of ASTRAL [2].
+We obtained the species tree from gene trees using wASTRAL-unweighted v1.16.3.4 [1] by optimizing the objective function of ASTRAL [2].
 
 
 # Announcements
@@ -212,12 +212,13 @@ bin/astral -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
 Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
 
 ```
-bin/astral -u 0 -o OUTPUT_FILE INPUT_FILE
-bin/astral -u 2 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/PROGRAM_NAME -u 2 -o OUTPUT_FILE INPUT_FILE
 ```
 
 Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
 
 ```
+make astral_int128
 bin/astral_int128 -o OUTPUT_FILE INPUT_FILE
 ```

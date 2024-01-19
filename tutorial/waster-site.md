@@ -1,5 +1,7 @@
 # Without-Alignment/Assembly Species Tree EstimatoR † (WASTER)
 
+[<img src="../misc/WASTER.png" width="500"/>](../misc/WASTER.png)
+
 WASTER is a coalesence-aware ***de novo*** species tree inference tool, which means it can take as inputs raw reads in FASTQ format.
 Paticularly, WASTER can accurately infer species tree even from Illumina reads with only ***1.5X depth***.
 WASTER infers the species tree by first calling SNPs from reads/assembies and then invoking CASTER to reconstruct the species tree from the SNPs.
