@@ -465,9 +465,9 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 			<< ",LR_SO:{quartetCnt:" << node->annotation().ab_cd.quartetCnt << ",sumInternal:" <<  node->annotation().ab_cd.sumInternalLength
 			<< ",sumL:" <<  node->annotation().ab_cd.sumLengthD << ",sumR:" <<  node->annotation().ab_cd.sumLengthC << ",sumS:" <<  node->annotation().ab_cd.sumLengthB << ",sumO:" <<  node->annotation().ab_cd.sumLengthA << "}"
 			<< ",LS_RO:{quartetCnt:" << node->annotation().ac_bd.quartetCnt << ",sumInternal:" <<  node->annotation().ac_bd.sumInternalLength
-			<< ",sumL:" <<  node->annotation().ac_bd.sumLengthD << ",sumR:" <<  node->annotation().ac_bd.sumLengthC << ",sumS:" <<  node->annotation().ac_bd.sumLengthB << ",sumO:" <<  node->annotation().ac_bd.sumLengthA << "}"
+			<< ",sumL:" <<  node->annotation().ac_bd.sumLengthD << ",sumR:" <<  node->annotation().ac_bd.sumLengthB << ",sumS:" <<  node->annotation().ac_bd.sumLengthC << ",sumO:" <<  node->annotation().ac_bd.sumLengthA << "}"
 			<< ",LO_RS:{quartetCnt:" << node->annotation().ad_bc.quartetCnt << ",sumInternal:" <<  node->annotation().ad_bc.sumInternalLength
-			<< ",sumL:" <<  node->annotation().ad_bc.sumLengthD << ",sumR:" <<  node->annotation().ad_bc.sumLengthC << ",sumS:" <<  node->annotation().ad_bc.sumLengthB << ",sumO:" <<  node->annotation().ad_bc.sumLengthA << "}}'";
+			<< ",sumL:" <<  node->annotation().ad_bc.sumLengthB << ",sumR:" <<  node->annotation().ad_bc.sumLengthD << ",sumS:" <<  node->annotation().ad_bc.sumLengthC << ",sumO:" <<  node->annotation().ad_bc.sumLengthA << "}}'";
 	}
 }
 

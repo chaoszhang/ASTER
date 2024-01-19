@@ -356,10 +356,10 @@ struct Quadrupartition{
 				W.pq = (U.pq + V.pq) / 2;
 				W.rs = (U.rs + V.rs) / 2;
 
-				W.pq_r = U.pq_r + V.pq_r;
-				W.pq_s = U.pq_s + V.pq_s;
-				W.p_rs = U.p_rs + V.p_rs;
-				W.q_rs = U.q_rs + V.q_rs;
+				W.pq_r = (U.pq_r + V.pq_r) / 2;
+				W.pq_s = (U.pq_s + V.pq_s) / 2;
+				W.p_rs = (U.p_rs + V.p_rs) / 2;
+				W.q_rs = (U.q_rs + V.q_rs) / 2;
 				
 				W.pq_rs = 0;
 				
@@ -371,29 +371,29 @@ struct Quadrupartition{
 				W.pqX = (U.pqX + V.pqX) / 2 + W.pq * w.length;
 				W.rsX = (U.rsX + V.rsX) / 2 + W.rs * w.length;
 
-				W.Pq_r = U.Pq_r + V.Pq_r;
-				W.Pq_s = U.Pq_s + V.Pq_s;
-				W.Qp_r = U.Qp_r + V.Qp_r;
-				W.Qp_s = U.Qp_s + V.Qp_s;
-				W.Rs_p = U.Rs_p + V.Rs_p;
-				W.Rs_q = U.Rs_q + V.Rs_q;
-				W.Sr_p = U.Sr_p + V.Sr_p;
-				W.Sr_q = U.Sr_q + V.Sr_q;
+				W.Pq_r = (U.Pq_r + V.Pq_r) / 2;
+				W.Pq_s = (U.Pq_s + V.Pq_s) / 2;
+				W.Qp_r = (U.Qp_r + V.Qp_r) / 2;
+				W.Qp_s = (U.Qp_s + V.Qp_s) / 2;
+				W.Rs_p = (U.Rs_p + V.Rs_p) / 2;
+				W.Rs_q = (U.Rs_q + V.Rs_q) / 2;
+				W.Sr_p = (U.Sr_p + V.Sr_p) / 2;
+				W.Sr_q = (U.Sr_q + V.Sr_q) / 2;
 				
-				W.P_rs = U.P_rs + V.P_rs;
-				W.Q_rs = U.Q_rs + V.Q_rs;
-				W.R_pq = U.R_pq + V.R_pq;
-				W.S_pq = U.S_pq + V.S_pq;
+				W.P_rs = (U.P_rs + V.P_rs) / 2;
+				W.Q_rs = (U.Q_rs + V.Q_rs) / 2;
+				W.R_pq = (U.R_pq + V.R_pq) / 2;
+				W.S_pq = (U.S_pq + V.S_pq) / 2;
 				
-				W.pqXr = U.pqXr + V.pqXr;
-				W.pqXs = U.pqXs + V.pqXs;
-				W.pXrs = U.pXrs + V.pXrs;
-				W.qXrs = U.qXrs + V.qXrs;
+				W.pqXr = (U.pqXr + V.pqXr) / 2;
+				W.pqXs = (U.pqXs + V.pqXs) / 2;
+				W.pXrs = (U.pXrs + V.pXrs) / 2;
+				W.qXrs = (U.qXrs + V.qXrs) / 2;
 
-				W.Pq_rs = U.Pq_rs + V.Pq_rs + W.q_rs * w.length;
-				W.Qp_rs = U.Qp_rs + V.Qp_rs + W.p_rs * w.length;
-				W.Rs_pq = U.Rs_pq + V.Rs_pq + W.pq_s * w.length;
-				W.Sr_pq = U.Sr_pq + V.Sr_pq + W.pq_r * w.length;
+				W.Pq_rs = (U.Pq_rs + V.Pq_rs) / 2 + W.q_rs * w.length;
+				W.Qp_rs = (U.Qp_rs + V.Qp_rs) / 2 + W.p_rs * w.length;
+				W.Rs_pq = (U.Rs_pq + V.Rs_pq) / 2 + W.pq_s * w.length;
+				W.Sr_pq = (U.Sr_pq + V.Sr_pq) / 2 + W.pq_r * w.length;
 
 				annot.quartetCnt = 0;
 				annot.sumLengthA = 0;
