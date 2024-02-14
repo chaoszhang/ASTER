@@ -6,8 +6,13 @@
 #include<algorithm>
 #include<random>
 #include<string>
+#include<iostream>
 #include<fstream>
 #include<sstream>
+#include<unordered_map>
+#include<unordered_set>
+
+using namespace std;
 
 namespace SeqUtils{
     string PARSE_LEAFNAME(const string& TEXT){
@@ -22,7 +27,7 @@ namespace SeqUtils{
         return n * (n - 1) * (n - 2) * (n - 3) / 24;
     }
 
-    score_t from_string(const string s){
+    int from_string(const string s){
     	return stod(s);
     }
 
@@ -66,6 +71,257 @@ namespace SeqUtils{
         return result;
     }
 }
+
+struct AlignmentParser{
+    bool isFasta = false, isFastaList = false, isPhylip = false;
+    bool formatAmbiguity = false, formatAA2NA = false, formatAA = false, formatNA = false;
+
+    queue<string> fastaQueue;
+    string bufferName, bufferSeq, nextLine;
+    int length, line, phylipNspecies;
+    bool firstFastaSeq;
+    ifstream fin;
+
+    bool ambiguitySecond = true;
+    
+    AlignmentParser(string fileName, string fileFormat = "auto", string seqFormat = "NA"){
+        ifstream ftemp(fileName);
+        string temp;
+        if (!getline(ftemp, temp)){
+            cerr << fileName << " seems empty!\n";
+            exit(0);
+        }
+        if (temp.length() == 0){
+            cerr << fileName << " seems empty!\n";
+            exit(0);
+        }
+        if (fileFormat == "phylip" || (fileFormat == "auto" && seemsPhylip(temp))) initPhylip(fileName);
+        else if (fileFormat == "fasta" || (fileFormat == "auto" && seemsFasta(temp))) initFasta(fileName);
+        else initFastaList(fileName);
+        if (seqFormat == "ambiguity") formatAmbiguity = true;
+        else if (seqFormat == "AA2NA") formatAA2NA = true;
+        else if (seqFormat == "AA") formatAA = true;
+        else formatNA = true;
+    }
+
+    static bool seemsPhylip(const string &line){
+        int i = 0;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
+        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
+        if (i == line.length() || (line[i] != ' ' && line[i] != '\t')) return false;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
+        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        return i == line.length();
+    }
+
+    static bool seemsFasta(const string &line){
+        return line[0] == '>';
+    }
+
+    void initPhylip(const string &fileName){
+        isPhylip = true;
+        fin.open(fileName);
+    }
+
+    void initFasta(const string &fileName){
+        isFasta = true;
+        fastaQueue.push(fileName);
+    }
+
+    void initFastaList(const string &fileName){
+        isFasta = true;
+        ifstream ftemp(fileName);
+        string temp;
+        while (getline(ftemp, temp)){
+            fastaQueue.push(temp);
+        }
+    }
+
+    bool nextAlignment(){
+        ambiguitySecond = true;
+        if (isFasta) return nextAlignmentFasta();
+        else if (isPhylip) return nextAlignmentPhylip();
+        else return false;
+    }
+
+    int getLength(){
+        return length;
+    }
+
+    bool nextSeq(){
+        if (formatAmbiguity){
+            ambiguitySecond = (!ambiguitySecond);
+            if (ambiguitySecond) return true;
+        }
+
+        if (isFasta) return nextSeqFasta();
+        else if (isPhylip) return nextSeqPhylip();
+        else return false;
+    }
+
+    string getName(){
+        return bufferName;
+    }
+
+    string getSeq(){
+        if (bufferSeq.length() != length){
+            cerr << "Error: Sequence length of " << bufferName << " is not consistent!\n";
+            exit(0);
+        }
+        if (formatNA) return toFormatNA(bufferSeq);
+        if (formatAmbiguity) return toAmbiguity(bufferSeq);
+        if (formatAA2NA) return toFormatAA2NA(bufferSeq);
+        return bufferSeq;
+    }
+
+    static string getFastaName(const string &fasta){
+        int i = 0;
+        string res;
+        // while (i < fasta.size() && fasta[i] == ' ') i++;
+        if (i == fasta.size() || fasta[i] != '>'){
+            cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+            exit(0);
+        }
+        i++;
+        while (i < fasta.size() && fasta[i] == ' ') i++;
+        while (i < fasta.size() && fasta[i] != ' ') {
+            res += fasta[i];
+            i++;
+        }
+        if (res.size() == 0){
+            cerr << "Error in parsing line '" << fasta << "' in FASTA format.\n";
+            exit(0);
+        }
+        return res;
+    }
+
+private:
+    static string removeSpace(const string &seq){
+        string res;
+        for (char c: seq){
+            if (c != ' ' && c != '\t' && c != '\r') res += c;
+        }
+        return res;
+    }
+
+    bool parseSeqFasta(){
+        bufferName = "";
+        bufferSeq = "";
+        string line;
+        if (nextLine.length()) {
+            line = nextLine;
+            nextLine = "";
+        }
+        else if (!getline(fin, line)) return false;
+
+        bufferName = getFastaName(line);
+        while (getline(fin, line)){
+            if (line[0] == '>') {
+                nextLine = line;
+                break;
+            }
+            bufferSeq += removeSpace(line);
+        }
+        return true;
+    }
+
+    bool nextAlignmentFasta(){
+        if (fastaQueue.empty()) return false;
+        string fileName = fastaQueue.front();
+        fastaQueue.pop();
+        cerr << "Processing " << fileName << " ... \n";
+        fin.close();
+        fin.open(fileName);
+        if (!parseSeqFasta()) {
+            cerr << "Error: FASTA file empty!\n";
+            exit(0);
+        }
+        length = bufferSeq.size();
+        firstFastaSeq = true;
+        return true;
+    }
+
+    bool nextSeqFasta(){
+        if (firstFastaSeq) {
+            firstFastaSeq = false;
+            return true;
+        }
+        return parseSeqFasta();
+    }
+
+    bool nextAlignmentPhylip(){
+        if (!(fin >> phylipNspecies)) return false;
+        fin >> length;
+        cerr << "Reading alignment of " << phylipNspecies << " species of length " << length << " ...\n";
+        return true;
+    }
+
+    bool nextSeqPhylip(){
+        if (phylipNspecies == 0) return false;
+        phylipNspecies--;
+        fin >> bufferName >> bufferSeq;
+        bufferSeq = removeSpace(bufferSeq);
+        return true;
+    }
+
+    string toFormatNA(const string &seq){
+        string res;
+        for (char c: seq){
+            switch (c) {
+                case 'A': case 'a': res += 'A'; break;
+                case 'C': case 'c': res += 'C'; break;
+                case 'G': case 'g': res += 'G'; break;
+                case 'T': case 't': case 'U': case 'u': res += 'T'; break;
+                default: res += '-';
+            }
+        }
+        return res;
+    }
+
+    string toAmbiguity(const string &seq){
+        string res;
+        if (!ambiguitySecond){
+            for (char c: seq){
+                switch (c) {
+                    case 'A': case 'a': case 'M': case 'm': case 'R': case 'r': case 'W': case 'w': res += 'A'; break;
+                    case 'C': case 'c': case 'S': case 's': case 'Y': case 'y': res += 'C'; break;
+                    case 'G': case 'g': case 'K': case 'k': res += 'G'; break;
+                    case 'T': case 't': case 'U': case 'u': res += 'T'; break;
+                    default: res += '-';
+                }
+            }
+        }
+        else {
+            for (char c: seq){
+                switch (c) {
+                    case 'A': case 'a': res += 'A'; break;
+                    case 'C': case 'c': case 'M': case 'm': res += 'C'; break;
+                    case 'G': case 'g': case 'R': case 'r': case 'S': case 's': res += 'G'; break;
+                    case 'T': case 't': case 'U': case 'u': case 'W': case 'w': case 'Y': case 'y': case 'K': case 'k': res += 'T'; break;
+                    default: res += '-';
+                }
+            }
+        }
+        return res;
+    }
+
+    string toFormatAA2NA(const string &seq){
+        string res;
+        for (char c: seq){
+            switch (c) {
+                case 'C': case 'c': case 'M': case 'm': case 'I': case 'i': case 'L': case 'l': case 'V': case 'v': res += 'A'; break;
+			    case 'D': case 'd': case 'E': case 'e': case 'Q': case 'q': case 'N': case 'n': case 'H': case 'h': case 'R': case 'r': case 'K': case 'k': res += 'T'; break;
+			    case 'S': case 's': case 'T': case 't': case 'A': case 'a': case 'G': case 'g': case 'P': case 'p': res += 'C'; break;
+			    case 'W': case 'w': case 'Y': case 'y': case 'F': case 'f': res += 'G'; break;
+                default: res += '-';
+            }
+        }
+        return res;
+    }
+};
 
 struct TreeTokenizer{
     static const string KEYWORDS, SPACES;
@@ -477,6 +733,7 @@ struct DistanceMatrix{
     }
 };
 
+/*
 struct BinaryTree{
     struct Node{
         int parent = -1, taxon = -1, left = -1, right = -1; 
@@ -944,4 +1201,5 @@ vector<vector<int> > diskCovering(const AlignmentHot &a, const AlignmentHot &b,
     return result;
 }
 
+*/
 #endif
