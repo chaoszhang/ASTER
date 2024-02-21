@@ -42,6 +42,11 @@ double from_string(const string s){
 
 #include "argparser.hpp"
 #include "multitree.hpp"
+
+#ifdef CASTLES
+#include "castles.hpp"
+#endif
+
 #include "algorithms.hpp"
 
 const bool VERBOSE = true;
@@ -472,7 +477,11 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 }
 
 int main(int argc, char** argv){
+	#ifdef CASTLES
+	ARG.setProgramName("astral-pro2", "ASTRAL for PaRalogs and Orthologs II (+ASTRAL-Pro2)\n*** NOW with integrated CASTLES-2 ***");
+	#else
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
+	#endif
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
 	ARG.addIntArg('e', "exit", 0, "0: print warning when input contains polytomies; 1: resolving polytomies; 2: printing rooted and tagged gene trees and exit");
 	ARG.addFlag('E', "noexit", "No warning when input contains polytomies (`-e 1`)", [&](){

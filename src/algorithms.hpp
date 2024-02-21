@@ -868,7 +868,7 @@ struct ConstrainedOptimizationAlgorithm{
 	int ROUND_NN = -1;
 
 	shared_ptr<AnnotatedTree> annotTree;
-	score_t tempSibling, tempRoot;
+	double tempSibling, tempRoot;
 
 	ConstrainedOptimizationAlgorithm(const int ntaxa, TripartitionInitializer &tripInit, const vector<string> &names, ThreadPool &TP, int ROUND_NN, const int seed = rand()):
 			ntaxa(ntaxa), tripInit(tripInit), names(names), TP(TP), ROUND_NN(ROUND_NN) {
@@ -1428,10 +1428,22 @@ struct ConstrainedOptimizationAlgorithm{
 			}
 		}
 		#endif
+		#ifdef CASTLES
+		if (support != 0) {
+			CastlesNode castles(node->annot);
+			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(castles.leftEdgeLength);
+			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(castles.rightEdgeLength);
+			res += string(":") + to_string(castles.edgeLengthOtherwise);
+			if (toplevel) {
+				tempSibling = castles.siblingEdgeLength;
+			}
+		}
+		#else
 		#ifdef SUPPORT
 		if (3 * score[0] > tscore) node->len = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
 		else node->len = 0;
 		res += ":" + to_string(node->len);
+		#endif
 		#endif
 		return string("(") + resL + "," + resR + ")" + res;
 	}
@@ -1454,6 +1466,10 @@ struct ConstrainedOptimizationAlgorithm{
 	string printOptimalTreeWithSupport(int support, double lambda, double weight){
 		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 		score_t siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
+		#else
+		#ifdef CASTLES
+		length_t siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
+		#endif
 		#endif
 		annotTree.reset(new AnnotatedTree());
 		shared_ptr<AnnotatedTree::Node> root = annotTree->addRoot();
@@ -1478,6 +1494,10 @@ struct ConstrainedOptimizationAlgorithm{
 			rootSum += tempRoot;
 			rootCount++;
 		}
+		#else
+		#ifdef CASTLES
+		if (nodes[get<0>(c)].leafId == -1) siblingL = tempSibling;
+		#endif
 		#endif
 		//0|c0|c1|-
 		switchSubtree(quad, get<1>(c), 1, 2);
@@ -1493,9 +1513,15 @@ struct ConstrainedOptimizationAlgorithm{
 		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
 		string res = string(":") + to_string(rootSum/rootCount/2) + "," + names[0] + ":" + to_string(rootSum/rootCount/2);
 		#else
+		#ifdef CASTLES
+		if (nodes[get<1>(c)].leafId == -1) siblingR = tempSibling;
+		if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(siblingR);
+		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
+		string res = string(",") + names[0];
+		#else
 		string res = string(",") + names[0];
 		#endif
-
+		#endif
 
 		if (support == 3) {
 			ofstream fcsv("freqQuad.csv");

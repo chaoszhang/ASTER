@@ -18,7 +18,7 @@ score_t NUM_EQ_CLASSES = 0;
 
 struct CustomizedAnnotation{
 	struct Quadrupartition{
-		score_t quartetCnt = 0;
+		length_t quartetCnt = 0;
 		length_t sumInternalLength = 0;
 		length_t sumLengthA = 0;
 		length_t sumLengthB = 0;
@@ -26,7 +26,8 @@ struct CustomizedAnnotation{
 		length_t sumLengthD = 0;
 
 		void numericalBalancing(){
-			if (quartetCnt == 0){
+			if (quartetCnt < 1e-8){
+				quartetCnt = 0;
 				sumInternalLength = 0;
 				sumLengthA = 0;
 				sumLengthB = 0;
@@ -97,10 +98,7 @@ struct TripartitionInitializer{
 	struct Node{
 		int up = -1, small = -1, large = -1;
 		bool dup = false;
-
-		#ifdef CUSTOMIZED_ANNOTATION
 		length_t length;
-		#endif
 	};
 	
 	vector<vector<Node> > nodes;
@@ -245,7 +243,6 @@ struct Tripartition{
 struct Quadrupartition{
 	struct Partition{
 		struct Node{
-			#ifdef CUSTOMIZED_ANNOTATION
 			struct Topology{
 				length_t pq_r = 0, pq_s = 0, p_rs = 0, q_rs = 0;
 				length_t pq = 0, rs = 0;
@@ -265,7 +262,6 @@ struct Quadrupartition{
 			// bool isGhostBranch = 1;
 			length_t length = 0;
 			CustomizedAnnotation annot;
-			#endif
 
 			score_t a = 0, b = 0, c = 0, d = 0;
 			score_t ab_c = 0, ab_d = 0, a_cd = 0, b_cd = 0;
@@ -276,7 +272,7 @@ struct Quadrupartition{
 			int up = -1, small = -1, large = -1; // -1 for dummy!
 			bool dup = false;
 		};
-		#ifdef CUSTOMIZED_ANNOTATION
+		
 		template<int T> void extended(Node& w, Node& u, Node& v){
 			Node::Topology& U = ((T == 0) ? u.T_ab_cd : (T == 1) ? u.T_ac_bd : u.T_ad_bc);
 			Node::Topology& V = ((T == 0) ? v.T_ab_cd : (T == 1) ? v.T_ac_bd : v.T_ad_bc);
@@ -438,7 +434,7 @@ struct Quadrupartition{
 
 			return w.annot - old;
 		}
-		#endif
+		
 		array<score_t, 3> normal(Node& w){
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
@@ -509,9 +505,7 @@ struct Quadrupartition{
 				nodes[i].small = init.nodes[p][i].small;
 				nodes[i].large = init.nodes[p][i].large;
 				nodes[i].dup = init.nodes[p][i].dup;
-				#ifdef CUSTOMIZED_ANNOTATION
 				nodes[i].length = init.nodes[p][i].length;
-				#endif
 			}
 		}
 		
@@ -540,7 +534,6 @@ struct Quadrupartition{
 					special(nodes[w]);
 				}
 
-				#ifdef CUSTOMIZED_ANNOTATION
 				u = oldu;
 				if (nodes[u].dup == false){
 					if (y != -1) ((y == 0) ? nodes[u].aa : (y == 1) ? nodes[u].bb : (y == 2) ? nodes[u].cc : nodes[u].dd)--;
@@ -554,7 +547,6 @@ struct Quadrupartition{
 						w = nodes[w].up;
 					}
 				}
-				#endif
 			}
 			color[i] = x;
 		}
@@ -565,14 +557,12 @@ struct Quadrupartition{
 			return {totalScore1 / prod, totalScore2 / prod, totalScore3 / prod};
 		}
 
-		#ifdef CUSTOMIZED_ANNOTATION
 		CustomizedAnnotation annotate(){
 			annot.ab_cd.numericalBalancing();
 			annot.ac_bd.numericalBalancing();
 			annot.ad_bc.numericalBalancing();
 			return annot;
 		}
-		#endif
 	};
 	
 	vector<Partition> parts;
@@ -602,7 +592,6 @@ struct Quadrupartition{
 		return res;
 	}
 
-	#ifdef CUSTOMIZED_ANNOTATION
 	CustomizedAnnotation annotate(){
 		CustomizedAnnotation res;
 		for (int p = 0; p < parts.size(); p++){
@@ -610,7 +599,6 @@ struct Quadrupartition{
 		}
 		return res;
 	}
-	#endif
 };
 
 

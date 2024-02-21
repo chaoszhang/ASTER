@@ -11,6 +11,10 @@
 
 //#define ASTRALIV
 
+#ifdef ASTRALIV
+#define CASTLES
+#endif
+
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -44,6 +48,11 @@ double from_string(const string s){
 
 #include "argparser.hpp"
 #include "genetreewithbinaryweight.hpp"
+
+#ifdef CASTLES
+#include "castles.hpp"
+#endif
+
 #include "algorithms.hpp"
 
 MetaAlgorithm meta;
@@ -171,7 +180,12 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 }
 
 int main(int argc, char** argv){
+	#ifdef CASTLES
+	ARG.setProgramName("astral4", "Accurate Species TRee ALgorithm IV (ASTRAL-IV)\n*** NOW with integrated CASTLES-2 ***");
+	#else
 	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
+	#endif
+	
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	
 	string mappingFile;
@@ -200,7 +214,7 @@ int main(int argc, char** argv){
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
 
-	#ifdef ASTRALIV
+	#ifdef CASTLES
 	examplePrintSubtreeWithSupport(meta.annotTree->root());
 	cout << ";\n";
 	#endif
