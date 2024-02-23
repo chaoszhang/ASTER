@@ -479,6 +479,7 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 int main(int argc, char** argv){
 	#ifdef CASTLES
 	ARG.setProgramName("astral-pro2", "ASTRAL for PaRalogs and Orthologs II (+ASTRAL-Pro2)\n*** NOW with integrated CASTLES-2 ***");
+	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
 	#else
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
 	#endif

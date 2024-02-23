@@ -182,6 +182,7 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 int main(int argc, char** argv){
 	#ifdef CASTLES
 	ARG.setProgramName("astral4", "Accurate Species TRee ALgorithm IV (ASTRAL-IV)\n*** NOW with integrated CASTLES-2 ***");
+	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
 	#else
 	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
 	#endif

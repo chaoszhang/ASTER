@@ -1430,7 +1430,7 @@ struct ConstrainedOptimizationAlgorithm{
 		#endif
 		#ifdef CASTLES
 		if (support != 0) {
-			CastlesNode castles(node->annot);
+			CastlesNode castles(node->annot, ARG.getDoubleArg("genelength"));
 			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(castles.leftEdgeLength);
 			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(castles.rightEdgeLength);
 			res += string(":") + to_string(castles.edgeLengthOtherwise);
