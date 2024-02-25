@@ -1517,7 +1517,7 @@ struct ConstrainedOptimizationAlgorithm{
 		if (nodes[get<1>(c)].leafId == -1) siblingR = tempSibling;
 		if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(siblingR);
 		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
-		string res = string(",") + names[0];
+		string res = string(":") + to_string(ARG.getDoubleArg("outgrouplength")/2) + "," + names[0] + ":" + to_string(ARG.getDoubleArg("outgrouplength")/2);
 		#else
 		string res = string(",") + names[0];
 		#endif

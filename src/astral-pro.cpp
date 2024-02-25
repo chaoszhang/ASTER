@@ -42,6 +42,7 @@ double from_string(const string s){
 
 #include "argparser.hpp"
 #include "multitree.hpp"
+#include "treeutils.hpp"
 
 #ifdef CASTLES
 #include "castles.hpp"
@@ -476,6 +477,49 @@ void examplePrintSubtreeWithSupport(shared_ptr<AnnotatedTree::Node> node){
 	}
 }
 
+string sampleGenetree(int p, int inode, const unordered_set<int> &outgroup){
+	string str;
+	if (tripInit.nodes[p][inode].small == -1){
+		if (outgroup.count(inode)) str = "outgroup";
+		else str = "ingroup";
+	}
+	else if (tripInit.nodes[p][inode].dup){
+		if (rand() & 1) return sampleGenetree(p, tripInit.nodes[p][inode].large, outgroup);
+		else return sampleGenetree(p, tripInit.nodes[p][inode].small, outgroup);
+	}
+	else str = string("(") + sampleGenetree(p, tripInit.nodes[p][inode].large, outgroup) + "," + sampleGenetree(p, tripInit.nodes[p][inode].small, outgroup) + ")";
+	return str + ":" + to_string(tripInit.nodes[p][inode].length);
+}
+
+pair<double, int> outgroupLength(const Tree& tr, string label = "outgroup"){
+	vector<int> rootChildren;
+	int outId = -1;
+	for (int i = 0; i < tr.nodes.size(); i++){
+		if (tr.nodes[i].label == label) outId = i;
+		if (tr.nodes[i].parent == tr.root) rootChildren.push_back(i);
+	}
+	if (outId == -1 || rootChildren.size() < 2) return {0.0, 0};
+	if (rootChildren.size() > 2 || tr.nodes[outId].parent != tr.root) return {tr.nodes[outId].length, 1};
+	return {tr.nodes[rootChildren[0]].length + tr.nodes[rootChildren[1]].length, 1};
+}
+
+double computeOutgroupLength(){
+	double totalLength = 0;
+	int cnt = 0;
+	for (int p = 0; p < meta.nThreads; p++){
+		unordered_set<int> outgroup;
+		for (int e: tripInit.leafParent[p][0]) outgroup.insert(e);
+		for (int e = 0; e < tripInit.nodes[p].size(); e++){
+			if (tripInit.nodes[p][e].up == -1) {
+				pair<double, int> treeLength = outgroupLength(sampleGenetree(p, e, outgroup) + ";");
+				totalLength += treeLength.first;
+				cnt += treeLength.second;
+			}
+		}
+	}
+	return totalLength / cnt;
+}
+
 int main(int argc, char** argv){
 	#ifdef CASTLES
 	ARG.setProgramName("astral-pro2", "ASTRAL for PaRalogs and Orthologs II (+ASTRAL-Pro2)\n*** NOW with integrated CASTLES-2 ***");
@@ -521,6 +565,10 @@ int main(int argc, char** argv){
 		else ofstream(ARG.getStringArg("output")) << rootNtagTrees;
 		exit(0);
 	}
+
+	#ifdef CASTLES
+	ARG.getDoubleArg("outgrouplength") = computeOutgroupLength();
+	#endif
 
 	score_t score = meta.run().first;
 	LOG << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
