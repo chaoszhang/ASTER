@@ -129,10 +129,15 @@ struct Workflow {
                         if (freq[i][j] > 0) cnt++;
                         if (freq[i][j] == 1) singleton = true;
                     }
-                    if (cnt == 2) { if (category[0] + d >= i) sitepair.push_back({category[0], i}); category[0] = i; }
-                    if (cnt == 3) { if (category[1] + d >= i) sitepair.push_back({category[1], i}); category[1] = i; }
-                    if (cnt == 4 && singleton) { if (category[2] + d >= i) sitepair.push_back({category[2], i}); category[2] = i; }
-                    if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
+                    if (ARG.getIntArg("pairdist") > 0){
+                        if (cnt == 2) { if (category[0] + d >= i) sitepair.push_back({category[0], i}); category[0] = i; }
+                        if (cnt == 3) { if (category[1] + d >= i) sitepair.push_back({category[1], i}); category[1] = i; }
+                        if (cnt == 4 && singleton) { if (category[2] + d >= i) sitepair.push_back({category[2], i}); category[2] = i; }
+                        if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
+                    }
+                    else {
+                        if (category[0] >= 0) sitepair.push_back({category[0], i}); category[0] = i;
+                    }
                 }
             }
             {
@@ -194,7 +199,7 @@ int main(int argc, char** argv){
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
-	ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites");
+	ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites (0 for strict neighbor pairing)");
 	ARG.addIntArg(0, "datatype", 0, "0 (default): nucleotides, 1: amino acids");
     
     Workflow WF(argc, argv);
