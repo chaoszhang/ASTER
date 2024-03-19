@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "2"
+#define DRIVER_VERSION "3"
 
 /* CHANGE LOG
+ * 3: Option for no smart-pairing
  * 2: Updating input file parser
  * 1: Modified the logic in parsing FASTA names 
  */

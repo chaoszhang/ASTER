@@ -522,7 +522,7 @@ double computeOutgroupLength(){
 
 int main(int argc, char** argv){
 	#ifdef CASTLES
-	ARG.setProgramName("astral-pro2", "ASTRAL for PaRalogs and Orthologs II (+ASTRAL-Pro2)\n*** NOW with integrated CASTLES-2 ***");
+	ARG.setProgramName("astral-pro3", "ASTRAL for PaRalogs and Orthologs III (+ASTRAL-Pro3)\n*** NOW with integrated CASTLES-Pro ***");
 	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
 	#else
 	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");

@@ -1,7 +1,9 @@
 mkdir exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral.cpp -o exe/astral.exe
+g++ -std=gnu++11 -D CASTLES -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral.cpp -o exe/astral4_experimental.exe
 ::g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral.cpp -o exe/astral_int128.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-pro.cpp -o exe/astral-pro.exe
+g++ -std=gnu++11 -D CASTLES -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-pro.cpp -o exe/astral-pro3_experimental.exe
 ::g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-pro.cpp -o exe/astral-pro_int128.exe
 ::g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-weighted.cpp -o exe/astral-weighted.exe
 ::g++ -std=gnu++11 -D LARGE_DATA -O2 -pthread -static -static-libgcc -static-libstdc++ src/astral-weighted.cpp -o exe/astral-weighted_precise.exe

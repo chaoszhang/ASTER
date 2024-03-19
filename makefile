@@ -6,12 +6,14 @@ mac: dir astral astral-pro astral-hybrid
 
 astral: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral || g++ -std=c++17 -O2 -pthread src/astral.cpp -o bin/astral
+	g++ -std=gnu++11 -march=native -D CASTLES -Ofast -pthread src/astral.cpp -o bin/astral4_experimental
 
 astral_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral_int128
 	
 astral-pro: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro || g++ -std=c++17 -O2 -pthread src/astral-pro.cpp -o bin/astral-pro
+	g++ -std=gnu++11 -march=native -D CASTLES -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3_experimental
 	
 astral-pro_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro_int128
@@ -38,7 +40,7 @@ caster-site: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site || g++ -std=gnu++17 -O2 -pthread src/caster-site.cpp -o bin/caster-site
 
 caster-site_branchlength: dir
-	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/caster-site.cpp -o bin/caster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/caster-site.cpp -o bin/caster-site_branchlength
+	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/caster-site.cpp -o bin/caster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/caster-site.cpp -o bin/caster-site_branchlength_experimental
 	
 caster-pair: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair
