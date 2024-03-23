@@ -25,12 +25,12 @@ Branch lengths are computed using integrated CASTLES-Pro [3].
 
 )V0G0N";
 
-const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (ASTRAL4)
+const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (ASTRAL-IV)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
 
 `ASTRAL4` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
 
-As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with wASTRAL-unweighted and use the wASTRAL-unweighted output tree as `-q` option to ASTRAL-III. 
+As a scalable alternative to ASTRAL-III, ASTRAL-IV lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with ASTRAL-IV and use the ASTRAL-IV output tree as `-q` option to ASTRAL-III. 
 
 ## Publication
 
@@ -42,7 +42,7 @@ As a scalable alternative to ASTRAL-III, wASTRAL-unweighted lacks of some featur
 
 ### Example of usage
 
-We obtained the species tree from gene trees using ASTRAL4 VERSION [1] by optimizing the objective function of ASTRAL [2].
+We obtained the species tree from gene trees using ASTRAL-IV VERSION [1] by optimizing the objective function of ASTRAL [2].
 Branch lengths are computed using integrated CASTLES-II [3].
 
 )V0G0N";
