@@ -3,13 +3,13 @@
 [<img src="misc/ASTER.png" width="250"/>](misc/ASTER.png)
 
 A family of optimatization algorithms for species tree inference:
-1. [ASTRAL4](tutorial/astral4.md)
-2. [ASTRAL-Pro3](tutorial/astral-pro3.md)
-3. [Weighted ASTRAL](tutorial/wastral.md)
-4. [CASTER-site](tutorial/caster-site.md)
-5. [CASTER-pair](tutorial/caster-site.md)
-6. [WASTER-site](tutorial/waster-site.md)
-7. SISTER
+1. [ASTRAL-IV](tutorial/astral4.md) (from unrooted gene tree ***topologies***)
+2. [ASTRAL-Pro3](tutorial/astral-pro3.md) (from unrooted gene ***family*** tree topologies)
+3. [Weighted ASTRAL](tutorial/wastral.md) (from unrooted gene trees with branch ***lengths*** and/or ***supports***)
+4. [CASTER-site](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
+5. [CASTER-pair](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
+6. [WASTER-site](tutorial/waster-site.md) (from ***raw reads***)
+7. SISTER (from optical-map-like distance data or shape data)
 8. MONSTER
 
 # Announcements
@@ -69,7 +69,7 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 
 # EXECUTION
 Please click the link below:
-1. [ASTRAL4](tutorial/astral4.md)
+1. [ASTRAL-IV](tutorial/astral4.md)
 2. [ASTRAL-Pro3](tutorial/astral-pro3.md)
 3. [Weighted ASTRAL](tutorial/wastral.md)
 4. [CASTER-site](tutorial/caster-site.md)
@@ -100,7 +100,7 @@ A: I recommend **Weighted ASTRAL**. It utilizes branch lengths and supports to i
 
 Q: I have gene trees but they do not satisfy the requirements for wASTRAL.
 
-A: You can still use **ASTRAL4**. By the way, ASTRAL4 is also useful for finding the supertree.
+A: You can still use **ASTRAL-IV**. By the way, ASTRAL-IV is also useful for finding the supertree.
 
 # ACKNOWLEGEMENT
 ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab and Rasmus Nielsen.
