@@ -49,7 +49,7 @@ clean:
 	rm bin/*
 	
 tutorial: all
-	rm tutorial/*.md
+	mkdir -p tutorial
 	bin/astral4 -H
 	bin/astral-pro3 -H
 	bin/wastral -H
