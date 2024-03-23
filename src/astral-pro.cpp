@@ -1,13 +1,14 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: Integrate CASTLES-Pro
  * 4: Add support for CASTLES
  * 3: Add support for polytomies
  */
 
 #define ROOTING
 
-//#define CASTLES
+#define CASTLES
 
 #include<iostream>
 #include<fstream>

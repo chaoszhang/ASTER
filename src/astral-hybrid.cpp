@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: merge all versions of weighted astral
  * 4: add weighting by tree and other options
  */
 
@@ -178,17 +179,8 @@ void readInputTrees(string input, string mapping, string treeweights) {
 	}
 }
 
-string HELP = " -a taxonNameMaps -x maxWeight -n minWeight -d defaultWeight";
-string HELP_TEXT = R"V0G0N(-a  a list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab
--m  treating duplicated taxa in a gene tree as: 1) muti-copy genes (default) or 2) multi-individual of the same species.
--x  max possible weight in weight scale (default: 100)
--n  min possible weight in weight scale (default: 0)
--d  min default weight when weight not provided (default: 0)
-inputGeneTrees: the path to a file containing all gene trees in Newick format
-)V0G0N";
-
 int main(int argc, char** argv){
-	ARG.setProgramName("astral-hybrid", "Weighted ASTRAL - Hybrid");
+	ARG.setProgramName("wastral", "Weighted ASTRAL (all versions included) \n *** You may use --mode to switch from hybrid weighting to other weighting schemes. ***");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 	ARG.addDoubleArg('x', "max", 100, "Max possible support value in weight scale");
 	ARG.addDoubleArg('n', "min", 0, "Min possible support value in weight scale");
@@ -208,7 +200,7 @@ int main(int argc, char** argv){
 
 	int dupType = 1;
 	string mappingFile;
-	meta.initialize(argc, argv, HELP, HELP_TEXT);
+	meta.initialize(argc, argv);
 	mappingFile = ARG.getStringArg("mapping");
 	maxv = ARG.getDoubleArg("max");
 	minv = ARG.getDoubleArg("min");

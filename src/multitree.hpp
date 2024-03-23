@@ -1,6 +1,7 @@
-#define OBJECTIVE_VERSION "2"
+#define OBJECTIVE_VERSION "3"
 
 /* CHANGE LOG
+ * 3. add CASTLES-Pro branch length calculations
  * 2. add customized annotation for branch lengths
  */
 

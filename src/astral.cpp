@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: Integrating CASTLES-II
  * 4: Adding rooting option
  * 3: Parse gene tree branch lengths
  * 2: Officialize program name
@@ -8,8 +9,7 @@
  */
 
 #define ROOTING
-
-//#define ASTRALIV
+#define CASTLES
 
 #ifdef ASTRALIV
 #define CASTLES

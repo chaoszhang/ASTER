@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.16"
+#define ALG_VERSION "v1.17"
 
 /* CHANGE LOG
+ * 1.17: adding support for castles
  * 1.16: adding support for annotations for branch lengths
  * 1.15: adding rooting option
  * 1.14: adding more information in -u 2 option

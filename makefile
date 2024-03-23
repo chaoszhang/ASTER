@@ -1,40 +1,29 @@
-all: dir astral astral-pro astral-hybrid caster-site caster-site_branchlength caster-pair waster-site
+all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site
 	echo "*** Installation complete! ***"
 
-mac: dir astral astral-pro astral-hybrid
+mac: dir astral astral-pro wastral
 	echo "*** Installation complete! ***"
 
 astral: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral || g++ -std=c++17 -O2 -pthread src/astral.cpp -o bin/astral
-	g++ -std=gnu++11 -march=native -D CASTLES -Ofast -pthread src/astral.cpp -o bin/astral4_experimental
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral.cpp -o bin/astral4 || g++ -std=c++17 -O2 -pthread src/astral.cpp -o bin/astral4
+	cp bin/astral4 bin/astral
 
 astral_int128: dir
-	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral_int128
+	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral4_int128
 	
 astral-pro: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro || g++ -std=c++17 -O2 -pthread src/astral-pro.cpp -o bin/astral-pro
-	g++ -std=gnu++11 -march=native -D CASTLES -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3_experimental
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3 || g++ -std=c++17 -O2 -pthread src/astral-pro.cpp -o bin/astral-pro3
+	cp bin/astral-pro3 bin/astral-pro
 	
 astral-pro_int128: dir
-	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro_int128
+	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3_int128
 
-astral-weighted: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-weighted.cpp -o bin/astral-weighted
+wastral: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/wastral || g++ -std=c++17 -O2 -pthread src/astral-hybrid.cpp -o bin/wastral
+	cp bin/wastral bin/astral-hybrid
 	
-astral-weighted_precise: dir
-	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-weighted.cpp -o bin/astral-weighted_precise
-	
-astral-lengthweighted: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-lengthweighted.cpp -o bin/astral-lengthweighted
-	
-astral-lengthweighted_precise: dir
-	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-lengthweighted.cpp -o bin/astral-lengthweighted_precise
-	
-astral-hybrid: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid || g++ -std=c++17 -O2 -pthread src/astral-hybrid.cpp -o bin/astral-hybrid
-	
-astral-hybrid_precise: dir
-	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/astral-hybrid_precise
+wastral_precise: dir
+	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-hybrid.cpp -o bin/wastral_precise
 	
 caster-site: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site || g++ -std=gnu++17 -O2 -pthread src/caster-site.cpp -o bin/caster-site
@@ -58,16 +47,10 @@ dir:
 	
 clean:
 	rm bin/*
-
-aaa-gpu:
-	nvcc -O3 -rdc=true -c src/biallelic-cuda.cu -o bin/biallelic-cuda.o
-	nvcc -dlink -o bin/biallelic-cuda_link.o bin/biallelic-cuda.o -lcudadevrt -lcudart
-	g++ -std=gnu++11 -march=native -Ofast -pthread -D"USE_CUDA" bin/biallelic-cuda.o bin/biallelic-cuda_link.o src/asterisk-biallelic.cpp -o bin/asterisk-biallelic-cuda -L/usr/local/cuda/lib64 -lcudart -lcudadevrt
-	rm bin/*.o
 	
 tutorial: all
-	bin/astral -H
-	bin/astral-pro -H
-	bin/astral-hybrid -H
+	bin/astral4 -H
+	bin/astral-pro3 -H
+	bin/wastral -H
 	bin/caster-site -H
 	bin/waster-site -H

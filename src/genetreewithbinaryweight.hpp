@@ -1,6 +1,7 @@
-#define OBJECTIVE_VERSION "3"
+#define OBJECTIVE_VERSION "4"
 
 /* CHANGE LOG
+ * 4. adding support for CASTLES
  * 3. code refactoring
  * 2. add customized annotation for branch lengths
  * 1. replace genetree.hpp as the default objective for astral.cpp
