@@ -8,7 +8,8 @@ class MDGenerator{
 const string APRO_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm for PaRalogs and Orthologs (ASTRAL-Pro3)
 ASTRAL-Pro stands for ASTRAL for PaRalogs and Orthologs. ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees and is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL-pro extends ASTRAL to allow multi-copy genes. ASTRAL-pro finds the species tree that has the maximum number of shared induced quartet tree equivalent classes with the set of gene trees, subject to the constraint that the set of bipartitions in the species tree comes from a predefined set of bipartitions. Please see the paper below for the definition of the PL-quartet scores, which is what ASTRAL-Pro optimizes. We refer to the tool both as A-Pro and ASTRAL-Pro. 
 
-`ASTRAL-Pro3` re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
+ASTRAL-Pro3 re-implements [ASTRAL-Pro](https://github.com/chaoszhang/A-pro) in an equally accurate yet **faster**, and **easier to install** and **lower memory consumption** way.
+ASTRAL-Pro3 also integrates [CASTLES-Pro](https://github.com/ytabatabaee/CASTLES) and thus computes terminal and internal branch lengths in substitution-per-site units.
 
 ## Publication
 
@@ -28,7 +29,8 @@ Branch lengths are computed using integrated CASTLES-Pro [3].
 const string ASTRAL_UNIQUE_INTRO = R"V0G0N(# Accurate Species Tree ALgorithm (ASTRAL-IV)
 ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
 
-`ASTRAL4` re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
+ASTRAL-IV re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
+ASTRAL-IV also integrates [CASTLES-II](https://github.com/ytabatabaee/CASTLES) and thus computes terminal and internal branch lengths in substitution-per-site units.
 
 As a scalable alternative to ASTRAL-III, ASTRAL-IV lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with ASTRAL-IV and use the ASTRAL-IV output tree as `-q` option to ASTRAL-III. 
 
@@ -192,7 +194,7 @@ gene_B3 species_name_B
 The output in is Newick format and gives:
 
 * the species tree topology
-* (NEW) branch lengths in ***substitution-per-site*** units (for ***all*** branches)
+* (NEW) branch lengths in ***substitution-per-site*** units (IQ-TREE like) for ***all*** branches
 * branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
 * It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 
@@ -218,7 +220,7 @@ individual_B3 species_name_B
 The output in is Newick format and gives:
 
 * the species tree topology
-* (NEW) branch lengths in ***substitution-per-site*** units (for ***all*** branches)
+* (NEW) branch lengths in ***substitution-per-site*** units (IQ-TREE like) for ***all*** branches
 * branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
 * It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
 

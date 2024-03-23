@@ -575,9 +575,11 @@ int main(int argc, char** argv){
 	LOG << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
 	LOG << "Score: " << score << endl;
 
+	/*
 	#ifdef CASTLES
 	examplePrintSubtreeWithSupport(meta.annotTree->root());
 	cout << ";\n";
 	#endif
+	*/
 	return 0;
 }

@@ -3,8 +3,8 @@
 [<img src="misc/ASTER.png" width="250"/>](misc/ASTER.png)
 
 A family of optimatization algorithms for species tree inference:
-1. [ASTRAL-IV](tutorial/astral4.md) (from unrooted gene tree ***topologies***)
-2. [ASTRAL-Pro3](tutorial/astral-pro3.md) (from unrooted gene ***family*** tree topologies)
+1. [ASTRAL-IV](tutorial/astral4.md) (from unrooted gene tree ***topologies*** with integrated CASTLES-II for branch lengths)
+2. [ASTRAL-Pro3](tutorial/astral-pro3.md) (from unrooted gene ***family*** tree topologies with integrated CASTLES-Pro)
 3. [Weighted ASTRAL](tutorial/wastral.md) (from unrooted gene trees with branch ***lengths*** and/or ***supports***)
 4. [CASTER-site](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
 5. [CASTER-pair](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)

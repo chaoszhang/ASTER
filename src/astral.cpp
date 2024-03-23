@@ -259,9 +259,11 @@ int main(int argc, char** argv){
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
 
+	/*
 	#ifdef CASTLES
 	examplePrintSubtreeWithSupport(meta.annotTree->root());
 	cout << ";\n";
 	#endif
+	*/
 	return 0;
 }
