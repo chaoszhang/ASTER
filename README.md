@@ -3,9 +3,9 @@
 [<img src="misc/ASTER.png" width="250"/>](misc/ASTER.png)
 
 A family of optimatization algorithms for species tree inference:
-1. [ASTRAL](tutorial/astral.md)
-2. [ASTRAL-Pro](tutorial/astral-pro.md)
-3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
+1. [ASTRAL4](tutorial/astral4.md)
+2. [ASTRAL-Pro3](tutorial/astral-pro3.md)
+3. [Weighted ASTRAL](tutorial/wastral.md)
 4. [CASTER-site](tutorial/caster-site.md)
 5. [CASTER-pair](tutorial/caster-site.md)
 6. [WASTER-site](tutorial/waster-site.md)
@@ -69,9 +69,9 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 
 # EXECUTION
 Please click the link below:
-1. [ASTRAL](tutorial/astral.md)
-2. [ASTRAL-Pro](tutorial/astral-pro.md)
-3. [Weighted ASTRAL](tutorial/astral-hybrid.md)
+1. [ASTRAL4](tutorial/astral4.md)
+2. [ASTRAL-Pro3](tutorial/astral-pro3.md)
+3. [Weighted ASTRAL](tutorial/wastral.md)
 4. [CASTER-site](tutorial/caster-site.md)
 5. [CASTER-pair](tutorial/caster-site.md)
 6. [WASTER-site](tutorial/waster-site.md)
@@ -88,7 +88,7 @@ A: I recommend **CASTER-site**, which is usually 1-2 magnitudes faster than conc
 
 Q: My dataset has a lot of muti-copy genes (e.g. plants) and I want to make an effort to utilize these precious signals.
 
-A: I highly recommend **ASTRAL-Pro**, which takes as input non-rooted non-labelled gene family trees. ASTRAL-Pro does not need to know the homology relationships of genes, but you still need to reconstruct gene family trees by yourself using RAxML/IQTree/Fasttree.
+A: I highly recommend **ASTRAL-Pro3**, which takes as input non-rooted non-labelled gene family trees. ASTRAL-Pro3 does not need to know the homology relationships of genes, but you still need to reconstruct gene family trees by yourself using RAxML/IQTree/Fasttree.
 
 Q: I have aligned genomes (>10M sites) and the average nucleotide identity is >80% between closely related species (e.g. birds, mammals, or abundant taxon sampling).
 
@@ -96,11 +96,11 @@ A: I recommend **CASTER-site** (faster) and **CASTER-pair** (slower). Those meth
 
 Q: I have gene trees with branch lengths and Bootstrap/Baysian supports and I know that horizontal gene transfers and hybridizations are rare.
 
-A: I recommend **Weighted ASTRAL - hybrid**. It utilizes branch lengths and supports to improve accuracy.
+A: I recommend **Weighted ASTRAL**. It utilizes branch lengths and supports to improve accuracy.
 
-Q: I have gene trees but they do not satisfy the requirements for Weighted ASTRAL - hybrid.
+Q: I have gene trees but they do not satisfy the requirements for wASTRAL.
 
-A: You can still use **ASTRAL**. By the way, this version of ASTRAL is also useful for finding the supertree.
+A: You can still use **ASTRAL4**. By the way, ASTRAL4 is also useful for finding the supertree.
 
 # ACKNOWLEGEMENT
 ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab and Rasmus Nielsen.

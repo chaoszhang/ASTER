@@ -49,6 +49,7 @@ clean:
 	rm bin/*
 	
 tutorial: all
+	rm tutorial/*.md
 	bin/astral4 -H
 	bin/astral-pro3 -H
 	bin/wastral -H
