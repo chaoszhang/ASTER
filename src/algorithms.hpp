@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.17"
+#define ALG_VERSION "v1.18"
 
 /* CHANGE LOG
+ * 1.18: improving numerical stability for incomplete beta
  * 1.17: adding support for castles
  * 1.16: adding support for annotations for branch lengths
  * 1.15: adding rooting option
@@ -1362,6 +1363,9 @@ struct ConstrainedOptimizationAlgorithm{
 			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
 		}
 		else if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)){
+			support0 = 1; support1 = 0; support2 = 0;
+		}
+		else if (tscore > 1000 && score[0] - max(score[1], score[2]) > 5 * sqrt((score[0] + max(score[1], score[2])) * 0.25)){
 			support0 = 1; support1 = 0; support2 = 0;
 		}
 		else {
