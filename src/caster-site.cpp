@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
 
 /* CHANGE LOG
+ * 4: Updating Eqfreq calculation
  * 3: Updating input file parser
  * 2: Adding branch length functionality
  * 1: Modified the logic in parsing FASTA names 
@@ -82,27 +83,22 @@ struct Workflow {
         return result;
     }
 
-    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset){
+    void buildGeneSeq(TripartitionInitializer::Gene::Initializer &gene, const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset, const array<double, 4> &eqfreq){
         int nInd = ind2species.size();
-        array<size_t, 4> cnt = {};
         for (int iInd = 0; iInd < nInd; iInd++) {
             size_t pSeq = pos + iInd * offset;
-            for (size_t iSite = 0; iSite < nSite; iSite++) {
-                tripInit.seq.add(pSeq + iSite, cnt);
-            }
             gene.species2ind[ind2species[iInd]].push_back(iInd);
             gene.ind2seq[iInd] = pSeq;
         }
-        double total = cnt[0] + cnt[1] + cnt[2] + cnt[3];
         for (int j = 0; j < 4; j++) {
-            gene.pi[j] = cnt[j] / total;
+            gene.pi[j] = eqfreq[j];
         }
     }
 
-    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset, const array<double, 4> &eqfreq) {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
-        buildGeneSeq(gene, ind2species, pos, nSite, offset);
+        buildGeneSeq(gene, ind2species, pos, nSite, offset, eqfreq);
         tripInit.genes.emplace_back(gene);
     }
 
@@ -111,8 +107,10 @@ struct Workflow {
         while (AP.nextAlignment()){
             AP2.nextAlignment();
             vector<bool> keep;
+            array<double, 4> eqfreq;
             {
                 vector<array<unsigned short, 4> > freq;
+                array<long long, 4> freqCnt;
                 keep.resize(AP.getLength());
                 freq.resize(AP.getLength());
                 while (AP.nextSeq()) {
@@ -120,10 +118,10 @@ struct Workflow {
                     string seq = AP.getSeq();
                     for (size_t i = 0; i < seq.size(); i++) {
                         switch (seq[i]) {
-                            case 'A': freq[i][0]++; break;
-                            case 'C': freq[i][1]++; break;
-                            case 'G': freq[i][2]++; break;
-                            case 'T': freq[i][3]++; break;
+                            case 'A': freq[i][0]++; freqCnt[0]++; break;
+                            case 'C': freq[i][1]++; freqCnt[1]++; break;
+                            case 'G': freq[i][2]++; freqCnt[2]++; break;
+                            case 'T': freq[i][3]++; freqCnt[3]++; break;
                         }
                     }
                 }
@@ -136,8 +134,12 @@ struct Workflow {
                     #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
                     keep[i] = true;
                     #else
-                    keep[i] = (cnt >= 2 || cnt1 >= 2);
+                    keep[i] = (cnt >= 2 || (cnt == 1 && cnt1 >= 2));
                     #endif
+                }
+                double total = freqCnt[0] + freqCnt[1] + freqCnt[2] + freqCnt[3];
+                for (int j = 0; j < 4; j++) {
+                    eqfreq[j] = freqCnt[j] / total;
                 }
             }
             {
@@ -153,7 +155,7 @@ struct Workflow {
                 int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
                 for (int i = 0; i < nChunk; i++) {
                     size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                    formatGene(ind2species, pos + s, t - s, len);
+                    formatGene(ind2species, pos + s, t - s, len, eqfreq);
                 }
             }
         }
