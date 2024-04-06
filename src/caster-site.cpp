@@ -126,15 +126,10 @@ struct Workflow {
                     }
                 }
                 for (size_t i = 0; i < keep.size(); i++) {
-                    int cnt = 0, cnt1 = 0;
-                    for (int j = 0; j < 4; j++) {
-                        if (freq[i][j] >= 2) cnt++;
-                        if (freq[i][j] == 1) cnt1++;
-                    }
                     #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
                     keep[i] = true;
                     #else
-                    keep[i] = (cnt >= 2 || (cnt == 1 && cnt1 >= 2));
+                    keep[i] = (freq[i][0] + freq[i][2] >= 2 && freq[i][1] + freq[i][3] >= 2);
                     #endif
                 }
                 double total = freqCnt[0] + freqCnt[1] + freqCnt[2] + freqCnt[3];
