@@ -110,7 +110,7 @@ struct Workflow {
             array<double, 4> eqfreq;
             {
                 vector<array<unsigned short, 4> > freq;
-                array<long long, 4> freqCnt;
+                array<long long, 4> freqCnt = {};
                 keep.resize(AP.getLength());
                 freq.resize(AP.getLength());
                 while (AP.nextSeq()) {
