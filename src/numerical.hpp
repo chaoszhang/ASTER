@@ -1,6 +1,7 @@
 #define OBJECTIVE_VERSION "0"
 
 #include<vector>
+#include<array>
 #include<cmath>
 #include "threadpool.hpp"
 
