@@ -59,11 +59,25 @@ int main(int argc, char** argv){
             cnt.emplace_back(m);
         }
         for (int j = 0; j < m; j++){
-            if (arr[j] == -1) continue;
+            if (arr[j] < 0) continue;
             M[i][j] += arr[j];
             cnt[i][j]++;
         }
     }
+    
+    for (int j = 0; j < M[0].size(); j++){
+        double sumM = 0, sumCnt = 0;
+        for (int i = 0; i < M.size(); i++){
+            sumM += M[i][j];
+            sumCnt += cnt[i][j];
+        }
+        double avg = (sumCnt > 0) ? sumM / sumCnt : 0;
+        for (int i = 0; i < M.size(); i++){
+            M[i][j] -= avg * cnt[i][j];
+        }
+    }
+    
+    tripInit.nThreads = meta.nThreads;
 
     LOG << "#Measurements: " << m << endl;
     LOG << "#Samples: " << nSample << endl;

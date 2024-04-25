@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.18"
+#define ALG_VERSION "v1.19"
 
 /* CHANGE LOG
+ * 1.19: error message for guide trees and constraint trees
  * 1.18: improving numerical stability for incomplete beta
  * 1.17: adding support for castles
  * 1.16: adding support for annotations for branch lengths
@@ -1020,6 +1021,10 @@ struct ConstrainedOptimizationAlgorithm{
 			string s;
 			for (; tree[i] != ':' && tree[i] != ')' && tree[i] != ',' && tree[i] != ';'; i++){
 				if (tree[i] != '\"' && tree[i] != '\'') s += tree[i];
+			}
+			if (name2id.count(s) == 0){
+				cerr << "Unknow species '" << s << "' in tree '" << tree << "' not found in the input! \n";
+				exit(0);
 			}
 			int id = name2id.at(s);
 			//pAlg.trip.addTotal(id);
