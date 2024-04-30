@@ -497,9 +497,17 @@ bin/PROGRAM_NAME -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 ASTER has very good parrallel efficiency up to 64 cores when input data is large. In fact, it often experiences super-linear speedup with 16 cores or more. So feel free to use as many cores as you want.
+
+ASTER also allows rooting at an given outgroup:
+
+```
+bin/PROGRAM_NAME --root YOUR_OUTGROUP INPUT_FILE
+```
 )V0G0N";
 
 const string APRO_UNIQUE_EXE = R"V0G0N(
+For ASTRAL-Pro, correct rooting is **strongly recommended** to accurately compute branch lengths.
+
 By default, ASTRAL-Pro assumes multiple genes from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
 
 ```
@@ -508,6 +516,8 @@ bin/astral-pro3 -a example/multitree_genename.map example/multitree_genename.nw
 )V0G0N";
 
 const string ASTRAL_UNIQUE_EXE = R"V0G0N(
+For ASTRAL, correct rooting is **strongly recommended** to accurately compute branch lengths.
+
 By default, ASTRAL assumes multiple individuals from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
 
 ```
