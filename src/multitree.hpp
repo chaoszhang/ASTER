@@ -27,7 +27,7 @@ struct CustomizedAnnotation{
 		length_t sumLengthD = 0;
 
 		void numericalBalancing(){
-			if (quartetCnt < 1e-8){
+			if (quartetCnt < 1e-6){
 				quartetCnt = 0;
 				sumInternalLength = 0;
 				sumLengthA = 0;
@@ -399,6 +399,25 @@ struct Quadrupartition{
 				annot.sumLengthD = 0;
 				annot.sumInternalLength = 0;
 			}
+
+			{
+				score_t wp = up + vp, wq = uq + vq, wr = ur + vr, ws = us + vs;
+
+				if (wp < 1e-8) wp = 0;
+				if (wq < 1e-8) wq = 0;
+				if (wr < 1e-8) wr = 0;
+				if (ws < 1e-8) ws = 0;
+
+				if (wp == 0 || wq == 0) W.Pq = W.Qp = W.pqX = W.pq = 0;
+				if (wr == 0 || ws == 0) W.Rs = W.Sr = W.rsX = W.rs = 0;
+
+				if (wp == 0 || wq == 0 || wr == 0) W.Sr_pq = W.Qp_r = W.Pq_r = W.pqXr = W.R_pq = W.pq_r = 0;
+				if (wp == 0 || wq == 0 || ws == 0) W.Rs_pq = W.Qp_s = W.Pq_s = W.pqXs = W.S_pq = W.pq_s = 0;
+				if (wp == 0 || wr == 0 || ws == 0) W.Qp_rs = W.Sr_p = W.Rs_p = W.pXrs = W.P_rs = W.p_rs = 0;
+				if (wq == 0 || wr == 0 || ws == 0) W.Pq_rs = W.Sr_q = W.Rs_q = W.qXrs = W.Q_rs = W.q_rs = 0;
+
+				if (wp == 0 || wq == 0 || wr == 0 || ws == 0) annot.sumLengthA = annot.sumLengthB = annot.sumLengthC = annot.sumLengthD = annot.sumInternalLength = annot.quartetCnt = W.pq_rs = 0;
+			}
 		}
 
 		CustomizedAnnotation extended(Node& w){
@@ -429,6 +448,7 @@ struct Quadrupartition{
 				w.C = (u.C + v.C) / 2 + w.cc * w.length;
 				w.D = (u.D + v.D) / 2 + w.dd * w.length;
 			}
+
 			extended<0>(w, u, v);
 			extended<1>(w, u, v);
 			extended<2>(w, u, v);

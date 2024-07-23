@@ -333,6 +333,20 @@ struct Quadrupartition{
 			annot.sumLengthD = U.Sr_p * vq + V.Sr_p * uq + U.Sr_q * vp + V.Sr_q * up + U.S_pq * vr + V.S_pq * ur + uS * V.pq_r + vS * U.pq_r + us * V.Sr_pq + vs * U.Sr_pq + U.Srx * V.pqx - U.Sry * V.pqy + V.Srx * U.pqx - V.Sry * U.pqy;
 			annot.sumInternalLength = U.pqZr * vs + V.pqZr * us + U.pqZs * vr + V.pqZs * ur + U.pZrs * vq + V.pZrs * uq + up * V.qZrs + vp * U.qZrs
 									+ U.pqX * V.rsx - U.pqY * V.rsy + U.pqx * V.rsX - U.pqy * V.rsY + V.pqX * U.rsx - V.pqY * U.rsy + V.pqx * U.rsX - V.pqy * U.rsY;
+
+			{
+				score_t wp = up + vp, wq = uq + vq, wr = ur + vr, ws = us + vs;
+
+				if (wp == 0 || wq == 0) W.Pqx = W.Pqy = W.Qpx = W.Qpy = W.pqX = W.pqY = W.pqx = W.pqy = 0;
+				if (wr == 0 || ws == 0) W.Rsx = W.Rsy = W.Srx = W.Sry = W.rsX = W.rsY = W.rsx = W.rsy = 0;
+
+				if (wp == 0 || wq == 0 || wr == 0) W.Sr_pq = W.Qp_r = W.Pq_r = W.pqZr = W.R_pq = W.pq_r = 0;
+				if (wp == 0 || wq == 0 || ws == 0) W.Rs_pq = W.Qp_s = W.Pq_s = W.pqZs = W.S_pq = W.pq_s = 0;
+				if (wp == 0 || wr == 0 || ws == 0) W.Qp_rs = W.Sr_p = W.Rs_p = W.pZrs = W.P_rs = W.p_rs = 0;
+				if (wq == 0 || wr == 0 || ws == 0) W.Pq_rs = W.Sr_q = W.Rs_q = W.qZrs = W.Q_rs = W.q_rs = 0;
+
+				if (wp == 0 || wq == 0 || wr == 0 || ws == 0) annot.sumLengthA = annot.sumLengthB = annot.sumLengthC = annot.sumLengthD = annot.sumInternalLength = annot.quartetCnt = W.pq_rs = 0;
+			}
 		}
 
 		CustomizedAnnotation extended(Node& w){
