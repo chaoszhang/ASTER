@@ -137,6 +137,7 @@ struct AlignmentParser{
         return bufferSeq;
     }
 
+private:
     static string getFastaName(const string &fasta){
         int i = 0;
         string res;
@@ -158,7 +159,6 @@ struct AlignmentParser{
         return res;
     }
 
-private:
     static string removeSpace(const string &seq){
         string res;
         for (char c: seq){

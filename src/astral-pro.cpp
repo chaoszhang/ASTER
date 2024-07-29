@@ -569,6 +569,7 @@ int main(int argc, char** argv){
 
 	#ifdef CASTLES
 	ARG.getDoubleArg("outgrouplength") = computeOutgroupLength();
+	ARG.getIntArg("numgenetrees") = K;
 	#endif
 
 	score_t score = meta.run().first;
