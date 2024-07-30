@@ -59,7 +59,7 @@ struct CastlesNode{
             length_t l_lambert = (delta + lambertw(-1 / 3 * exp(-delta - 1) * (2 * delta + 3)) + 1) * ln_i;
             length_t threshold = log10(ngts);
             length_t w_mean = threshold * d_est, w_lambert = 1 / (threshold * d_est);
-            length_t l_est = (w_mean * lm_i + w_lambert * l_lambert) / (w_mean + w_lambert);
+            l_est = (w_mean * lm_i + w_lambert * l_lambert) / (w_mean + w_lambert);
         }
         length_t mu1_est = l_est / d_est;
         
