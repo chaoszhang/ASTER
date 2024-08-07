@@ -1,4 +1,8 @@
-#define DRIVER_VERSION "0"
+#define DRIVER_VERSION "1"
+
+/* CHANGE LOG
+ * 1: Remove non-effective sites
+ */
 
 #include<iostream>
 #include<fstream>
@@ -31,15 +35,17 @@ typedef int count_t;
 
 using namespace std;
 
-unsigned char CHAR2BITS[256] = {}, CHAR2MASK[256] = {}, RC[256] = {};
-unsigned char QUALITY2ASCII[95] = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+static unsigned char CHAR2BITS(char c){
+    if (c == 'A') return 0;
+    if (c == 'C') return 1;
+    if (c == 'G') return 2;
+    if (c == 'T') return 3;
+    return 0;
+}
 
-const string STRING_REVERSE_COMPLEMENT(const string &seq){
-    string res;
-    for (int i = seq.size() - 1; i >= 0; i--){
-        res += RC[seq[i]];
-    }
-    return res;
+static unsigned char CHAR2MASK(char c){
+    if (c == 'N') return 1;
+    return 0;
 }
 
 template<size_t K> class KmerTable{
@@ -53,13 +59,13 @@ public:
     size_t fillcnt = 0;
 
     static void shift(size_t &bits, size_t &mask, const unsigned char c){
-        bits = ((bits << 2) | CHAR2BITS[c]) & MASK;
-        mask = ((mask << 2) | CHAR2MASK[c]) & MASK;
+        bits = ((bits << 2) | CHAR2BITS(c)) & MASK;
+        mask = ((mask << 2) | CHAR2MASK(c)) & MASK;
     }
 
     static void rshift(size_t &bits, size_t &mask, const unsigned char c){
-        bits = (bits >> 2) | ((3 ^ CHAR2BITS[c]) << (K * 2 - 2));
-        mask = ((mask << 2) | CHAR2MASK[c]) & MASK;
+        bits = (bits >> 2) | ((3 ^ CHAR2BITS(c)) << (K * 2 - 2));
+        mask = ((mask << 2) | CHAR2MASK(c)) & MASK;
     }
 
     static size_t REVERSE_COMPLEMENT(size_t bits){
@@ -85,20 +91,21 @@ public:
             shift(b2, m2, seqn[i + K]);
             rshift(b3, m3, seqn[i + 2 * K + 1]);
             rshift(b4, m4, seqn[i + 3 * K + 1]);
-            if (i >= K - 1 && CHAR2MASK[seqs[i + K + 1]] == 0){
+            char c = seqs[i + K + 1];
+            if (i >= K - 1 && CHAR2MASK(c) == 0){
                 if (b1 > b4 && m1 == 0 && m4 == 0){
                     size_t p = b1 * (b1 - 1) / 2 + b4;
-                    if (CHAR2BITS[seqs[i + K + 1]] & 1) table[p] |= 2;
+                    if (CHAR2BITS(c) & 1) table[p] |= 2;
                     else table[p] |= 1;
                 }
                 if (b2 > b3 && m2 == 0 && m3 == 0){
                     size_t p = b2 * (b2 - 1) / 2 + b3;
-                    if (CHAR2BITS[seqs[i + K + 1]] & 1) table[p] |= 2;
+                    if (CHAR2BITS(c) & 1) table[p] |= 2;
                     else table[p] |= 1;
                 }
             }
         }
-        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seqs), STRING_REVERSE_COMPLEMENT(seqn), false);
+        if (bothStrands) add(SeqParser::STRING_REVERSE_COMPLEMENT(seqs), SeqParser::STRING_REVERSE_COMPLEMENT(seqn), false);
     }
 
     void postprocess(){
@@ -144,15 +151,18 @@ public:
 };
 
 template<size_t K> class SNP{
-    constexpr static const size_t SHIFT = 6;
+    constexpr static const size_t SHIFT = 8;
     constexpr static const size_t M = (1LL << (K * 4 - 1 - SHIFT)) - (1LL << (K * 2 - 1 - SHIFT));
     string snps;
 
 public:
     static vector<size_t> sortedPattern, pattern2pos;
+    static vector<int8_t> cntAG, cntCT;
 
     static void staticInit(){
         sort(sortedPattern.begin(), sortedPattern.end());
+        cntAG.resize(sortedPattern.size());
+        cntCT.resize(sortedPattern.size());
         pattern2pos.reserve(M + 1);
         size_t n = sortedPattern.size();
         for (size_t i = 0, j = 0; i < M + 1; i++){
@@ -161,9 +171,23 @@ public:
         }
     }
 
+    static void staticFilter(){
+        vector<size_t> filteredPattern;
+        for (int i = 0; i < sortedPattern.size(); i++) {
+            if (cntAG[i] >= 2 && cntCT[i] >= 2) filteredPattern.push_back(sortedPattern[i]);
+        }
+        sortedPattern = filteredPattern;
+        pattern2pos.clear();
+        cntAG.clear();
+        cntCT.clear();
+        staticInit();
+    }
+
     static void staticClear(){
         sortedPattern.clear();
+        sortedPattern.shrink_to_fit();
         pattern2pos.clear();
+        pattern2pos.shrink_to_fit();
     }
 
     static size_t locate(size_t pattern){
@@ -191,16 +215,20 @@ public:
             KmerTable<K>::shift(b2, m2, seqn[i + K]);
             KmerTable<K>::rshift(b3, m3, seqn[i + 2 * K + 1]);
             KmerTable<K>::rshift(b4, m4, seqn[i + 3 * K + 1]);
-            if (i >= K - 1 && CHAR2MASK[seqs[i + K + 1]] == 0){
+            if (i >= K - 1 && CHAR2MASK(seqs[i + K + 1]) == 0){
                 if (b1 > b4 && m1 == 0 && m4 == 0) add(b1 * (b1 - 1) / 2 + b4, seqs[i + K + 1]);
                 if (b2 > b3 && m2 == 0 && m3 == 0) add(b2 * (b2 - 1) / 2 + b3, seqs[i + K + 1]);
             }
         }
-        if (bothStrands) add(STRING_REVERSE_COMPLEMENT(seqs), STRING_REVERSE_COMPLEMENT(seqn), false);
+        if (bothStrands) add(SeqParser::STRING_REVERSE_COMPLEMENT(seqs), SeqParser::STRING_REVERSE_COMPLEMENT(seqn), false);
     }
 
-    void reset(){
-        for (char& c: snps) c = 0;
+    void postprocess(){
+        for (int i = 0; i < sortedPattern.size(); i++) {
+            if ((snps[i] == 'A' || snps[i] == 'G') && cntAG[i] < 2) cntAG[i]++;
+            if ((snps[i] == 'C' || snps[i] == 'T') && cntCT[i] < 2) cntCT[i]++; 
+            snps[i] = 0;
+        } 
     }
 
     const string& get(){
@@ -212,6 +240,8 @@ public:
 };
 template <size_t K> vector<size_t> SNP<K>::sortedPattern;
 template <size_t K> vector<size_t> SNP<K>::pattern2pos;
+template <size_t K> vector<int8_t> SNP<K>::cntAG;
+template <size_t K> vector<int8_t> SNP<K>::cntCT;
 
 struct Workflow {
     MetaAlgorithm meta;
@@ -220,7 +250,7 @@ struct Workflow {
     vector<string>& names = meta.names;
     unordered_map<string, int>& name2id = meta.name2id;
     
-    unsigned char QCS = 0, QCN = 0;
+    int intqcs, intqcn;
     bool eofFlag = false;
 
     double GCcontent = 0.5;
@@ -258,80 +288,64 @@ struct Workflow {
         tripInit.genes.emplace_back(gene);
     }
 
-    static string getFormat(const string fileName){
-        ifstream fin(fileName);
-        string s;
-        getline(fin, s);
-        if (s.size() == 0) return "";
-        if (s[0] == '@') return "fastq";
-        if (s[0] == '>') return "fasta";
-        return "";
+    static int countAT(const string seq){
+        int cnt = 0;
+        for (const char c: seq){
+            if (c == 'A' || c == 'T') cnt++;
+        }
+        return cnt;
     }
 
-    bool getFastaSeq(ifstream& fin, string& seq){
-        if (eofFlag){
-            eofFlag = false;
-            return false;
+    static int countCG(const string seq){
+        int cnt = 0;
+        for (const char c: seq){
+            if (c == 'C' || c == 'G') cnt++;
         }
-        seq = "";
-        eofFlag = true;
-        string line;
-        while(getline(fin, line)){
-            if (line[0] == '>'){
-                if (seq == "") continue;
-                else {
-                    eofFlag = false;
-                    break;
-                }
-            }
-            seq += line;
-        }
-        return true;
+        return cnt;
     }
-
-    bool getFastqSeq(ifstream& fin, string& seqs, string& seqn){
-        string line;
-        if (getline(fin, line)){
-            if (line == "") getline(fin, line);
-            getline(fin, seqs);
-            seqn = seqs;
-            getline(fin, line);
-            getline(fin, line);
-            for (int i = 0; i < seqs.size(); i++){
-                if (line[i] < QCS) seqs[i] = 'N';
-                if (line[i] < QCN) seqn[i] = 'N';
-            }
-
-            return true;
-        }
-        else return false;
-    }
-
+    
     void readAlignment(){
-        ifstream fin(ARG.getStringArg("input"));
         size_t freqAT = 0, freqCG = 0, npos = 0;
         string line;
-        while (getline(fin, line)){
-            if (line[0] == '>'){
-                string name = line.substr(1);
-                LOG << "Processing " << name << " ...\n";
-                addName(meta.mappedname(name));
-                ind2species.push_back(name2id[meta.mappedname(name)]);
-                continue;
-            }
-            npos += line.size();
-            for (const char c: line) {
-                tripInit.seq.append(c);
-                switch (c) {
-                    case 'A': case 'a': freqAT++; break;
-                    case 'C': case 'c': freqCG++; break;
-                    case 'G': case 'g': freqCG++; break;
-                    case 'T': case 't': freqAT++; break;
-                    case 'U': case 'u': freqAT++; break;
+        vector<int8_t> cntAG, cntCT;
+        {
+            ifstream fin(ARG.getStringArg("input"));
+            while (getline(fin, line)){
+                if (line[0] == '>'){
+                    string name = line.substr(1);
+                    LOG << "Processing " << name << " ...\n";
+                    continue;
+                }
+                if (cntAG.size() == 0){
+                    cntAG.resize(line.size());
+                    cntCT.resize(line.size());
+                }
+                freqAT += countAT(line);
+                freqCG += countCG(line);
+                for (int i = 0; i < line.size(); i++){
+                    if ((line[i] == 'A' || line[i] == 'G') && cntAG[i] < 2) cntAG[i]++;
+                    if ((line[i] == 'C' || line[i] == 'T') && cntCT[i] < 2) cntCT[i]++; 
                 }
             }
         }
-
+        {
+            ifstream fin(ARG.getStringArg("input"));
+            while (getline(fin, line)){
+                if (line[0] == '>'){
+                    string name = line.substr(1);
+                    LOG << "SNP calling " << name << " ...\n";
+                    addName(meta.mappedname(name));
+                    ind2species.push_back(name2id[meta.mappedname(name)]);
+                    continue;
+                }
+                string filtered;
+                for (int i = 0; i < line.size(); i++){
+                    if (cntAG[i] >= 2 && cntCT[i] >= 2) filtered.push_back(line[i]);
+                }
+                npos += filtered.size();
+                for (const char c: filtered) tripInit.seq.append(c);
+            }
+        }
         GCcontent = ((double) freqCG) / (freqAT + freqCG);
         nSNP = npos / ind2species.size();
     }
@@ -344,20 +358,18 @@ struct Workflow {
         tripInit.nThreads = meta.nThreads;
 
         if (ARG.getIntArg("mode") <= 3){
-            int intqcs = ARG.getIntArg("qcs");
+            intqcs = ARG.getIntArg("qcs");
             if (intqcs >= 94){
                 cerr << "Bad quality control threshold for SNPs!\n";
                 exit(0);
             }
-            QCS = QUALITY2ASCII[intqcs];
-            LOG << "Quality control: Masking all SNP bases with quality lower than '" << QCS << "' for FASTQ inputs.\n";
-            int intqcn = ARG.getIntArg("qcn");
+            LOG << "Quality control: Masking all SNP bases with quality lower than '" << SeqUtils::QUALITY2ASCII[intqcs] << "' for FASTQ inputs.\n";
+            intqcn = ARG.getIntArg("qcn");
             if (intqcn >= 94){
                 cerr << "Bad quality control threshold for non-SNPs!\n";
                 exit(0);
             }
-            QCN = QUALITY2ASCII[intqcn];
-            LOG << "Quality control: Masking all non-SNP bases with quality lower than '" << QCN << "' for FASTQ inputs.\n";
+            LOG << "Quality control: Masking all non-SNP bases with quality lower than '" << SeqUtils::QUALITY2ASCII[intqcn] << "' for FASTQ inputs.\n";
             switch (ARG.getIntArg("kmer")){
                 case 7: init<7>(); break;
                 case 8: init<8>(); break;
@@ -404,19 +416,10 @@ struct Workflow {
                 while (selected.count(cur)) cur = rand() % files.size();
                 selected.insert(cur);
                 LOG << "Species " << indNames[cur] << " is selected to count the most frequent patterns.\n";
-                string format = getFormat(files[cur]);
-                ifstream fin(files[cur]);
-                if (format == "fasta"){
-                    string seq;
-                    while (getFastaSeq(fin, seq)) table.add(seq, seq);
-                }
-                else if (format == "fastq"){
-                    string seqs, seqn;
-                    while (getFastqSeq(fin, seqs, seqn)) table.add(seqs, seqn);
-                }
-                else {
-                    cerr << "File " << files[cur] << " bad format!\n";
-                    exit(0);
+                SeqParser seq(files[cur]);
+                while (seq.nextSeq()){
+                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+                    table.add(seqs, seqn);
                 }
                 table.postprocess();
                 LOG << "Hash table " << (int) (table.fillProportion() * 100) << "% filled." << endl;
@@ -425,7 +428,7 @@ struct Workflow {
                     break;
                 }
             }
-            size_t patternCnt = min(KmerTable<K>::LEN * 2 / files.size(), KmerTable<K>::LEN / 8);
+            size_t patternCnt = KmerTable<K>::LEN * 2 / (files.size() + 128);
             freqPatterns = table.frequentPatterns(patternCnt, selected.size() == files.size());
 
             if (ARG.getIntArg("mode") == 2){
@@ -445,74 +448,65 @@ struct Workflow {
             while (fin >> i) freqPatterns.push_back(i);
         }
         
-        nSNP = freqPatterns.size();
-        LOG << nSNP << " SNPs are selected.\n";
+        LOG << freqPatterns.size() << " SNPs are selected.\n";
         
         if (ARG.getIntArg("mode") == 3){
             if (ARG.getStringArg("output") != "<standard output>") ofstream fin(ARG.getStringArg("output"));
         }
-
+        
         SNP<K>::staticInit();
-        SNP<K> snp;
-        //freqPatterns.clear();
-        size_t freqAT = 0, freqCG = 0;
-        for (size_t i = 0; i < files.size(); i++){
-            LOG << "Processing " << files[i] << " ...\n";
-            ind2species.push_back(name2id[meta.mappedname(indNames[i])]);
-            string format = getFormat(files[i]);
-            ifstream fin(files[i]);
-            if (format == "fasta"){
-                string seq;
-                while (getFastaSeq(fin, seq)) snp.add(seq, seq);
-            }
-            else if (format == "fastq"){
-                string seqs, seqn;
-                while (getFastqSeq(fin, seqs, seqn)) snp.add(seqs, seqn);
-            }
-            else {
-                cerr << "File " << files[i] << " bad format!\n";
-                exit(0);
-            }
-            if (ARG.getIntArg("mode") == 3){
-                if (ARG.getStringArg("output") == "<standard output>"){
-                    cout << ">" << indNames[i] << endl << snp.get() << endl;
+        {
+            SNP<K> snp;
+            size_t freqAT = 0, freqCG = 0;
+            for (size_t i = 0; i < files.size(); i++){
+                LOG << "Processing " << files[i] << " ...\n";
+                SeqParser seq(files[i]);
+                while (seq.nextSeq()){
+                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+                    snp.add(seqs, seqn);
                 }
-                else {
-                    ofstream fout(ARG.getStringArg("output"), ios_base::app);
-                    fout << ">" << indNames[i] << endl << snp.get() << endl;
+                if (ARG.getIntArg("mode") == 3){
+                    if (ARG.getStringArg("output") == "<standard output>"){
+                        cout << ">" << indNames[i] << endl << snp.get() << endl;
+                    }
+                    else {
+                        ofstream fout(ARG.getStringArg("output"), ios_base::app);
+                        fout << ">" << indNames[i] << endl << snp.get() << endl;
+                    }
                 }
-            }
 
-            for (const char c: snp.get()) {
-                tripInit.seq.append(c);
-                switch (c) {
-                    case 'A': case 'a': freqAT++; break;
-                    case 'C': case 'c': freqCG++; break;
-                    case 'G': case 'g': freqCG++; break;
-                    case 'T': case 't': freqAT++; break;
-                    case 'U': case 'u': freqAT++; break;
-                }
+                string s = snp.get();
+                freqAT += countAT(s);
+                freqCG += countCG(s);
+                snp.postprocess();
             }
-            snp.reset();
+            if (ARG.getIntArg("mode") == 3) exit(0);
+            GCcontent = ((double) freqCG) / (freqAT + freqCG);
         }
 
-        if (ARG.getIntArg("mode") == 3) exit(0);
-        GCcontent = ((double) freqCG) / (freqAT + freqCG);
+        SNP<K>::staticFilter();
+        nSNP = freqPatterns.size();
+        LOG << nSNP << " effective SNPs found.\n";
+        {
+            SNP<K> snp;
+            for (size_t i = 0; i < files.size(); i++){
+                LOG << "SNP calling " << files[i] << " ...\n";
+                ind2species.push_back(name2id[meta.mappedname(indNames[i])]);
+                SeqParser seq(files[i]);
+                while (seq.nextSeq()){
+                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+                    snp.add(seqs, seqn);
+                }
+
+                for (const char c: snp.get()) tripInit.seq.append(c);
+                snp.postprocess();
+            }
+        }
         SNP<K>::staticClear();
     }
 };
 
 int main(int argc, char** argv){
-    CHAR2BITS['a'] = 0; CHAR2BITS['c'] = 1; CHAR2BITS['g'] = 2; CHAR2BITS['t'] = 3; CHAR2BITS['u'] = 3;
-    CHAR2BITS['A'] = 0; CHAR2BITS['C'] = 1; CHAR2BITS['G'] = 2; CHAR2BITS['T'] = 3; CHAR2BITS['U'] = 3;
-
-    for (size_t i = 0; i < 256; i++) CHAR2MASK[i] = 1;
-    CHAR2MASK['a'] = 0; CHAR2MASK['c'] = 0; CHAR2MASK['g'] = 0; CHAR2MASK['t'] = 0; CHAR2MASK['u'] = 0;
-    CHAR2MASK['A'] = 0; CHAR2MASK['C'] = 0; CHAR2MASK['G'] = 0; CHAR2MASK['T'] = 0; CHAR2MASK['U'] = 0;
-
-    RC['a'] = 't'; RC['c'] = 'g'; RC['g'] = 'c'; RC['t'] = 'a'; RC['u'] = 'a'; 
-    RC['A'] = 'T'; RC['C'] = 'G'; RC['G'] = 'C'; RC['T'] = 'A'; RC['U'] = 'A'; 
-
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
     ARG.addIntArg('k', "kmer", 9, "k-mer size; 7: require >128 MB memory, 8: >2 GB memory, 9 (default): >32 GB memory, 10: >512 GB memory", true);
     ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");

@@ -15,6 +15,8 @@
 using namespace std;
 
 namespace SeqUtils{
+    string QUALITY2ASCII = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
     string fastaFormatName(const string &name){
         string res;
         for (char c: name){
@@ -31,6 +33,152 @@ namespace SeqUtils{
         return res;
     }
 }
+
+struct SeqParser{
+    bool isFasta = false;
+    string seq, quality, L1;
+    ifstream fin;
+
+    const long long STEP_SIZE = 1024; // 131072;
+    long long cnt = 0, lenCnt = 0, threshold = STEP_SIZE;
+    
+    SeqParser(string fileName, string fileFormat = "auto"){
+        ifstream ftemp(fileName);
+        string temp;
+        if (!getline(ftemp, temp)){
+            cerr << fileName << " seems empty!\n";
+            exit(0);
+        }
+        if (temp.length() == 0){
+            cerr << fileName << " seems empty!\n";
+            exit(0);
+        }
+        if (fileFormat == "fastq" || (fileFormat == "auto" && seemsFastq(temp))) initFastq(fileName);
+        else if (fileFormat == "fasta" || (fileFormat == "auto" && seemsFasta(temp))) initFasta(fileName);
+        else {
+            cerr << "Bad format!\n";
+            exit(0);
+        }
+    }
+
+    bool nextSeq(){
+        if (isFasta) return nextFastaSeq();
+        else return nextFastqSeq();
+    }
+
+    string getSeq(int threshold = 0){
+        if (isFasta) return seq;
+        if (threshold >= SeqUtils::QUALITY2ASCII.length()) threshold = SeqUtils::QUALITY2ASCII.length() - 1;
+        string res;
+        for (int i = 0; i < seq.size(); i++){
+            if (quality[i] >= SeqUtils::QUALITY2ASCII[threshold]) res += seq[i];
+            else res += 'N';
+        }
+        return res;
+    }
+
+    static string STRING_REVERSE_COMPLEMENT(const string &seq){
+        string res;
+        for (int i = seq.size() - 1; i >= 0; i--){
+            switch (seq[i]) {
+                case 'A': res += 'T'; break;
+                case 'C': res += 'G'; break;
+                case 'G': res += 'C'; break;
+                case 'T': res += 'A'; break;
+                default: res += 'N';
+            }
+        }
+        return res;
+    }
+
+    static string formatSeq(const string raw){
+        string res;
+        for (char c: raw){
+            switch (c) {
+                case 'A': case 'a': res += 'A'; break;
+                case 'C': case 'c': res += 'C'; break;
+                case 'G': case 'g': res += 'G'; break;
+                case 'T': case 't': case 'U': case 'u': res += 'T'; break;
+                case ' ': case '\t': case '\r': case '\n': break; 
+                default: res += 'N';
+            }
+        }
+        return res;
+    }
+
+private:
+    static bool seemsFastq(const string &line){
+        return line[0] == '@';
+    }
+
+    static bool seemsFasta(const string &line){
+        return line[0] == '>';
+    }
+
+    void initFastq(const string &fileName){
+        isFasta = false;
+        fin.open(fileName);
+    }
+
+    void initFasta(const string &fileName){
+        isFasta = true;
+        fin.open(fileName);
+        if (!getline(fin, L1)){
+            cerr << fileName << " seems empty!\n";
+            exit(0);
+        }
+        if (L1.length() == 0) getline(fin, L1);
+    }
+
+    bool nextFastaSeq(){
+        if (L1 == "") return false;
+
+        string line;
+        seq = "";
+        while (getline(fin, line)){
+            if (line.length() > 0 && line[0] == '>') {
+                cnt++;
+                lenCnt += seq.length();
+                if (lenCnt >= threshold){
+                    while (lenCnt >= threshold) threshold += STEP_SIZE;
+                    LOG << cnt << " sequences read (" << lenCnt << " BPs); the last sequence is '" + L1 + "'";
+                }
+
+                L1 = line;
+                return true;
+            }
+            seq += formatSeq(line);
+        }
+        
+        cnt++;
+        lenCnt += seq.length();
+        if (lenCnt >= threshold){
+            while (lenCnt >= threshold) threshold += STEP_SIZE;
+            LOG << cnt << " sequences read (" << lenCnt << " BPs); the last sequence is '" + L1 + "'" << endl;
+        }
+
+        L1 = "";
+        return true;
+    }
+
+    bool nextFastqSeq(){
+        string L2, L3;
+        if (!getline(fin, L1)) return false;
+        if (L1.length() == 0) getline(fin, L1);
+        getline(fin, L2);
+        getline(fin, L3);
+        getline(fin, quality);
+        seq = formatSeq(L2);
+
+        cnt++;
+        lenCnt += seq.length();
+        if (lenCnt >= threshold){
+            while (lenCnt >= threshold) threshold += STEP_SIZE;
+            LOG << cnt << " sequences read (" << lenCnt << " BPs); the last sequence is '" + L1 + "'" << endl;
+        }
+        return true;
+    }
+};
 
 struct AlignmentParser{
     bool isFasta = false, isFastaList = false, isPhylip = false;
@@ -62,42 +210,6 @@ struct AlignmentParser{
         else if (seqFormat == "AA2NA") formatAA2NA = true;
         else if (seqFormat == "AA") formatAA = true;
         else formatNA = true;
-    }
-
-    static bool seemsPhylip(const string &line){
-        int i = 0;
-        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
-        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
-        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
-        if (i == line.length() || (line[i] != ' ' && line[i] != '\t')) return false;
-        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
-        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
-        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
-        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
-        return i == line.length();
-    }
-
-    static bool seemsFasta(const string &line){
-        return line[0] == '>';
-    }
-
-    void initPhylip(const string &fileName){
-        isPhylip = true;
-        fin.open(fileName);
-    }
-
-    void initFasta(const string &fileName){
-        isFasta = true;
-        fastaQueue.push(fileName);
-    }
-
-    void initFastaList(const string &fileName){
-        isFasta = true;
-        ifstream ftemp(fileName);
-        string temp;
-        while (getline(ftemp, temp)){
-            fastaQueue.push(temp);
-        }
     }
 
     bool nextAlignment(){
@@ -165,6 +277,42 @@ private:
             if (c != ' ' && c != '\t' && c != '\r') res += c;
         }
         return res;
+    }
+
+    static bool seemsPhylip(const string &line){
+        int i = 0;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
+        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
+        if (i == line.length() || (line[i] != ' ' && line[i] != '\t')) return false;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
+        while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
+        while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
+        return i == line.length();
+    }
+
+    static bool seemsFasta(const string &line){
+        return line[0] == '>';
+    }
+
+    void initPhylip(const string &fileName){
+        isPhylip = true;
+        fin.open(fileName);
+    }
+
+    void initFasta(const string &fileName){
+        isFasta = true;
+        fastaQueue.push(fileName);
+    }
+
+    void initFastaList(const string &fileName){
+        isFasta = true;
+        ifstream ftemp(fileName);
+        string temp;
+        while (getline(ftemp, temp)){
+            fastaQueue.push(temp);
+        }
     }
 
     bool parseSeqFasta(){
