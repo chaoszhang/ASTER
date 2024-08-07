@@ -1,4 +1,4 @@
-all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site
+all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site waster-site_branchlength
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral-pro wastral
@@ -34,6 +34,9 @@ caster-site_branchlength: dir
 caster-pair: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair
 
+waster-site_branchlength: dir
+	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/waster-site.cpp -o bin/waster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/waster-site.cpp -o bin/waster-site_branchlength_experimental
+	
 waster-site: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-site.cpp -o bin/waster-site || g++ -std=gnu++17 -O2 -pthread src/waster-site.cpp -o bin/waster-site
 

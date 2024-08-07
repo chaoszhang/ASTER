@@ -18,7 +18,11 @@
 
 #define ROOTING
 #define NAME_MAPPING
+
+//#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+#ifndef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 #define CUSTOMIZED_ANNOTATION_LENGTH
+#endif
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -340,7 +344,11 @@ struct Workflow {
                 }
                 string filtered;
                 for (int i = 0; i < line.size(); i++){
+                    #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                    filtered.push_back(line[i]);
+                    #else
                     if (cntAG[i] >= 2 && cntCT[i] >= 2) filtered.push_back(line[i]);
+                    #endif
                 }
                 npos += filtered.size();
                 for (const char c: filtered) tripInit.seq.append(c);
