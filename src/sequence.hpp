@@ -410,7 +410,7 @@ inline array<score_t, 3> quadPos(const array<array<unsigned short, 4>, 4> &cnt, 
 			quadPos(cnt[0], cnt[3], cnt[1], cnt[2], pi)};
 }
 
-inline array<unsigned, 2> blCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
+inline array<unsigned, 2> roughBlCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
 	unsigned SAB = 0, SA = 0, SB = 0;
 	for (int i = 0; i < 4; i++){
 		unsigned A = a[i], B = b[i];
@@ -418,7 +418,13 @@ inline array<unsigned, 2> blCntPos(const array<unsigned short, 4> &a, const arra
 		SA += A;
 		SB += B;
 	}
-	return {SAB, SA * SB};
+	return {SA * SB - SAB, SA * SB};
+}
+
+inline array<unsigned, 2> blCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
+	unsigned a1 = a[0] + a[2], a2 = a[1] + a[3];
+	unsigned b1 = b[0] + b[2], b2 = b[1] + b[3];
+	return {a1 * b2 - b1 * a2, (a1 + a2) * (b1 + b2)};
 }
 
 struct Quadrupartition{
@@ -501,26 +507,26 @@ struct Quadrupartition{
 
 		void blCnt(array<score_t, 2> &res, int i, int j){
 			long long S0 = 0, S1 = 0;
+			#if (defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH) && defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH_ROUGH)) || defined(CUSTOMIZED_ANNOTATION_LENGTH)
+			for (int iKernal = 0; iKernal < nKernal; iKernal++){
+				array<unsigned, 2> cnt = roughBlCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
+				S0 += cnt[0];
+				S1 += cnt[1];
+			}
+			res[0] += S0;
+			res[1] += S1;
+			#else
+			#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
 				array<unsigned, 2> cnt = blCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
 				S0 += cnt[0];
 				S1 += cnt[1];
 			}
-			score_t SP2 = 0;
-			for (int i = 0; i < 4; i++){
-				SP2 += pi[i] * pi[i];
+			if (S1 > 0 && S0 * 10 >= S1){
+				res[0] += S1 * (log(S1) - log(S0));
+				res[1] += S1;
 			}
-			#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-			score_t num = S0 - S1 * SP2;
-			score_t denom = S1 * (1 - SP2);
-			// cerr << SP2 << "\t" << S0 << "\t" << S1 << "\t" << num << "\t" << denom << "\t" << -log(num / denom) << endl;
-			if (denom < 1 || num < 0 || num > denom || denom > 20 * num) return;
-			res[0] += -log(num / denom) * (1 - SP2) * denom * weight;
-			res[1] += denom * weight;
 			#endif
-			#ifdef CUSTOMIZED_ANNOTATION_LENGTH
-			res[0] += S1 - S0;
-			res[1] += S1;
 			#endif
 		}
 
