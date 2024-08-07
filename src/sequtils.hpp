@@ -39,7 +39,7 @@ struct SeqParser{
     string seq, quality, L1;
     ifstream fin;
 
-    const long long STEP_SIZE = 1024; // 131072;
+    const long long STEP_SIZE = 1 << 27;
     long long cnt = 0, lenCnt = 0, threshold = STEP_SIZE;
     
     SeqParser(string fileName, string fileFormat = "auto"){
@@ -141,7 +141,7 @@ private:
                 lenCnt += seq.length();
                 if (lenCnt >= threshold){
                     while (lenCnt >= threshold) threshold += STEP_SIZE;
-                    LOG << cnt << " sequences read (" << lenCnt << " BPs); the last sequence is '" + L1 + "'";
+                    LOG << cnt << " sequences read (" << lenCnt << " BPs); the last sequence is '" + L1 + "'" << endl;
                 }
 
                 L1 = line;
