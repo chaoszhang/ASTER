@@ -281,10 +281,10 @@ struct Workflow {
             gene.species2ind[ind2species[iInd]].push_back(iInd);
             gene.ind2seq[iInd] = pSeq;
         }
-        gene.pi[0] = 1 - GCcontent;
-        gene.pi[1] = GCcontent;
-        gene.pi[2] = GCcontent;
-        gene.pi[3] = 1 - GCcontent;
+        gene.pi[0] = (1 - GCcontent) * 0.5;
+        gene.pi[1] = GCcontent * 0.5;
+        gene.pi[2] = GCcontent * 0.5;
+        gene.pi[3] = (1 - GCcontent) * 0.5;
     }
 
     void formatGene(size_t pos, size_t nSite, size_t offset) {

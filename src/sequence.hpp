@@ -1,7 +1,7 @@
 #define OBJECTIVE_VERSION "1"
 
 /* CHANGE LOG
- * 1: add branch length
+ * 1: add branch length & bug fixed
  */
 
 #include<vector>
@@ -410,10 +410,10 @@ inline array<score_t, 3> quadPos(const array<array<unsigned short, 4>, 4> &cnt, 
 			quadPos(cnt[0], cnt[3], cnt[1], cnt[2], pi)};
 }
 
-inline array<unsigned, 2> roughBlCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
-	unsigned SAB = 0, SA = 0, SB = 0;
+inline array<int, 2> roughBlCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
+	int SAB = 0, SA = 0, SB = 0;
 	for (int i = 0; i < 4; i++){
-		unsigned A = a[i], B = b[i];
+		int A = a[i], B = b[i];
 		SAB += A * B;
 		SA += A;
 		SB += B;
@@ -421,10 +421,11 @@ inline array<unsigned, 2> roughBlCntPos(const array<unsigned short, 4> &a, const
 	return {SA * SB - SAB, SA * SB};
 }
 
-inline array<unsigned, 2> blCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b){
-	unsigned a1 = a[0] + a[2], a2 = a[1] + a[3];
-	unsigned b1 = b[0] + b[2], b2 = b[1] + b[3];
-	return {a1 * b2 - b1 * a2, (a1 + a2) * (b1 + b2)};
+inline array<double, 2> blCntPos(const array<unsigned short, 4> &a, const array<unsigned short, 4> &b, double p){
+	int a1 = a[0] + a[2], a2 = a[1] + a[3];
+	int b1 = b[0] + b[2], b2 = b[1] + b[3];
+	double denom = (a1 + a2) * (b1 + b2) * p * (1 - p);
+	return {a1 * b1 * (1 - p) + a2 * b2 * p - denom, denom};
 }
 
 struct Quadrupartition{
@@ -506,10 +507,10 @@ struct Quadrupartition{
 		}
 
 		void blCnt(array<score_t, 2> &res, int i, int j){
-			long long S0 = 0, S1 = 0;
 			#if (defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH) && defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH_ROUGH)) || defined(CUSTOMIZED_ANNOTATION_LENGTH)
+			long long S0 = 0, S1 = 0;
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
-				array<unsigned, 2> cnt = roughBlCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
+				array<int, 2> cnt = roughBlCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
 				S0 += cnt[0];
 				S1 += cnt[1];
 			}
@@ -517,11 +518,13 @@ struct Quadrupartition{
 			res[1] += S1;
 			#else
 			#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+			double S0 = 0, S1 = 0;
 			for (int iKernal = 0; iKernal < nKernal; iKernal++){
-				array<unsigned, 2> cnt = blCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j]);
+				array<double, 2> cnt = blCntPos(kernal[iKernal].cnt[i], kernal[iKernal].cnt[j], pi[0] + pi[2]);
 				S0 += cnt[0];
 				S1 += cnt[1];
 			}
+			cerr << S0 << " " << S1 << endl;
 			if (S1 > 0 && S0 * 10 >= S1){
 				res[0] += S1 * (log(S1) - log(S0));
 				res[1] += S1;
