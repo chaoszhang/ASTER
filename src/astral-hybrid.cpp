@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "5"
+#define DRIVER_VERSION "6"
 
 /* CHANGE LOG
+ * 6: auto-detect support type
  * 5: merge all versions of weighted astral
  * 4: add weighting by tree and other options
  */
@@ -179,11 +180,67 @@ void readInputTrees(string input, string mapping, string treeweights) {
 	}
 }
 
+void DETECT(int begin, int end){
+	int i = begin;
+	while (i < end && TEXT[i] != ':') i++;
+	if (i == begin) return;
+	score_t s = from_string(TEXT.substr(begin, i - begin));
+	if (s > maxv) maxv = s;
+	if (s < minv) minv = s;
+}
+
+void detectSupport(){
+	if (TEXT[pos] == '(') { 
+		pos++;
+		detectSupport(); 
+		pos++;
+		detectSupport();
+		while (TEXT[pos] != ')') detectSupport();
+		int i = ++pos;
+		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
+		DETECT(i, pos);
+	} 
+	else while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
+}
+
+void detectSupportType(string input) {
+	LOG << "Auto-detecting support value type ...\n";
+	ifstream fin(input);
+	string line;
+	maxv = 0;
+	minv = 100;
+
+	while (getline(fin, line)) TEXT += line;
+	while (pos < TEXT.size()){
+		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
+		if (pos < TEXT.size()) detectSupport();
+	}
+
+	if (maxv >= 2){
+		LOG << "Bootstrap-like support values (0-100) detected.\n";
+		maxv = 100;
+		defaultv = minv = 0;
+	}
+	else if (minv >= 0.3) {
+		LOG << "Local-probability-like support values (0.333-1) detected.\n";
+		maxv = 1;
+		defaultv = minv = 0.333;
+	}
+	else {
+		LOG << "Likelihood-like support values (0-1) detected.\n";
+		maxv = 1;
+		defaultv = minv = 0;
+	}
+
+	TEXT = "";
+	pos = 0;
+}
+
 int main(int argc, char** argv){
 	ARG.setProgramName("wastral", "Weighted ASTRAL (all versions included) \n *** You may use --mode to switch from hybrid weighting to other weighting schemes. ***");
 	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
-	ARG.addDoubleArg('x', "max", 100, "Max possible support value in weight scale");
-	ARG.addDoubleArg('n', "min", 0, "Min possible support value in weight scale");
+	ARG.addDoubleArg('x', "max", -1, "Max possible support value in weight scale (auto-detect by default)");
+	ARG.addDoubleArg('n', "min", -1, "Min possible support value in weight scale (auto-detect by default)");
 	ARG.addDoubleArg('d', "default", 0, "Default support value when weight not provided");
 	ARG.addFlag('S', "bootstrap", "Bootstrap support value mode (default mode, `-x 100 -n 0 -d 0`)", [&](){
 		ARG.getDoubleArg("max") = 100; ARG.getDoubleArg("min") = 0; ARG.getDoubleArg("default") = 0;
@@ -207,6 +264,8 @@ int main(int argc, char** argv){
 	defaultv = ARG.getDoubleArg("default");
 	lengthFactor = ARG.getDoubleArg("weight");
 	
+	if (maxv < 0 || minv < 0) detectSupportType(ARG.getStringArg("input"));
+
 	int mode = ARG.getIntArg("mode");
 	useSupport = (mode == 1 || mode == 2);
 	useLength = (mode == 1 || mode == 3);
