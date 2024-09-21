@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "6"
+#define DRIVER_VERSION "7"
 
 /* CHANGE LOG
+ * 7: bug fix
  * 6: auto-detect support type
  * 5: merge all versions of weighted astral
  * 4: add weighting by tree and other options
@@ -195,7 +196,10 @@ void detectSupport(){
 		detectSupport(); 
 		pos++;
 		detectSupport();
-		while (TEXT[pos] != ')') detectSupport();
+		while (TEXT[pos] != ')') {
+			pos++;
+			detectSupport();
+		}
 		int i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		DETECT(i, pos);
