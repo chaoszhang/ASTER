@@ -137,7 +137,7 @@ struct Workflow {
                         if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
                     }
                     else {
-                        if (category[0] >= 0) sitepair.push_back({category[0], i}); category[0] = i;
+                        if (category[0] >= 0) sitepair2.push_back({category[0], i}); category[0] = i;
                     }
                 }
             }
