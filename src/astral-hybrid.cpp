@@ -257,7 +257,7 @@ int main(int argc, char** argv){
 	}, true);
 	ARG.addDoubleArg('w', "weight", -1, "Weight factor of total terminal branch lengths");
 	ARG.addIntArg(0, "mode", 1, "1: hybrid weighting, 2: support only, 3: length only, 4: unweighted");
-	ARG.addStringArg(0, "treeweights", "", "A list of gene tree weights, space/tab/new-line separated (default: uniform weights)");
+	ARG.addStringArg(0, "treeweights", "", "A file containing a list of gene tree weights, space/tab/new-line separated (default: uniform weights)");
 
 	int dupType = 1;
 	string mappingFile;
