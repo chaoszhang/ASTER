@@ -528,40 +528,6 @@ When your dataset has no more than 50 species and no more than 500 genes, you ma
 )V0G0N";
 
 const string WASTRAL_UNIQUE_EXE = R"V0G0N(
-***Notice:*** For hybrid weighting (default) and weighting by support (mode 2), you ***must*** provide max (`-x`) and min (`-n`) of support value to the program; otherwise it will default to `max=100, min=0`. Please ensure that you provide the correct max and min; otherwise, the output of the program ***may not be meaningful***.
-
-```
-bin/wastral -x MAX_SUPPORT -n MIN_SUPPORT INPUT_FILE
-```
-
-For **Bootstrap** support, the default value should be fine (any of the following commands works):
-
-```
-bin/wastral INPUT_FILE
-bin/wastral -S INPUT_FILE
-bin/wastral -x 100 -n 0 INPUT_FILE
-```
-
-For **local Baysian** support, `-x 1 -n 0.333` is recommended or `-B` for short:
-
-```
-bin/wastral -B INPUT_FILE
-```
-or
-```
-bin/wastral -x 1 -n 0.333 INPUT_FILE
-```
-
-For other **probability & likelihood** support, `-x 1 -n 0` may be more reasonable or `-L` for short:
-
-```
-bin/wastral -L INPUT_FILE
-```
-or
-```
-bin/wastral -x 1 -n 0 INPUT_FILE
-```
-
 By default, wASTRAL assumes multiple individuals/alleles from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
 
 ```
@@ -672,6 +638,46 @@ Species tree with more than **2000** taxa may cause **floating point underflow o
 ```
 make wastral_precise
 bin/wastral_precise -o OUTPUT_FILE INPUT_FILE
+```
+
+***Notice:*** For hybrid weighting (default) and weighting by support (mode 2), wASTRAL by default will automatically detect support type.
+You may also specify max (`-x`) and min (`-n`) of support value to the program.
+
+```
+bin/wastral -x MAX_SUPPORT -n MIN_SUPPORT INPUT_FILE
+```
+
+For **Bootstrap** support, any of the following commands works:
+
+```
+bin/wastral -S INPUT_FILE
+bin/wastral -x 100 -n 0 INPUT_FILE
+```
+
+For **local Baysian** support, `-x 1 -n 0.333` is recommended or `-B` for short:
+
+```
+bin/wastral -B INPUT_FILE
+```
+or
+```
+bin/wastral -x 1 -n 0.333 INPUT_FILE
+```
+
+For other **probability & likelihood** support, `-x 1 -n 0` may be more reasonable or `-L` for short:
+
+```
+bin/wastral -L INPUT_FILE
+```
+or
+```
+bin/wastral -x 1 -n 0 INPUT_FILE
+```
+
+By default, wASTRAL assumes multiple individuals/alleles from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+
+```
+bin/wastral -a example/genetree.map example/genetree.nw
 ```
 
 In case you want to run Weighted ASTRAL by Branch Support, you can do:

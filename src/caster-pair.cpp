@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
 
 /* CHANGE LOG
+ * 4: Option for objective functions
  * 3: Option for no smart-pairing
  * 2: Updating input file parser
  * 1: Modified the logic in parsing FASTA names 
@@ -137,11 +138,11 @@ struct Workflow {
                         if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
                     }
                     else {
-                        if (category[0] >= 0) sitepair2.push_back({category[0], i}); category[0] = i;
+                        if (category[0] >= 0) sitepair.push_back({category[0], i}); category[0] = i;
                     }
                 }
             }
-            {
+            if (ARG.getIntArg("pairdist") > 0) {
                 long long pos = tripInit.seq.len();
                 long long offset = 3 * sitepair.size() + sitepair2.size();
                 vector<int> ind2species;
@@ -171,6 +172,51 @@ struct Workflow {
                     }
                 }
             }
+            else if (ARG.getIntArg("objective") == 1 || ARG.getIntArg("objective") == 2) {
+                long long pos = tripInit.seq.len();
+                long long offset = sitepair.size();
+                vector<int> ind2species;
+                while (AP2.nextSeq()) {
+                    ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
+                    string seq = AP2.getSeq();
+                    if (ARG.getIntArg("objective") == 1) {
+                        for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+                    }
+                    else {
+                        for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
+                    }
+                }
+                {
+                    long long len = sitepair.size();
+                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+                    for (int i = 0; i < nChunk; i++) {
+                        size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+                        formatGene(ind2species, pos + s, t - s, offset);
+                    }
+                    pos += sitepair.size();
+                }
+            }
+            else {
+                long long pos = tripInit.seq.len();
+                long long offset = 3 * sitepair.size();
+                vector<int> ind2species;
+                while (AP2.nextSeq()) {
+                    ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
+                    string seq = AP2.getSeq();
+                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
+                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
+                }
+                for (int x = 0; x < 3; x++) {
+                    long long len = sitepair.size();
+                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+                    for (int i = 0; i < nChunk; i++) {
+                        size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
+                        formatGene(ind2species, pos + s, t - s, offset);
+                    }
+                    pos += sitepair.size();
+                }
+            }
         }
     }
 
@@ -184,12 +230,11 @@ struct Workflow {
         tripInit.nThreads = meta.nThreads;
         
         string fileFormat = ARG.getStringArg("format");
-        string seqFormat = (ARG.getIntArg("datatype")) ? "AA2NA" : "NA";
         if (fileFormat != "auto" && fileFormat != "fasta" && fileFormat != "phylip" && fileFormat != "list"){
             cerr << "Failed to parse format named '" << fileFormat << "'\n";
 			exit(1);
         }
-		read(ARG.getStringArg("input"), fileFormat, seqFormat);
+		read(ARG.getStringArg("input"), fileFormat, "NA");
         tripInit.nSpecies = names.size();
     }
 };
@@ -201,7 +246,7 @@ int main(int argc, char** argv){
     ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
 	ARG.addIntArg(0, "pairdist", 0, "The distance for pairing sites (0 for strict neighbor pairing)");
-	ARG.addIntArg(0, "datatype", 0, "0 (default): nucleotides, 1: amino acids");
+	ARG.addIntArg(0, "objective", 1, "Objective function, 1:RY only (default), 2:WS only, 3: RY+WS+KM");
     
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
