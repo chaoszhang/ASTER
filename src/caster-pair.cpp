@@ -4,7 +4,7 @@
  * 4: Option for objective functions
  * 3: Option for no smart-pairing
  * 2: Updating input file parser
- * 1: Modified the logic in parsing FASTA names 
+ * 1: Modified the logic in parsing FASTA names
  */
 
 #include<iostream>
@@ -89,32 +89,38 @@ struct Workflow {
             gene.species2ind[ind2species[iInd]].push_back(iInd);
             gene.ind2seq[iInd] = pSeq;
         }
-        double total = cnt[0] + cnt[1] + cnt[2] + cnt[3];
-		double p = (cnt[0] + 0.5 * (cnt[1] + cnt[2])) / total;
-        gene.pq = p * (1 - p);
     }
 
-    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset) {
+    void formatGene(const vector<int> &ind2species, size_t pos, size_t nSite, size_t offset, double p) {
         int nInd = ind2species.size(), nSpecies = names.size(), nKernal = nSite, nRep = 0;
         TripartitionInitializer::Gene::Initializer gene(nInd, nSpecies, nSite, nKernal, nRep);
         buildGeneSeq(gene, ind2species, pos, nSite, offset);
+        gene.pq = p * (1 - p);
         tripInit.genes.emplace_back(gene);
     }
 
     void read(const string &file, const string &fileFormat, const string &seqFormat) {
         AlignmentParser AP(file, fileFormat, seqFormat), AP2(file, fileFormat, seqFormat);
-		while (AP.nextAlignment()){
-            vector<pair<long long, long long> > sitepair, sitepair2;
+        while (AP.nextAlignment()){
+            vector<bool> invariants;
             AP2.nextAlignment();
             long long nSites = AP.getLength();
+            long long nChunk = (nSites + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+            long long d = ARG.getIntArg("pairdist");
+			int objective = ARG.getIntArg("objective");
+            vector<vector<pair<long long, long long> > > sitepairs(nChunk), sitepairsRY(nChunk);
+            vector<double> piAC, piAG, piAT;
+            vector<bool> useRY;
+			int n = 0;
+            long long offset = 0;
             {
-                int d = ARG.getIntArg("pairdist");
                 vector<array<unsigned short, 4> > freq;
                 freq.resize(nSites);
                 while (AP.nextSeq()) {
                     addName(meta.mappedname(AP.getName()));
                     string seq = AP.getSeq();
-                    for (size_t i = 0; i < nSites; i++) {
+					n++;
+                    for (long long i = 0; i < nSites; i++) {
                         switch (seq[i]) {
                             case 'A': freq[i][0]++; break;
                             case 'C': freq[i][1]++; break;
@@ -123,98 +129,75 @@ struct Workflow {
                         }
                     }
                 }
-                long long category[4] = {-(1 << 30), -(1 << 30), -(1 << 30), -(1 << 30)};
-                for (long long i = 0; i < nSites; i++) {
-                    int cnt = 0;
-                    bool singleton = false;
-                    for (int j = 0; j < 4; j++) {
-                        if (freq[i][j] > 0) cnt++;
-                        if (freq[i][j] == 1) singleton = true;
+                for (long long i = 0; i < nChunk; i++){
+                    long long s = i * nSites / nChunk, t = (i + 1) * nSites / nChunk;
+                    long long prev[7] = {-1 << 30, -1 << 30, -1 << 30, -1 << 30, -1 << 30, -1 << 30, -1 << 30};
+                    long long sumFreq[4] = {};
+					vector<int> cnts(t - s);
+					vector<bool> singletons(t - s);
+					long long cnt4 = 0, cnt1234 = 0;
+                    for (long long j = s; j < t; j++){
+                        int cnt = 0;
+                        bool singleton = false;
+                        for (int k = 0; k < 4; k++) {
+                            if (freq[j][k] > 0) cnt++;
+                            if (freq[j][k] == 1) singleton = true;
+                            sumFreq[k] += freq[j][k];
+                        }
+						if (cnt >= 4) cnt4++;
+						if (cnt >= 1) cnt1234++;
+                        if (cnt == 4 && !singleton) cnt = 5;
+                        cnts[j - s] = cnt;
+						singletons[j - s] = singleton;
+                        if (cnt == 0) continue;
+                        if (objective == 3 && n >= 20 && d > 0){
+                            long long pj = prev[cnt];
+                            if (pj + d >= j && !(cnt == 1 && singletons[pj - s]) && !(cnts[pj - s] == 1 && singleton) && !(cnt == 1 && cnts[pj - s] == 1)) {
+                                sitepairsRY[i].emplace_back(pj, j);
+                                if (cnt < 5 && cnts[pj - s] < 5) sitepairs[i].emplace_back(pj, j);
+                            }
+                            // prev[cnt - 1] = prev[cnt] = prev[cnt + 1] = j;
+							if (cnt > 2) prev[cnt] = j;
+							else prev[1] = prev[2] = j;
+                        }
+                        else {
+                            if (j != s && !(cnt == 1 && singletons[j - 1 - s]) && !(cnts[j - 1 - s] == 1 && singleton) && !(cnt == 1 && cnts[j - 1 - s] == 1)){
+								sitepairsRY[i].emplace_back(j - 1, j);
+								sitepairs[i].emplace_back(j - 1, j);
+							}
+                        }
                     }
-                    if (ARG.getIntArg("pairdist") > 0){
-                        if (cnt == 2) { if (category[0] + d >= i) sitepair.push_back({category[0], i}); category[0] = i; }
-                        if (cnt == 3) { if (category[1] + d >= i) sitepair.push_back({category[1], i}); category[1] = i; }
-                        if (cnt == 4 && singleton) { if (category[2] + d >= i) sitepair.push_back({category[2], i}); category[2] = i; }
-                        if (cnt == 4 && !singleton) { if (category[3] + d >= i) sitepair2.push_back({category[3], i}); category[3] = i; }
-                    }
-                    else {
-                        if (category[0] >= 0) sitepair.push_back({category[0], i}); category[0] = i;
-                    }
+					double r = (n - 1) / 60.0;
+					if (objective == 1 || (objective == 3 && n < 20 && cnt4 > cnt1234 * r * r * r)) sitepairs[i].clear();
+                    double totalFreq = sumFreq[0] + sumFreq[1] + sumFreq[2] + sumFreq[3];
+                    piAC.push_back((sumFreq[0] + sumFreq[1]) / totalFreq);
+                    piAG.push_back((sumFreq[0] + sumFreq[2]) / totalFreq);
+                    piAT.push_back((sumFreq[0] + sumFreq[3]) / totalFreq);
+                    offset += sitepairsRY[i].size() + 2 * sitepairs[i].size();
                 }
             }
-            if (ARG.getIntArg("pairdist") > 0) {
-                long long pos = tripInit.seq.len();
-                long long offset = 3 * sitepair.size() + sitepair2.size();
-                vector<int> ind2species;
-                while (AP2.nextSeq()) {
-                    ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
-                    string seq = AP2.getSeq();
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
-                    for (const pair<long long, long long> &e: sitepair2) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
-                }
-                for (int x = 0; x < 3; x++) {
-                    long long len = sitepair.size();
-                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
-                    for (int i = 0; i < nChunk; i++) {
-                        size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                        formatGene(ind2species, pos + s, t - s, offset);
-                    }
-                    pos += sitepair.size();
-                }
-                {
-                    long long len = sitepair2.size();
-                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
-                    for (int i = 0; i < nChunk; i++) {
-                        long long s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                        formatGene(ind2species, pos + s, t - s, offset);
-                    }
+
+            long long pos = tripInit.seq.len();
+            vector<int> ind2species;
+            while (AP2.nextSeq()) {
+                ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
+                string seq = AP2.getSeq();
+                for (long long i = 0; i < nChunk; i++){
+                    for (const pair<long long, long long> &e: sitepairsRY[i]) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
+                    for (const pair<long long, long long> &e: sitepairs[i]) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
+                    for (const pair<long long, long long> &e: sitepairs[i]) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
                 }
             }
-            else if (ARG.getIntArg("objective") == 1 || ARG.getIntArg("objective") == 2) {
-                long long pos = tripInit.seq.len();
-                long long offset = sitepair.size();
-                vector<int> ind2species;
-                while (AP2.nextSeq()) {
-                    ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
-                    string seq = AP2.getSeq();
-                    if (ARG.getIntArg("objective") == 1) {
-                        for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
-                    }
-                    else {
-                        for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
-                    }
+            for (int i = 0; i < nChunk; i++) {
+                if (sitepairsRY[i].size()){
+					formatGene(ind2species, pos, sitepairsRY[i].size(), offset, piAG[i]);
+					pos += sitepairsRY[i].size();
                 }
-                {
-                    long long len = sitepair.size();
-                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
-                    for (int i = 0; i < nChunk; i++) {
-                        size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                        formatGene(ind2species, pos + s, t - s, offset);
-                    }
-                    pos += sitepair.size();
-                }
-            }
-            else {
-                long long pos = tripInit.seq.len();
-                long long offset = 3 * sitepair.size();
-                vector<int> ind2species;
-                while (AP2.nextSeq()) {
-                    ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
-                    string seq = AP2.getSeq();
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, true, false, false>(seq[e.first], seq[e.second]);
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, true, false>(seq[e.first], seq[e.second]);
-                    for (const pair<long long, long long> &e: sitepair) tripInit.seq.append<true, false, false, true>(seq[e.first], seq[e.second]);
-                }
-                for (int x = 0; x < 3; x++) {
-                    long long len = sitepair.size();
-                    long long nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
-                    for (int i = 0; i < nChunk; i++) {
-                        size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                        formatGene(ind2species, pos + s, t - s, offset);
-                    }
-                    pos += sitepair.size();
+				if (sitepairs[i].size()){
+                    formatGene(ind2species, pos, sitepairs[i].size(), offset, piAC[i]);
+                    pos += sitepairs[i].size();
+                    formatGene(ind2species, pos, sitepairs[i].size(), offset, piAT[i]);
+                    pos += sitepairs[i].size();
                 }
             }
         }
@@ -228,29 +211,28 @@ struct Workflow {
 
     void init(){
         tripInit.nThreads = meta.nThreads;
-        
+
         string fileFormat = ARG.getStringArg("format");
         if (fileFormat != "auto" && fileFormat != "fasta" && fileFormat != "phylip" && fileFormat != "list"){
             cerr << "Failed to parse format named '" << fileFormat << "'\n";
-			exit(1);
+            exit(1);
         }
-		read(ARG.getStringArg("input"), fileFormat, "NA");
+        read(ARG.getStringArg("input"), fileFormat, "NA");
         tripInit.nSpecies = names.size();
     }
 };
 
 int main(int argc, char** argv){
     ARG.setProgramName("caster-pair", "Coalescence-aware Alignment-based Species Tree EstimatoR (Pair)");
-    ARG.addStringArg('f', "format", "auto", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment, auto (default): detect format automatically", true);
+    ARG.addStringArg('f', "format", "auto", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment, auto: detect format automatically", true);
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
-    ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
-	ARG.addIntArg(0, "pairdist", 0, "The distance for pairing sites (0 for strict neighbor pairing)");
-	ARG.addIntArg(0, "objective", 1, "Objective function, 1:RY only (default), 2:WS only, 3: RY+WS+KM");
-    
+    ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites (0 for strict neighbor pairing)");
+    ARG.addIntArg(0, "objective", 3, "Objective function, 1:RY only, 2: RY+WS+KM, 3: auto-select");
+
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
     LOG << "Score: " << (double) res.first << endl;
-	return 0;
+    return 0;
 }
