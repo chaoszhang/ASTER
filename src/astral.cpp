@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "5"
+#define DRIVER_VERSION "6"
 
 /* CHANGE LOG
+ * 6: Adding compiler flag for coalescent unit
  * 5: Integrating CASTLES-II
  * 4: Adding rooting option
  * 3: Parse gene tree branch lengths
@@ -9,9 +10,8 @@
  */
 
 #define ROOTING
-#define CASTLES
 
-#ifdef ASTRALIV
+#ifndef COALESCENT_UNIT
 #define CASTLES
 #endif
 

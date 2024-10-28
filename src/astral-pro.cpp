@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "5"
+#define DRIVER_VERSION "6"
 
 /* CHANGE LOG
+ * 6: Adding compiler flag for coalescent unit
  * 5: Integrate CASTLES-Pro
  * 4: Add support for CASTLES
  * 3: Add support for polytomies
@@ -8,7 +9,9 @@
 
 #define ROOTING
 
+#ifndef COALESCENT_UNIT
 #define CASTLES
+#endif
 
 #include<iostream>
 #include<fstream>
