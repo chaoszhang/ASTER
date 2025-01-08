@@ -1,6 +1,7 @@
-#define OBJECTIVE_VERSION "1"
+#define OBJECTIVE_VERSION "2"
 
 /* CHANGE LOG
+ * 2: bug fix for branch length
  * 1: add branch length & bug fixed
  */
 
@@ -524,7 +525,7 @@ struct Quadrupartition{
 				S0 += cnt[0];
 				S1 += cnt[1];
 			}
-			cerr << S0 << " " << S1 << endl;
+			// cerr << S0 << " " << S1 << endl;
 			if (S1 > 0 && S0 * 10 >= S1){
 				res[0] += S1 * (log(S1) - log(S0));
 				res[1] += S1;

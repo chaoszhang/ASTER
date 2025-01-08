@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: Final score normalization & Updating Eqfreq
  * 4: Updating Eqfreq calculation
  * 3: Updating input file parser
  * 2: Adding branch length functionality
@@ -106,51 +107,57 @@ struct Workflow {
         AlignmentParser AP(file, fileFormat, seqFormat), AP2(file, fileFormat, seqFormat);
         while (AP.nextAlignment()){
             AP2.nextAlignment();
-            vector<bool> keep;
-            array<double, 4> eqfreq;
+            long long nSites = AP.getLength();
+            long long nChunk = (nSites + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
+            vector<vector<long long> > sites(nChunk);
+            vector<array<double, 4> > eqfreq;
+            long long offset = 0;
             {
                 vector<array<unsigned short, 4> > freq;
-                array<long long, 4> freqCnt = {};
-                keep.resize(AP.getLength());
                 freq.resize(AP.getLength());
                 while (AP.nextSeq()) {
                     addName(meta.mappedname(AP.getName()));
                     string seq = AP.getSeq();
                     for (size_t i = 0; i < seq.size(); i++) {
                         switch (seq[i]) {
-                            case 'A': freq[i][0]++; freqCnt[0]++; break;
-                            case 'C': freq[i][1]++; freqCnt[1]++; break;
-                            case 'G': freq[i][2]++; freqCnt[2]++; break;
-                            case 'T': freq[i][3]++; freqCnt[3]++; break;
+                            case 'A': freq[i][0]++; break;
+                            case 'C': freq[i][1]++; break;
+                            case 'G': freq[i][2]++; break;
+                            case 'T': freq[i][3]++; break;
                         }
                     }
                 }
-                for (size_t i = 0; i < keep.size(); i++) {
-                    #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-                    keep[i] = true;
-                    #else
-                    keep[i] = (freq[i][0] + freq[i][2] >= 2 && freq[i][1] + freq[i][3] >= 2);
-                    #endif
-                }
-                double total = freqCnt[0] + freqCnt[1] + freqCnt[2] + freqCnt[3];
-                for (int j = 0; j < 4; j++) {
-                    eqfreq[j] = freqCnt[j] / total;
+                for (long long i = 0; i < nChunk; i++) {
+                    long long s = i * nSites / nChunk, t = (i + 1) * nSites / nChunk;
+                    long long sumFreq[4] = {};
+                    for (long long j = s; j < t; j++) {
+                        for (int k = 0; k < 4; k++) {
+                            sumFreq[k] += freq[j][k];
+                        }
+                        #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+                        sites[i].push_back(j);
+                        #else
+                        if (freq[j][0] + freq[j][2] >= 2 && freq[j][1] + freq[j][3] >= 2) sites[i].push_back(j);
+                        #endif
+                    }
+                    offset += sites[i].size();
+                    double total = sumFreq[0] + sumFreq[1] + sumFreq[2] + sumFreq[3];
+                    eqfreq.push_back({ sumFreq[0] / total, sumFreq[1] / total, sumFreq[2] / total, sumFreq[3] / total });
                 }
             }
             {
                 vector<int> ind2species;
-                size_t pos = tripInit.seq.len(), len = count(keep.begin(), keep.end(), true);
+                size_t pos = tripInit.seq.len();
                 while (AP2.nextSeq()) {
                     ind2species.push_back(name2id[meta.mappedname(AP2.getName())]);
                     string seq = AP2.getSeq();
-                    for (int i = 0; i < keep.size(); i++){
-                        if (keep[i]) tripInit.seq.append(seq[i]);
+                    for (long long i = 0; i < nChunk; i++) {
+                        for (long long j : sites[i]) tripInit.seq.append(seq[j]);
                     }
                 }
-                int nChunk = (len + ARG.getIntArg("chunk") - 1) / ARG.getIntArg("chunk");
                 for (int i = 0; i < nChunk; i++) {
-                    size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
-                    formatGene(ind2species, pos + s, t - s, len, eqfreq);
+                    formatGene(ind2species, pos, sites[i].size(), offset, eqfreq[i]);
+                    pos += sites[i].size();
                 }
             }
         }
@@ -192,6 +199,6 @@ int main(int argc, char** argv){
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
-    LOG << "Score: " << (double) res.first << endl;
+    LOG << "Normalized score: " << (double) res.first / 4 << endl;
 	return 0;
 }

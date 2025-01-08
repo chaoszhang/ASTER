@@ -75,7 +75,7 @@ int MAPPING(int begin, int end){
 	if (name2id.count(s) == 0){
 		name2id[s] = names.size();
 		names.push_back(s);
-		for (int i = 0; i < meta.nThread2; i++){
+		for (int i = 0; i < meta.nThreads; i++){
 			tripInit.leafParent[i].emplace_back();
 		}
 	}
@@ -274,7 +274,7 @@ int main(int argc, char** argv){
 	useSupport = (mode == 1 || mode == 2);
 	useLength = (mode == 1 || mode == 3);
 
-	for (int i = 0; i < meta.nThread2; i++){
+	for (int i = 0; i < meta.nThreads; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}

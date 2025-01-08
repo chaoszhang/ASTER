@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "1"
+#define DRIVER_VERSION "2"
 
 /* CHANGE LOG
+ * 2: Final score normalization
  * 1: Remove non-effective sites
  */
 
@@ -528,7 +529,7 @@ int main(int argc, char** argv){
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
-    LOG << "Score: " << (double) res.first << endl;
+    LOG << "Normalized score: " << (double) res.first / 4 << endl;
     
     return 0;
 }

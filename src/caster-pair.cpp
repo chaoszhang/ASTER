@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: Final score normalization & Switching default objective
  * 4: Option for objective functions
  * 3: Option for no smart-pairing
  * 2: Updating input file parser
@@ -228,11 +229,11 @@ int main(int argc, char** argv){
     ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
     ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites (0 for strict neighbor pairing)");
-    ARG.addIntArg(0, "objective", 3, "Objective function, 1:RY only, 2: RY+WS+KM, 3: auto-select");
+    ARG.addIntArg(0, "objective", 1, "Objective function, 1:RY only, 2: RY+WS+KM, 3: auto-select");
 
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
-    LOG << "Score: " << (double) res.first << endl;
+    LOG << "Normalized score: " << (double) res.first / 4 << endl;
     return 0;
 }

@@ -545,7 +545,7 @@ int main(int argc, char** argv){
 	resolvePolytomies = (ARG.getIntArg("exit") != 0);
 	rootNtag = (ARG.getIntArg("exit") == 2);
 
-	for (int i = 0; i < meta.nThread2; i++){
+	for (int i = 0; i < meta.nThreads; i++){
 		tripInit.nodes.emplace_back();
 		tripInit.leafParent.emplace_back();
 	}
