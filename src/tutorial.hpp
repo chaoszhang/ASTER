@@ -90,7 +90,7 @@ Our results suggest that CASTER-site and CASTER-pair can fulfill the need for la
 
 ## Publication
 
-Chao Zhang, Rasmus Nielsen, Siavash Mirarab, CASTER: Direct species tree inference from whole-genome alignments, bioRxiv 2023.10.04.560884, https://doi.org/10.1101/2023.10.04.560884
+Chao Zhang, Rasmus Nielsen, Siavash Mirarab, CASTER: Direct species tree inference from whole-genome alignments. Science (2025) https://www.science.org/doi/10.1126/science.adk9688
 
 ## Notice
 
@@ -108,7 +108,7 @@ WASTER infers the species tree by first calling SNPs from reads/assembies and th
 
 ## Publication
 
-TBA
+Chao Zhang, Rasmus Nielsen, WASTER: Practical de novo phylogenomics from low-coverage short reads, bioRxiv (2025) https://doi.org/10.1101/2025.01.20.633983
 
 )V0G0N";
 
