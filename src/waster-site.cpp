@@ -71,7 +71,7 @@ public:
     }
 
     static void rshift(size_t &bits, size_t &mask, const unsigned char c){
-        bits = (bits >> 2) | ((3 ^ CHAR2BITS(c)) << (K * 2 - 2));
+        bits = (bits >> 2) | ((3LL ^ CHAR2BITS(c)) << (K * 2 - 2));
         mask = ((mask << 2) | CHAR2MASK(c)) & MASK;
     }
 
