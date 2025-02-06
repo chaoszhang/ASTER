@@ -19,7 +19,7 @@
 #include<thread>
 #include<mutex>
 
-#define DEBUGINFO
+//#define DEBUGINFO
 
 #define ROOTING
 #define NAME_MAPPING
