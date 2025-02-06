@@ -19,7 +19,7 @@
 #include<thread>
 #include<mutex>
 
-//#define DEBUGINFO
+#define DEBUGINFO
 
 #define ROOTING
 #define NAME_MAPPING
@@ -412,11 +412,13 @@ public:
 
 private:
     constexpr static const size_t MASK = 0xffffffff;
-    size_t masks[8] = {0x33333333, 0xcccccccc, 0x0f0f0f0f, 0xf0f0f0f0, 0x00ff00ff, 0xff00ff00, 0x0000ffff, 0xffff0000};
+    constexpr static const size_t NMASKS = 14, MAXDIST = 3;
+    size_t masks[NMASKS] = {0x33333333, 0xcccccccc, 0x0f0f0f0f, 0xf0f0f0f0, 0x00ff00ff, 0xff00ff00, 0x0000ffff, 0xffff0000,
+                            0x3333cccc, 0xcccc3333, 0x0f0ff0f0, 0xf0f00f0f, 0x00ffff00, 0xff0000ff};
     vector<size_t> patterns;
     vector<double> weights;
     vector<int> unionfind;
-    unordered_map<size_t, int> masked[8];
+    unordered_map<size_t, int> masked[NMASKS];
     vector<int> id2pos;
     int npos = 0;
     
@@ -451,29 +453,30 @@ public:
         for (int i = 0; i < patterns.size(); i++) {
             size_t b1 = (patterns[i] >> 32);
             size_t b2 = (patterns[i] & MASK);
-            for (int k = 0; k < 8; k++) {
+            for (int k = 0; k < NMASKS; k++) {
                 size_t mb1 = (masks[k] & b1);
                 size_t mb2 = (masks[k] & b2);
                 size_t mb = pairup(mb1, mb2);
                 if (masked[k].count(mb)) {
                     int j = masked[k][mb];
-                    if (dist(patterns[i], patterns[j]) <= 2 || dist(patterns[i], REVERSE_COMPLEMENT<32>(patterns[j])) <= 2) {
+                    if (dist(patterns[i], patterns[j]) <= MAXDIST || dist(patterns[i], REVERSE_COMPLEMENT<32>(patterns[j])) <= MAXDIST 
+                            || dist(patterns[ufroot(i)], patterns[ufroot(j)]) <= MAXDIST || dist(patterns[ufroot(i)], REVERSE_COMPLEMENT<32>(patterns[ufroot(j)])) <= MAXDIST) {
                         if (weights[ufroot(i)] > weights[ufroot(j)]) {
                             unionfind[ufroot(j)] = ufroot(i);
-                            masked[k][mb] = ufroot(i);
+                            masked[k][mb] = i;
                         }
                         else if (ufroot(i) != ufroot(j)) {
                             unionfind[ufroot(i)] = ufroot(j);
                         }
                     }
                     else {
-                        if (weights[i] > weights[j]) {
-                            masked[k][mb] = ufroot(i);
+                        if (weights[ufroot(i)] > weights[ufroot(j)]) {
+                            masked[k][mb] = i;
                         }
                     }
                 }
                 else {
-                    masked[k][mb] = ufroot(i);
+                    masked[k][mb] = i;
                 }
             }
         }
@@ -493,7 +496,7 @@ public:
     SNP(const string &file){
         ifstream fin(file);
         int LEN;
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; k < NMASKS; k++) {
             fin >> LEN;
             for (int i = 0; i < LEN; i++){
                 size_t first;
@@ -531,7 +534,7 @@ public:
     
     void save(const string &file){
         ofstream fout(file);
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; k < NMASKS; k++) {
             fout << masked[k].size() << endl;
             for (const auto &e: masked[k]) fout << e.first << " " << e.second << endl;
         }
@@ -562,17 +565,17 @@ public:
             size_t b = (b1 << 32) + b2, rb = (b2 << 32) + b1;
             int best = -1;
             char c;
-            for (int k = 0; k < 8; k++) {
+            for (int k = 0; k < NMASKS; k++) {
                 size_t mb1 = (masks[k] & b1);
                 size_t mb2 = (masks[k] & b2);
                 size_t mb = pairup(mb1, mb2);
                 if (masked[k].count(mb) == 0) continue;
-                int next = ufroot(masked[k][mb]);
-                if (dist(patterns[next], b) <= 2 && (best != -1 || weights[best] < weights[next])) {
+                int temp = masked[k][mb], next = ufroot(temp);
+                if ((dist(patterns[temp], b) <= MAXDIST || dist(patterns[next], b) <= MAXDIST) && (best != -1 || weights[best] < weights[next])) {
                     best = next;
                     c = seqs[i + 1];
                 }
-                if (dist(patterns[next], rb) <= 2 && (best != -1 || weights[best] < weights[next])) {
+                if ((dist(patterns[temp], rb) <= MAXDIST || dist(patterns[next], rb) <= MAXDIST) && (best != -1 || weights[best] < weights[next])) {
                     best = next;
                     c = REVERSE_COMPLEMENT(seqs[i + 1]);
                 }
@@ -792,9 +795,9 @@ struct Workflow {
             }
             
             #ifdef DEBUGINFO
-            generatedConsensus = consensus.generateConsensus(200);
+            generatedConsensus = consensus.generateConsensus(100);
             #else
-            generatedConsensus = consensus.generateConsensus(20000000);
+            generatedConsensus = consensus.generateConsensus(10000000);
             #endif
 
             LOG << generatedConsensus.size() << " consensus sequences selected.\n";
