@@ -207,8 +207,9 @@ public:
             }
         }
 
+        LOG << "Threshold: " << threshold << endl;
+        
         #ifdef DEBUGINFO
-        cerr << "Threshold " << threshold << endl;
         for (size_t e: res){
             size_t a1 = (static_cast<int>(floor(sqrt(8 * e + 1))) + 1) / 2;
             size_t a2 = e - a1 * (a1 - 1) / 2;

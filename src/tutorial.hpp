@@ -271,6 +271,8 @@ const string CASTER_IO = R"V0G0N(
 # STOP!
 Please make sure you removed paralogous alignment regions using `RepeatMasker` or alike. This will improve the accuracy of CASTER on biological datasets!
 
+A detailed [walkthrough](../misc/caster-linux-walkthrough.md) is also available (English/中文).
+
 # INPUT
 * The input by default is a single MSA in Fasta format
 * The input can also be a text file containing a list of Fasta files (one file per line) if you add `-f list` to input arguments
