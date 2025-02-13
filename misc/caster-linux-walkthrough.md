@@ -52,7 +52,7 @@ ls fasta_alignments/* > input_fasta_list.txt
 cat input_fasta_list.txt
 ```
 
-Absolute pathes are preferred:
+Absolute paths are preferred:
 (更推荐用绝对路径)
 
 ```
@@ -70,7 +70,7 @@ Save the output to `caster-site.nw`.
 cat caster-site.nw
 ```
 
-Now let's try using 4 threads.
+Now, let's try using 4 threads.
 (试着用四个线程看看)
 
 ```
@@ -84,6 +84,46 @@ You can choose a single species as the outgroup.
 ```
 ../../bin/caster-site -i input_fasta_list.txt -o caster-site.nw -t 4 --root Orangutan
 cat caster-site.nw
+```
+
+Now, try CASTER-pair.
+（试试CASTER-pair）
+
+```
+../../bin/caster-pair -i input_fasta_list.txt -o caster-pair.nw -t 4 --root Orangutan
+cat caster-pair.nw
+```
+
+You can also add a guide tree file which may contain one or more guide trees.
+（您也能指定一个参考树文件，该文件可以包括一个或多个参考树）
+
+```
+../../bin/caster-pair -i input_fasta_list.txt -g caster-site.nw -o caster-pair.nw -t 4 --root Orangutan
+cat caster-pair.nw
+```
+
+When normal inference is computationally impossible, you can try only using local search around guide trees.
+（当计算资源不足，无法用常规方法推断物种树，您可以尝试仅搜索与参考树类似的物种树）
+
+```
+../../bin/caster-pair -i input_fasta_list.txt -g caster-site.nw -o caster-pair.nw -t 4 -r 0 -s 0 --root Orangutan
+cat caster-pair.nw
+```
+
+You can score an existing tree and you must specify the outgroup again, but if you wish, you can switch the outgroup.
+（您可限定物种树的拓扑结构，这时您仍需要指定外群，当然如果您愿意，您可以指定不同的外群）
+
+```
+../../bin/caster-site -i input_fasta_list.txt -C -c caster-pair.nw -o caster-site.score.nw -t 4 --root Human
+cat caster-site.score.nw
+```
+
+Scoring an existing tree is useful when computing branch lengths, as `caster-site_branchlength` is much slower than normal `caster-site`.
+（由于`caster-site_branchlength`比`caster-site`慢很多，指定物种树的拓扑结构计算枝长可以事半功倍）
+
+```
+../../bin/caster-site_branchlength -i input_fasta_list.txt -C -c caster-site.nw -o caster-site_branchlength.nw -t 4 --root Orangutan
+cat caster-site_branchlength.nw
 ```
 
 # Alignments in PHYLIP format (比对为PHYLIP格式)
@@ -131,3 +171,6 @@ You can choose a single species as the outgroup.
 ../../bin/caster-site -i concat.phy -o caster-site.nw -t 4 --root Orangutan
 cat caster-site.nw
 ```
+
+Other tricks see **Alignments in FASTA format**.
+(其他技巧参照**比对为FASTA格式**)

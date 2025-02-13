@@ -187,9 +187,7 @@ struct Workflow {
 int main(int argc, char** argv){
     ARG.setProgramName("caster-site", "Coalescence-aware Alignment-based Species Tree EstimatoR (Site)");
     ARG.addStringArg('f', "format", "auto", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment, auto (default): detect format automatically", true);
-    ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
-    ARG.addIntArg('d', "diskcover", 1, "The number of replicates in the disk covering method", true);
-	ARG.addIntArg(0, "ambiguity", 0, "0 (default): ambiguity codes are treated as N, 1: ambiguity codes are treated as diploid unphased sites");
+    ARG.addIntArg(0, "ambiguity", 0, "0 (default): ambiguity codes are treated as N, 1: ambiguity codes are treated as diploid unphased sites");
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
     
     #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH

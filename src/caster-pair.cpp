@@ -226,7 +226,6 @@ struct Workflow {
 int main(int argc, char** argv){
     ARG.setProgramName("caster-pair", "Coalescence-aware Alignment-based Species Tree EstimatoR (Pair)");
     ARG.addStringArg('f', "format", "auto", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment, auto: detect format automatically", true);
-    ARG.addStringArg('m', "mutation", "", "Substitution rate file from Iqtree if assumming heterogeneous rates", true);
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
     ARG.addIntArg(0, "pairdist", 20, "The distance for pairing sites (0 for strict neighbor pairing)");
     ARG.addIntArg(0, "objective", 1, "Objective function, 1:RY only, 2: RY+WS+KM, 3: auto-select");

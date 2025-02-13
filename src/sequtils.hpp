@@ -46,11 +46,11 @@ struct SeqParser{
         ifstream ftemp(fileName);
         string temp;
         if (!getline(ftemp, temp)){
-            cerr << fileName << " seems empty!\n";
+            cerr << "Input file path '" << fileName << "' seems empty!\n";
             exit(0);
         }
         if (temp.length() == 0){
-            cerr << fileName << " seems empty!\n";
+            cerr << "Input file path '" << fileName << "' seems empty!\n";
             exit(0);
         }
         if (fileFormat == "fastq" || (fileFormat == "auto" && seemsFastq(temp))) initFastq(fileName);
@@ -124,7 +124,7 @@ private:
         isFasta = true;
         fin.open(fileName);
         if (!getline(fin, L1)){
-            cerr << fileName << " seems empty!\n";
+            cerr << "Input file path '" << fileName << "' seems empty!\n";
             exit(0);
         }
         if (L1.length() == 0) getline(fin, L1);
@@ -196,11 +196,11 @@ struct AlignmentParser{
         ifstream ftemp(fileName);
         string temp;
         if (!getline(ftemp, temp)){
-            cerr << fileName << " seems empty!\n";
+            cerr << "Input file path '" << fileName << "' seems empty!\n";
             exit(0);
         }
         if (temp.length() == 0){
-            cerr << fileName << " seems empty!\n";
+            cerr << "Input file path '" << fileName << "' seems empty!\n";
             exit(0);
         }
         if (fileFormat == "phylip" || (fileFormat == "auto" && seemsPhylip(temp))) initPhylip(fileName);
