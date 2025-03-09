@@ -56,7 +56,7 @@ struct SeqParser{
         if (fileFormat == "fastq" || (fileFormat == "auto" && seemsFastq(temp))) initFastq(fileName);
         else if (fileFormat == "fasta" || (fileFormat == "auto" && seemsFasta(temp))) initFasta(fileName);
         else {
-            cerr << "Bad format!\n";
+            cerr << "Input file '" << fileName << "' bad format! Only FASTA and FASTQ are supported! (Did you forget unzipping it?)\n";
             exit(0);
         }
     }

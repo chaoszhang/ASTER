@@ -1,4 +1,4 @@
-all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site waster-site_branchlength waster-ng waster-ng_branchlength
+all: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site waster-site_branchlength waster-ng waster-ng_branchlength
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral-pro wastral
