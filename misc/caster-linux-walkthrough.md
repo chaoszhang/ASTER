@@ -1,4 +1,4 @@
-# CASTER Linux walkthrough (Linux版CASTER手把手演示)
+# CASTER Linux walkthrough (Linux版CASTER演示)
 
 [<img src="CASTER.png" width="500"/>](CASTER.png)
 

@@ -181,7 +181,11 @@ public:
     static void staticFilter(){
         vector<size_t> filteredPattern;
         for (int i = 0; i < sortedPattern.size(); i++) {
+            #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+            filteredPattern.push_back(sortedPattern[i]);
+            #else
             if (cntAG[i] >= 2 && cntCT[i] >= 2) filteredPattern.push_back(sortedPattern[i]);
+            #endif
         }
         sortedPattern = filteredPattern;
         pattern2pos.clear();
@@ -518,7 +522,7 @@ struct Workflow {
 };
 
 int main(int argc, char** argv){
-    ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)");
+    ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)\n***Running WASTER requires 64GB memory by default!***");
     ARG.addIntArg('k', "kmer", 9, "k-mer size; 7: require >128 MB memory, 8: >2 GB memory, 9 (default): >32 GB memory, 10: >512 GB memory", true);
     ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
