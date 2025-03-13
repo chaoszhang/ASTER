@@ -25,21 +25,11 @@ cd ASTER
 make
 ```
 
-Now we enter the directory for our CASTER demo.
-(现在我们可以进入CASTER演示用目录了)
+Now we enter the directory for our WASTER demo.
+(现在我们可以进入WASTER演示用目录了)
 
 ```
 cd example/waster-walkthrough
-```
-
-# Alignments in FASTA format (比对为FASTA格式)
-
-CASTER can take as input a list of alignments in FASTA format. Yes, sequences must be aligned first. Notice that although in this demo I use genes, CASTER actually prefers inter-genic regions.
-(CASTER允许将多个FASTA格式比对文件作为输入。没错，你必须先比对好。注意，虽然这个演示用了基因，但CASTER更适合用基因间区域)
-
-```
-ls fasta_alignments/*
-cat fasta_alignments/gene1.fa
 ```
 
 # Prepare the input file (准备输入文件)

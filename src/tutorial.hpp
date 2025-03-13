@@ -228,9 +228,6 @@ The output in is Newick format and gives:
 // The ASTRAL tree leaves the branch length of terminal branches empty. Some tools for visualization and tree editing do not like this (e.g., ape). In FigTree, if you open the tree several times, it eventually opens up (at least on our machines). In ape, if you ask it to ignore branch lengths all together, it works. In general, if your tool does not like the lack of terminal branches, you can add a dummy branch length, [as in this script](https://github.com/smirarab/global/blob/master/src/mirphyl/utils/add-bl.py).
 
 const string WASTRAL_IO = R"V0G0N(
-
-A detailed [walkthrough](../misc/waster-linux-walkthrough.md) is also available (English/中文).
-
 # INPUT
 * The input gene trees are in the Newick format
 * The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals/genes per species.
@@ -407,6 +404,8 @@ If you have ***overlapping*** paired-end sequencing reads, please make sure you 
 This will improve the accuracy of WASTER on biological datasets!
 If you have non-overlapping paired-end sequencing reads, great!
 With the same sequencing depth, WASTER prefers non-overlapping reads.
+
+A detailed [walkthrough](../misc/waster-linux-walkthrough.md) is also available (English/中文).
 
 # INPUT
 The input is a text file containing a list of species names each followed by a Fasta/Fastq file (one species name and one file per line). For example:
