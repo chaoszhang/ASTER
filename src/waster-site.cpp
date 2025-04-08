@@ -180,7 +180,7 @@ public:
 
     static void staticFilter(){
         vector<size_t> filteredPattern;
-        for (int i = 0; i < sortedPattern.size(); i++) {
+        for (size_t i = 0; i < sortedPattern.size(); i++) {
             #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
             filteredPattern.push_back(sortedPattern[i]);
             #else
@@ -213,7 +213,7 @@ public:
 
     void add(size_t pattern, char c){
         size_t pos = locate(pattern);
-        if (pos == -1) return;
+        if (pos == static_cast<size_t>(-1)) return;
         if (snps[pos] == 0) snps[pos] = c;
         else if (snps[pos] != c) snps[pos] = 'N';
     }
@@ -235,7 +235,7 @@ public:
     }
 
     void postprocess(){
-        for (int i = 0; i < sortedPattern.size(); i++) {
+        for (size_t i = 0; i < sortedPattern.size(); i++) {
             if ((snps[i] == 'A' || snps[i] == 'G') && cntAG[i] < 2) cntAG[i]++;
             if ((snps[i] == 'C' || snps[i] == 'T') && cntCT[i] < 2) cntCT[i]++; 
             snps[i] = 0;
@@ -333,7 +333,7 @@ struct Workflow {
                 }
                 freqAT += countAT(line);
                 freqCG += countCG(line);
-                for (int i = 0; i < line.size(); i++){
+                for (size_t i = 0; i < line.size(); i++){
                     if ((line[i] == 'A' || line[i] == 'G') && cntAG[i] < 2) cntAG[i]++;
                     if ((line[i] == 'C' || line[i] == 'T') && cntCT[i] < 2) cntCT[i]++; 
                 }
@@ -350,7 +350,7 @@ struct Workflow {
                     continue;
                 }
                 string filtered;
-                for (int i = 0; i < line.size(); i++){
+                for (size_t i = 0; i < line.size(); i++){
                     #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
                     filtered.push_back(line[i]);
                     #else
@@ -397,7 +397,7 @@ struct Workflow {
 
         size_t nChunk = meta.nThreads;
         size_t pos = 0, len = nSNP;
-        for (int i = 0; i < nChunk; i++) {
+        for (size_t i = 0; i < nChunk; i++) {
             size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
             formatGene(pos + s, t - s, len);
         }

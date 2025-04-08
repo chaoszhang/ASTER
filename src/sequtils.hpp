@@ -66,11 +66,11 @@ struct SeqParser{
         else return nextFastqSeq();
     }
 
-    string getSeq(int threshold = 0){
+    string getSeq(size_t threshold = 0){
         if (isFasta) return seq;
         if (threshold >= SeqUtils::QUALITY2ASCII.length()) threshold = SeqUtils::QUALITY2ASCII.length() - 1;
         string res;
-        for (int i = 0; i < seq.size(); i++){
+        for (size_t i = 0; i < seq.size(); i++){
             if (quality[i] >= SeqUtils::QUALITY2ASCII[threshold]) res += seq[i];
             else res += 'N';
         }
@@ -186,7 +186,8 @@ struct AlignmentParser{
 
     queue<string> fastaQueue;
     string bufferName, bufferSeq, nextLine;
-    int length, line, phylipNspecies;
+    size_t length;
+    int line, phylipNspecies;
     bool firstFastaSeq;
     ifstream fin;
 
@@ -251,7 +252,7 @@ struct AlignmentParser{
 
 private:
     static string getFastaName(const string &fasta){
-        int i = 0;
+        size_t i = 0;
         string res;
         // while (i < fasta.size() && fasta[i] == ' ') i++;
         if (i == fasta.size() || fasta[i] != '>'){
@@ -280,7 +281,7 @@ private:
     }
 
     static bool seemsPhylip(const string &line){
-        int i = 0;
+        size_t i = 0;
         while (i < line.length() && (line[i] == ' ' || line[i] == '\t')) i++;
         if (i == line.length() || line[i] < '0' || line[i] > '9') return false;
         while (i < line.length() && line[i] >= '0' && line[i] <= '9') i++;
@@ -522,7 +523,7 @@ struct AlignmentHot
 
     AlignmentHot operator+(const AlignmentHot &x) const{
         AlignmentHot y;
-        for (int i = 0; i < s.size(); i++){
+        for (size_t i = 0; i < s.size(); i++){
             y.s.push_back(s[i] | x[i]);
         }
         y.p = p + x.p;
@@ -531,7 +532,7 @@ struct AlignmentHot
 
     AlignmentHot operator-(const AlignmentHot &x) const{
         AlignmentHot y;
-        for (int i = 0; i < s.size(); i++){
+        for (size_t i = 0; i < s.size(); i++){
             y.s.push_back(s[i] ^ x[i]);
         }
         y.p = p - x.p;
@@ -547,7 +548,7 @@ struct AlignmentHot
 
     SeqHot seqOr() const{
         SeqHot result = s[0];
-        for (int i = 1; i < s.size(); i++)
+        for (size_t i = 1; i < s.size(); i++)
             result = result | s[i];
         return result;
     }
@@ -682,14 +683,9 @@ struct DistanceMatrix{
     DistanceMatrix(int n): d(n, vector<double>(n)), w(n, vector<double>(n)){}
 
     DistanceMatrix(const AlignmentHot &a, const AlignmentHot &b, bool floyd = true): DistanceMatrix(a.nTaxa()){
-        int n = a.nTaxa(), L = a[0].nSites();
+        int n = a.nTaxa();
         for (int i = 0; i < n; i++){
             for (int j = 0; j < n; j++){
-                /*int x = 0, y = 0;
-                for (int k = 0; k < L; k++){
-                    if ((a[i][k] && b[j][k]) || (a[j][k] && b[i][k])) x++;
-                    if ((a[i][k] || b[i][k]) && (a[j][k] || b[j][k])) y++;
-                }*/
                 int x = ((a[i] & b[j]) | (a[j] & b[i])).sum();
                 int y = ((a[i] | b[i]) & (a[j] | b[j])).sum();
                 w[i][j] = y - x / (2 * a.p * b.p);

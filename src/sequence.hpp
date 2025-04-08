@@ -52,13 +52,13 @@ struct CustomizedAnnotation{
 
 	CustomizedAnnotation operator+ (const CustomizedAnnotation& o) const{
 		CustomizedAnnotation r(bs.size());
-		for (int i = 0; i < bs.size(); i++){
-			for (int j = 0; j < 3; j++){
+		for (size_t i = 0; i < bs.size(); i++){
+			for (size_t j = 0; j < 3; j++){
 				r.bs[i][j] = bs[i][j] + o.bs[i][j];
 			}
 		}
-		for (int i = 0; i < 6; i++){
-			for (int j = 0; j < 2; j++){
+		for (size_t i = 0; i < 6; i++){
+			for (size_t j = 0; j < 2; j++){
 				r.dist[i][j] = dist[i][j] + o.dist[i][j];
 			}
 		}
@@ -66,13 +66,13 @@ struct CustomizedAnnotation{
 	}
 
 	CustomizedAnnotation& operator+= (const CustomizedAnnotation& o){
-		for (int i = 0; i < bs.size(); i++){
-			for (int j = 0; j < 3; j++){
+		for (size_t i = 0; i < bs.size(); i++){
+			for (size_t j = 0; j < 3; j++){
 				bs[i][j] += o.bs[i][j];
 			}
 		}
-		for (int i = 0; i < 6; i++){
-			for (int j = 0; j < 2; j++){
+		for (size_t i = 0; i < 6; i++){
+			for (size_t j = 0; j < 2; j++){
 				dist[i][j] += o.dist[i][j];
 			}
 		}
@@ -220,8 +220,8 @@ struct TripartitionInitializer{
 			int nInd, nSpecies, nSite, nKernal, nRep;
 
 			Initializer(int nInd, int nSpecies, int nSite, int nKernal, int nRep): species2ind(nSpecies),
-					nInd(nInd), nSpecies(nSpecies), nSite(nSite), nKernal(nKernal), nRep(nRep),
-					indSiteRep2kernal((nRep == 0) ? nullptr : new int[nInd * nSite * nRep]), ind2seq(new size_t[nInd]){}
+					indSiteRep2kernal((nRep == 0) ? nullptr : new int[nInd * nSite * nRep]), ind2seq(new size_t[nInd]),
+					nInd(nInd), nSpecies(nSpecies), nSite(nSite), nKernal(nKernal), nRep(nRep){}
 			
 			void setIndSiteRep2kernal(int iInd, int iSite, int iRep, int iKernal){
 				indSiteRep2kernal[(iInd * nSite + iSite) * nRep + iRep] = iKernal;
@@ -272,12 +272,12 @@ struct TripartitionInitializer{
 		};
 
 		const int nInd, nSpecies, nSite, nKernal, nRep;
+		const array<float, 4> pi;
 		const shared_ptr<const int[]> species2indRange, indBin;
+		const score_t weight = 1;
 		const shared_ptr<const int[]> indSiteRep2kernal;
 		const shared_ptr<const size_t[]> ind2seq;
 		shared_ptr<Kernal[]> kernal;
-		const array<float, 4> pi;
-		const score_t weight = 1;
 		
 		score_t scoreCache = 0;
 		bool valid = false;
@@ -340,8 +340,8 @@ struct TripartitionInitializer{
 };
 
 struct Tripartition{
-	vector<vector<char> > color;
 	TripartitionInitializer& TI;
+	vector<vector<char> > color;
 
 	Tripartition(TripartitionInitializer &init): TI(init), color(init.nThreads, vector<char>(init.nSpecies, -1)){
 		for (TripartitionInitializer::Gene &g: TI.genes){
@@ -451,11 +451,11 @@ struct Quadrupartition{
 		};
 
 		const int nInd, nSpecies, nSite, nKernal, nRep;
+		const array<float, 4> pi;
 		const shared_ptr<const int[]> species2indRange, indBin;
 		const shared_ptr<const int[]> indSiteRep2kernal;
 		const shared_ptr<const size_t[]> ind2seq;
 		const shared_ptr<Kernal[]> kernal;
-		const array<float, 4> pi;
 		const int ufb_size, ufb_fold;
 		shared_ptr<int[]> ufb_offset;
 		const score_t weight = 1;
@@ -576,8 +576,8 @@ struct Quadrupartition{
 	};
 
 	vector<Gene> genes;
-	vector<vector<char> > color;
 	TripartitionInitializer& TI;
+	vector<vector<char> > color;
 
 	Quadrupartition(TripartitionInitializer &init): TI(init), color(init.nThreads, vector<char>(init.nSpecies, -1)){
 		for (TripartitionInitializer::Gene &g: TI.genes){
@@ -616,7 +616,7 @@ struct Quadrupartition{
 
 	void update(int x, int i){
 		vector<thread> thrds;
-		for (int p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::updatePart, this, p, x, i);
+		for (size_t p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::updatePart, this, p, x, i);
 		updatePart(0, x, i);
 		for (thread &t: thrds) t.join();
 	}
@@ -625,13 +625,13 @@ struct Quadrupartition{
 		array<double, 3> res;
 		vector<array<score_t, 3> > t(color.size());
 		vector<thread> thrds;
-		for (int p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::scorePart, this, p, ref(t[p]));
+		for (size_t p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::scorePart, this, p, ref(t[p]));
 		scorePart(0, t[0]);
 		for (thread &t: thrds) t.join();
 		res[0] = 0;
 		res[1] = 0;
 		res[2] = 0;
-		for (int p = 0; p < color.size(); p++){
+		for (size_t p = 0; p < color.size(); p++){
 			res[0] += t[p][0];
 			res[1] += t[p][1];
 			res[2] += t[p][2];
@@ -643,10 +643,10 @@ struct Quadrupartition{
 		CustomizedAnnotation res(TI.ufb_size);
 		vector<CustomizedAnnotation> t(color.size(), TI.ufb_size);
 		vector<thread> thrds;
-		for (int p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::annotatePart, this, p, ref(t[p]));
+		for (size_t p = 1; p < color.size(); p++) thrds.emplace_back(&Quadrupartition::annotatePart, this, p, ref(t[p]));
 		annotatePart(0, t[0]);
 		for (thread &t: thrds) t.join();
-		for (int p = 0; p < color.size(); p++){
+		for (size_t p = 0; p < color.size(); p++){
 			res += t[p];
 		}
 		return res;

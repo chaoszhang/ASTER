@@ -59,7 +59,7 @@ class ThreadPool{
 		for (future<vector<score_t> > &result: results){
 			resultValues.push_back(result.get());
 		}
-		for (int i = 0; i < resultValues[0].size(); i++){
+		for (size_t i = 0; i < resultValues[0].size(); i++){
 			score_t s = 0;
 			for (vector<score_t> &rv: resultValues) s += rv[i];
 			sums.push(s);

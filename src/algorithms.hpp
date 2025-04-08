@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.20"
+#define ALG_VERSION "v1.21"
 
 /* CHANGE LOG
+ * 1.21: de-warning and new species tree representation
  * 1.20: updating NNI algorithm
  * 1.19: error message for guide trees and constraint trees
  * 1.18: improving numerical stability for incomplete beta
@@ -39,6 +40,7 @@ typedef unsigned __int128 hash_t;
 #include "incbeta.c"
 #include "argparser.hpp"
 #include "threadpool.hpp"
+#include "speciestree.hpp"
 
 #ifndef ERROR_TOLERANCE
 #define ERROR_TOLERANCE 0
@@ -173,15 +175,16 @@ struct PlacementAlgorithm{
 	vector<tuple<hash_t, hash_t, score_t> > tripHash;
 	vector<int> order;
 	vector<Node> nodes;
-	int rootNodeId = -1, rootLeafId = -1, orderId = 0;
+	int rootNodeId = -1, rootLeafId = -1;
+	size_t orderId = 0;
 	int rNN;
 	
-	const int ROUND_NN = -1;
 	Tripartition trip;
+	const int ROUND_NN = -1;
 	ThreadPool &TP;
 	
 	PlacementAlgorithm(const vector<hash_t> &taxonHash, TripartitionInitializer &tripInit, ThreadPool& TP, int ROUND_NN):
-		taxonHash(taxonHash), trip(tripInit), rNN(ROUND_NN), ROUND_NN(ROUND_NN), TP(TP) {}
+		taxonHash(taxonHash), rNN(ROUND_NN), trip(tripInit), ROUND_NN(ROUND_NN), TP(TP) {}
 	
 	int& heavy(int v){
 		return nodes[v].heavy;
@@ -262,13 +265,11 @@ struct PlacementAlgorithm{
 	void defaultInitializer(){
 		if (rootLeafId == -1){
 			rootLeafId = order[orderId];
-			//trip.addTotal(order[orderId]);
 			orderId++;
 		}
 		if (rootNodeId == -1){
 			rootNodeId = nodes.size();
 			nodes.emplace_back(order[orderId]);
-			//trip.addTotal(order[orderId]);
 			orderId++;
 		}
 		forceLeftHeavy(rootNodeId);
@@ -1189,7 +1190,7 @@ struct PlacementAlgorithm{
 
 struct ConstrainedOptimizationAlgorithm{
 	struct Node{
-		Node(int leafId, hash_t hash): leafId(leafId), hash(hash){}
+		Node(int leafId, hash_t hash): hash(hash), leafId(leafId) {}
 		
 		hash_t hash, bestChild = 0;
 		score_t bestScore = 0;
@@ -1197,14 +1198,14 @@ struct ConstrainedOptimizationAlgorithm{
 		unordered_map<hash_t, tuple<int, int, score_t>, Hasher> children;
 	};
 	
+	const int ntaxa;
+	TripartitionInitializer& tripInit;
+	const vector<string> names;
 	vector<Node> nodes;
 	unordered_map<hash_t, int, Hasher> hash;
 	vector<hash_t> taxonHash;
-	const vector<string> names;
 	uniform_int_distribution<hash_t> randomHash;
 	uniform_real_distribution<double> randP;
-	TripartitionInitializer &tripInit;
-	const int ntaxa;
 	int roundId = 0;
 	ThreadPool &TP;
 	int ROUND_NN = -1;
@@ -1446,7 +1447,7 @@ struct ConstrainedOptimizationAlgorithm{
 	}
 	
 	void addTripartitions(const vector<tuple<hash_t, hash_t, score_t> > tripHash){
-		for (const tuple<hash_t, hash_t, score_t> t: tripHash){
+		for (const tuple<hash_t, hash_t, score_t> &t: tripHash){
 			int left = hash2node(get<0>(t)), right = hash2node(get<1>(t)), parent = hash2node(get<0>(t) + get<1>(t));
 			nodes[parent].children[get<0>(t)] = make_tuple(left, right, get<2>(t));
 			nodes[parent].children[get<1>(t)] = make_tuple(left, right, get<2>(t));
@@ -1536,7 +1537,6 @@ struct ConstrainedOptimizationAlgorithm{
 			return true;
 		}
 		else {
-			//pAlg.trip.update(-1, i);
 			pAlg.tripUpdateSet(-1, i);
 			pAlg.tripUpdateGet(-1, i);
 			return false;
@@ -1564,7 +1564,6 @@ struct ConstrainedOptimizationAlgorithm{
 				shuffle(pAlg.order.begin(), pAlg.order.end(), RND_GENERATOR);
 				pAlg.run();
 				alg.addTripartitions(pAlg.tripHash);
-				//for (int i = 0; i < n; i++) pAlg.trip.update(-1, order[i]);
 				for (int i = 0; i < n; i++) pAlg.tripUpdateSet(-1, order[i]);
 				for (int i = 0; i < n; i++) pAlg.tripUpdateGet(-1, order[i]);
 				pAlg.tripHash.clear();
@@ -1576,7 +1575,6 @@ struct ConstrainedOptimizationAlgorithm{
 				pAlg.rNN = ROUND_NN;
 			}
 			alg.computeOptimalTree();
-			//LOG << alg.printOptimalTree() << endl;
 			alg.createPlacementAlgorithm(pAlg, 1);
 			pAlg.taxonHash[0] = taxonHash[0];
 		}
@@ -1591,21 +1589,19 @@ struct ConstrainedOptimizationAlgorithm{
 		{
 			vector<int> abnormalOrder;
 			vector<PlacementAlgorithm::Node> pNodes(pAlg.nodes);
-			int rootNodeId = pAlg.rootNodeId;//, rootLeafId = pAlg.rootLeafId;
+			int rootNodeId = pAlg.rootNodeId;
 			{
 				vector<PlacementAlgorithm::Node> originalNodes(pAlg.nodes);
-				int originalRootNodeId = pAlg.rootNodeId;//, originalRootLeafId = pAlg.rootLeafId;
+				int originalRootNodeId = pAlg.rootNodeId;
 				
 				vector<vector<int> > nodeBranch(pNodes.size());
 				
 				for (int i = n; i < N; i++) {
 					nodeBranch[pAlg.locateBranch(order[i])].push_back(order[i]);
 				}
-				int cnt = 0;
-				for (int b = 0; b < nodeBranch.size(); b++){
+				for (size_t b = 0; b < nodeBranch.size(); b++){
 					pAlg.nodes = originalNodes;
 					pAlg.rootNodeId = originalRootNodeId;
-					//pAlg.rootLeafId = originalRootLeafId;
 					vector<int> added;
 					unordered_map<int, int> nodeRemap;
 					nodeRemap[b] = b;
@@ -1613,7 +1609,6 @@ struct ConstrainedOptimizationAlgorithm{
 						if (placeNode(pAlg, pNodes, rootNodeId, i, nodeRemap)) added.push_back(i);
 						else abnormalOrder.push_back(i);
 					}
-					//for (int i: added) pAlg.trip.update(-1, i);
 					for (int i: added) pAlg.tripUpdateSet(-1, i);
 					for (int i: added) pAlg.tripUpdateGet(-1, i);
 				}
@@ -1621,7 +1616,6 @@ struct ConstrainedOptimizationAlgorithm{
 			pAlg.order = abnormalOrder;
 			pAlg.nodes = pNodes;
 			pAlg.rootNodeId = rootNodeId;
-			//pAlg.rootLeafId = rootLeafId;
 			pAlg.orderId = 0;
 		}
 		LOG << "Remaining: " << pAlg.order.size() << endl;
@@ -1668,6 +1662,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}	
 	}
 
+	/*
 	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda,
 			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo, double weight, shared_ptr<AnnotatedTree::Node> node, bool toplevel = false){
 		if (nodes[v].leafId != -1) {
@@ -1700,9 +1695,8 @@ struct ConstrainedOptimizationAlgorithm{
 		switchSubtree(quad, get<0>(c), 3, 2);
 		score[0] /= weight; score[1] /= weight; score[2] /= weight;
 		double tscore = score[0] + score[1] + score[2];
-		double support0, support1, support2;
-		
 		#ifdef SUPPORT
+		double support0, support1, support2;
 		if (tscore < 1e-8){
 			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
 		}
@@ -1831,7 +1825,7 @@ struct ConstrainedOptimizationAlgorithm{
 		
 		Quadrupartition quad(tripInit);
 		quad.update(0, 0);
-		for (int i = 1; i < names.size(); i++) quad.update(2, i);
+		for (size_t i = 1; i < names.size(); i++) quad.update(2, i);
 		int v = hash[-taxonHash[0]];
 		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
 		//0|c1|c0|-
@@ -1878,6 +1872,184 @@ struct ConstrainedOptimizationAlgorithm{
 			printFreqQuadCSV(get<1>(c), get<0>(c), names[0], fcsv, qInfo);
 		}
 		return string("((") + resL + "," + resR + ")" + res + ");";
+	}
+	*/
+
+	void computeOptimalSubtreeWithSupport(SpeciesTree &tree, Quadrupartition& quad, int v, int u,
+		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> >& qInfo, shared_ptr<SpeciesTree::Node> node, bool toplevel = false) {
+		if (nodes[v].leafId != -1) {
+			int i = nodes[v].leafId;
+			node->taxon = i;
+			node->name = names[i];
+			return;
+		}
+		//r|u|c0c1|-
+		string res;
+		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+		//ru|c1|c0|-
+		switchSubtree(quad, u, 1, 0);
+		switchSubtree(quad, get<1>(c), 2, 1);
+		computeOptimalSubtreeWithSupport(tree, quad, get<0>(c), get<1>(c), qInfo, tree.addLeft(node));
+		//ru|c0|c1|-
+		switchSubtree(quad, get<0>(c), 2, 1);
+		switchSubtree(quad, get<1>(c), 1, 2);
+		computeOptimalSubtreeWithSupport(tree, quad, get<1>(c), get<0>(c), qInfo, tree.addRight(node));
+		//r|u|c1|c0
+		switchSubtree(quad, u, 0, 1);
+		switchSubtree(quad, get<0>(c), 1, 3);
+		#ifdef CUSTOMIZED_ANNOTATION
+		auto annot = quad.annotate();
+		#endif
+		array<double, 3> score = quad.score();
+		//r|u|c0c1|-
+		switchSubtree(quad, get<0>(c), 3, 2);
+		double weight = tree.temp["weight"];
+		score[0] /= weight; score[1] /= weight; score[2] /= weight;
+		double tscore = score[0] + score[1] + score[2];
+
+		#ifdef SUPPORT
+		double support0, support1, support2;
+		double lambda = tree.temp["lambda"];
+		if (tscore < 1e-8) {
+			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
+		}
+		else if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)) {
+			support0 = 1; support1 = 0; support2 = 0;
+		}
+		else if (tscore > 1000 && score[0] - max(score[1], score[2]) > 5 * sqrt((score[0] + max(score[1], score[2])) * 0.25)) {
+			support0 = 1; support1 = 0; support2 = 0;
+		}
+		else {
+			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
+			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
+			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
+			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2);
+			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2);
+			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2);
+			support0 = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
+			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
+			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
+		}
+		node->attributes["support"] = support0;
+		node->attributes["pp1"] = support0;
+		node->attributes["pp2"] = support1;
+		node->attributes["pp3"] = support2;
+		node->attributes["f1"] = score[0];
+		node->attributes["f2"] = score[1];
+		node->attributes["f3"] = score[2];
+		node->attributes["q1"] = score[0] / tscore;
+		node->attributes["q2"] = score[1] / tscore;
+		node->attributes["q3"] = score[2] / tscore;
+		//if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
+		#endif
+		#ifdef LOCAL_BOOTSTRAP
+		array<int, 3> bs = annot.bootstrap();
+		double nbs = annot.bs.size() / 100.0;
+		node->attributes["support"] = bs[0] / nbs;
+		node->attributes["bs1"] = bs[0];
+		node->attributes["bs2"] = bs[1];
+		node->attributes["bs3"] = bs[2];
+		node->attributes["s1"] = score[0];
+		node->attributes["s2"] = score[1];
+		node->attributes["s3"] = score[2];
+		node->attributes["q1"] = score[0] / tscore;
+		node->attributes["q2"] = score[1] / tscore;
+		node->attributes["q3"] = score[2] / tscore;
+		#endif
+		#ifdef G_SUPPORT
+		double p0 = gTest(score[0], score[1], score[2]);
+		double p1 = gTest(score[1], score[2], score[0]);
+		double p2 = gTest(score[2], score[0], score[1]);
+		if (support == 1) res += to_string(p0);
+		else {
+			array<double, 3> p = { p0, p1, p2 };
+			res += "'[p=" + to_string(p0) + ";p2=" + to_string(p1) + ";p3=" + to_string(p2)
+				+ ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
+			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
+		}
+		node->s = p0;
+		#endif
+		#ifdef CUSTOMIZED_LENGTH
+		node->attributes["length"] = quad.length(score);
+		#endif
+		#ifdef CUSTOMIZED_ANNOTATION_LENGTH
+		array<score_t, 5> lengths = annot.lengths();
+		node->attributes["length"] = lengths[0];
+		#endif
+		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
+		array<score_t, 5> lengths = annot.lengths();
+		node->attributes["length"] = lengths[0];
+		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["length"] = lengths[4];
+		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["length"] = lengths[3];
+		if (toplevel) {
+			tree.temp["rootlengthsum"] += lengths[1];
+			tree.temp["rootlengthcnt"]++;
+			tree.temp["rootsiblinglength"] = lengths[2];
+		}
+		#endif
+		#ifdef CASTLES
+		CastlesNode castles(annot, ARG.getDoubleArg("genelength"), ARG.getIntArg("numgenetrees"));
+		node->attributes["length"] = castles.edgeLengthOtherwise;
+		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["length"] = castles.leftEdgeLength;
+		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["length"] = castles.rightEdgeLength;
+		if (toplevel) {
+			tree.temp["rootsiblinglength"] = castles.siblingEdgeLength;
+		}
+		#else
+		#ifdef SUPPORT
+		if (3 * score[0] > tscore) node->attributes["length"] = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
+		else node->attributes["length"] = 0;
+		#endif
+		#endif
+	}
+
+	SpeciesTree optimalTreeWithSupport(double lambda, double weight) {
+		SpeciesTree tree;
+		tree.temp["lambda"] = lambda;
+		tree.temp["weight"] = weight;
+
+		#if defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH) || defined(CASTLES)
+		double siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
+		#endif
+		shared_ptr<SpeciesTree::Node> root = tree.addRoot();
+		shared_ptr<SpeciesTree::Node> left = tree.addLeft(root);
+		shared_ptr<SpeciesTree::Node> right = tree.addRight(root);
+		right->taxon = 0;
+		right->name = names[0];
+
+		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > qInfo;
+
+		Quadrupartition quad(tripInit);
+		quad.update(0, 0);
+		for (size_t i = 1; i < names.size(); i++) quad.update(2, i);
+		int v = hash[-taxonHash[0]];
+		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
+		//0|c1|c0|-
+		switchSubtree(quad, get<1>(c), 2, 1);
+		computeOptimalSubtreeWithSupport(tree, quad, get<0>(c), get<1>(c), qInfo, tree.addLeft(left), true);
+		//0|c0|c1|-
+		switchSubtree(quad, get<1>(c), 1, 2);
+		switchSubtree(quad, get<0>(c), 2, 1);
+		computeOptimalSubtreeWithSupport(tree, quad, get<1>(c), get<0>(c), qInfo, tree.addRight(left), true);
+		#if defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH) || defined(CASTLES)
+		if (nodes[get<0>(c)].leafId != -1) left->lc->attributes["length"] = tree.temp["rootsiblinglength"];
+		if (nodes[get<1>(c)].leafId != -1) left->rc->attributes["length"] = tree.temp["rootsiblinglength"];
+		#ifdef CASTLES
+		left->attributes["length"] = ARG.getDoubleArg("outgrouplength");
+		#else
+		left->attributes["length"] = tree.temp["rootlengthsum"] / tree.temp["rootlengthcnt"];
+		#endif
+		#endif
+
+		/*
+		if (support == 3) {
+			ofstream fcsv("freqQuad.csv");
+			printFreqQuadCSV(get<0>(c), get<1>(c), names[0], fcsv, qInfo);
+			printFreqQuadCSV(get<1>(c), get<0>(c), names[0], fcsv, qInfo);
+		}
+		*/
+
+		return tree;
 	}
 #endif
 };
@@ -2052,7 +2224,12 @@ struct MetaAlgorithm{
 		#ifdef SUPPORT
 		w = ARG.getDoubleArg("downweightrepeat");
 		#endif
-		if (support) output = alg.printOptimalTreeWithSupport(support, lambda, w);
+		if (support) {
+			SpeciesTree tree = alg.optimalTreeWithSupport(lambda, w);
+			if (support == 1) output = tree.simpleTree("length", "support");
+			else output = tree.annotatedTree("length");
+			// output = alg.printOptimalTreeWithSupport(support, lambda, w);
+		}
 		#endif
 		fout << output << endl;
 
