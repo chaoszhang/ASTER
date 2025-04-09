@@ -174,3 +174,6 @@ cat caster-site.nw
 
 Other tricks see **Alignments in FASTA format**.
 (其他技巧参照**比对为FASTA格式**)
+
+# Sliding window analysis (滑窗分析)
+Continue [here](caster-sliding-window-walkthrough.md)

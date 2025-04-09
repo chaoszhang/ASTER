@@ -84,14 +84,6 @@ You can choose a single species as the outgroup.
 cat waster.nw
 ```
 
-You can choose a single species as the outgroup.
-（您可选择单个物种作为外群）
-
-```
-../../bin/waster-site -i input.tsv -o waster.nw -t 4 --root Orangutan
-cat waster.nw
-```
-
 Scoring an existing tree is useful when computing branch lengths, as `waster-site_branchlength` is much slower than normal `waster-site`.
 （由于`waster-site_branchlength`比`waster-site`慢很多，指定物种树的拓扑结构计算枝长可以事半功倍）
 

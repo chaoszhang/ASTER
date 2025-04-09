@@ -273,6 +273,8 @@ Please make sure you removed paralogous alignment regions using `RepeatMasker` o
 
 A detailed [walkthrough](../misc/caster-linux-walkthrough.md) is also available (English/中文).
 
+A walkthrough for [sliding window](../misc/caster-sliding-window-walkthrough.md) analysis is also available.
+
 # INPUT
 * The input by default is a single MSA in Fasta format
 * The input can also be a text file containing a list of Fasta files (one file per line) if you add `-f list` to input arguments
