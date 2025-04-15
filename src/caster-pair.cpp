@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "5"
+#define DRIVER_VERSION "6"
 
 /* CHANGE LOG
+ * 6: Bug fix
  * 5: Final score normalization & Switching default objective
  * 4: Option for objective functions
  * 3: Option for no smart-pairing
@@ -145,6 +146,7 @@ struct Workflow {
                             if (freq[j][k] == 1) singleton = true;
                             sumFreq[k] += freq[j][k];
                         }
+                        if (cnt > 2) singleton = false;
 						if (cnt >= 4) cnt4++;
 						if (cnt >= 1) cnt1234++;
                         if (cnt == 4 && !singleton) cnt = 5;
