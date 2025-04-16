@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.21"
+#define ALG_VERSION "v1.22"
 
 /* CHANGE LOG
+ * 1.22: adding back freqQuad.csv
  * 1.21: de-warning and new species tree representation
  * 1.20: updating NNI algorithm
  * 1.19: error message for guide trees and constraint trees
@@ -2051,6 +2052,34 @@ struct ConstrainedOptimizationAlgorithm{
 
 		return tree;
 	}
+
+	string subtreeLeaves(shared_ptr<SpeciesTree::Node> node){
+		if (node->isLeaf()) return node->name;
+		else return node->name = subtreeLeaves(node->lc) + "," + subtreeLeaves(node->rc);
+	}
+	
+	void printFreqQuadCSVRecursion(shared_ptr<SpeciesTree::Node> v, shared_ptr<SpeciesTree::Node> u, string top, ostream &fcsv, int &id){
+		if (v->isLeaf()) return;
+		printFreqQuadCSVRecursion(v->lc, v->rc, top + "," + u->name, fcsv, id);
+		printFreqQuadCSVRecursion(v->rc, v->lc, top + "," + u->name, fcsv, id);
+		id++;
+		double tscore = v->attributes["f1"] + v->attributes["f2"] + v->attributes["f3"]; 
+		fcsv << "N" << id << "\tt1\t{" << v->lc->name << "}|{" << v->rc->name << "}#{" << u->name << "}|{" << top << "}\t"
+			<< v->attributes["pp1"] << "\t" << v->attributes["f1"] << "\t" << tscore << endl;
+		fcsv << "N" << id << "\tt2\t{" << top << "}|{" << v->rc->name << "}#{" << u->name << "}|{" << v->lc->name << "}\t"
+			<< v->attributes["pp2"] << "\t" << v->attributes["f2"] << "\t" << tscore << endl;
+		fcsv << "N" << id << "\tt3\t{" << v->lc->name << "}|{" << top << "}#{" << u->name << "}|{" << v->rc->name << "}\t"
+			<< v->attributes["pp3"] << "\t" << v->attributes["f3"] << "\t" << tscore << endl;
+	}
+	
+	void printFreqQuadCSV(SpeciesTree& tree){
+		subtreeLeaves(tree.root());
+		ofstream fcsv("freqQuad.csv");
+		int id = 0;
+		printFreqQuadCSVRecursion(tree.root()->lc->lc, tree.root()->lc->rc, tree.root()->rc->name, fcsv, id);
+		printFreqQuadCSVRecursion(tree.root()->lc->rc, tree.root()->lc->lc, tree.root()->rc->name, fcsv, id);
+	}
+
 #endif
 };
 
@@ -2228,7 +2257,7 @@ struct MetaAlgorithm{
 			SpeciesTree tree = alg.optimalTreeWithSupport(lambda, w);
 			if (support == 1) output = tree.simpleTree("length", "support");
 			else output = tree.annotatedTree("length");
-			// output = alg.printOptimalTreeWithSupport(support, lambda, w);
+			if (support == 3) alg.printFreqQuadCSV(tree);
 		}
 		#endif
 		fout << output << endl;
