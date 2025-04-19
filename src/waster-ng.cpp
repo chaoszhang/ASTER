@@ -105,7 +105,7 @@ template<size_t K> class KmerTable{
 
 public:
     constexpr static const size_t LEN = (1LL << (K * 4 - 1)) - (1LL << (K * 2 - 1));
-    constexpr static const size_t CACHE_MAX = (1LL << 24);
+    constexpr static const size_t CACHE_MAX = (1LL << 27);
 
     size_t fillcnt = 0;
 
@@ -168,7 +168,7 @@ public:
             size_t p = e / 4;
             uint8_t c = (e & 3);
             uint8_t b = (table[p] & 7);
-            if (b == 3 || b == 4 + c) return;
+            if (b == 3 || b == 4 + c) continue;
             if (b == 0) table[p] += 4 + c;
             else table[p] += 3 - b;
         }
@@ -194,9 +194,25 @@ public:
     void postprocess(){
         performAddChar();
         fillcnt = 0;
-        for (size_t i = 0; i < LEN; i++){
-            if (table[i] == 0) continue; 
-            fillcnt++;
+        vector<size_t> cnts(nThreads);
+        vector<thread> threads;
+        for (size_t i = 1; i < nThreads; i++) {
+            threads.emplace_back(&KmerTable<K>::performPostprocess, this, i, ref(cnts[i]));
+        }
+        performPostprocess(0, cnts[0]);
+        for (thread& t : threads) t.join();
+        for (size_t i = 0; i < nThreads; i++) {
+            fillcnt += cnts[i];
+        }
+    }
+
+    void performPostprocess(size_t threadID, size_t &realcnt) {
+        size_t cnt = 0;
+        size_t start = (threadID * LEN) / nThreads;
+        size_t end = ((threadID + 1) * LEN) / nThreads;
+        for (size_t i = start; i < end; i++) {
+            if (table[i] == 0) continue;
+            cnt++;
             if ((table[i] & 7) == 0) continue;
             if ((table[i] & 7) == 3) {
                 if ((table[i] & 8) == 0) table[i] += 8 - 3;
@@ -206,6 +222,7 @@ public:
                 if (table[i] < 240) table[i] += 16;
             }
         }
+        realcnt = cnt;
     }
 
     double fillProportion() const{
@@ -266,7 +283,7 @@ template<size_t K> class KmerConsensus {
     constexpr static const size_t MASK = (1LL << (K * 2)) - 1;
 
     constexpr static const size_t LEN = (1LL << (K * 4 - 1)) - (1LL << (K * 2 - 1));
-    constexpr static const size_t CACHE_MAX = (1LL << 20);
+    constexpr static const size_t CACHE_MAX = (1LL << 26);
 
     struct Profile {
         int32_t sample[7] = { -1, -1, -1, -1, -1, -1, -1 };
@@ -403,7 +420,7 @@ public:
     void postprocess() {
         performProfileAdd();
         for (int i = 0; i < sortedPattern.size(); i++) {
-            profile[i].sampled = false;
+            if (profile[i].sampled) profile[i].sampled = false;
         }
     }
 
