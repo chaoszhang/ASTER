@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "3"
+#define DRIVER_VERSION "4"
 
 /* CHANGE LOG
+ * 4: Parallelization
  * 3: A different strategy
  * 2: Final score normalization
  * 1: Remove non-effective sites
@@ -99,9 +100,12 @@ template<size_t K> class KmerTable{
     constexpr static const size_t MASK = (1LL << (K * 2)) - 1;
 
     uint8_t* table;
+    vector<vector<size_t> > cache;
+    size_t cacheSize = 0, nThreads;
 
 public:
     constexpr static const size_t LEN = (1LL << (K * 4 - 1)) - (1LL << (K * 2 - 1));
+    constexpr static const size_t CACHE_MAX = (1LL << 24);
 
     size_t fillcnt = 0;
 
@@ -124,17 +128,50 @@ public:
         return res;
     }
 
-    KmerTable(): table(new uint8_t[LEN]{}){}
+    KmerTable(size_t nThreads = 1): table(new uint8_t[LEN]{}), cache(nThreads), nThreads(nThreads){}
 
     ~KmerTable(){
         delete table;
     }
 
+    /*
     void addChar(size_t p, uint8_t c) {
         uint8_t b = (table[p] & 7);
         if (b == 3 || b == 4 + c) return;
         if (b == 0) table[p] += 4 + c;
         else table[p] += 3 - b;
+    }
+    */
+
+    void addChar(size_t p, uint8_t c) {
+        size_t threadID = (p * nThreads) / LEN;
+        cache[threadID].push_back(p * 4 + c);
+        cacheSize++;
+        if (cacheSize >= CACHE_MAX) performAddChar();
+    }
+
+    void performAddChar(){
+        vector<thread> threads;
+        for (size_t i = 1; i < nThreads; i++){
+            threads.emplace_back(&KmerTable<K>::performAddCharThread, this, i);
+        }
+        performAddCharThread(0);
+        for (thread &t: threads) t.join();
+        for (size_t i = 0; i < nThreads; i++){
+            cache[i].clear();
+        }
+        cacheSize = 0;
+    }
+
+    void performAddCharThread(size_t threadID){
+        for (size_t e: cache[threadID]){
+            size_t p = e / 4;
+            uint8_t c = (e & 3);
+            uint8_t b = (table[p] & 7);
+            if (b == 3 || b == 4 + c) return;
+            if (b == 0) table[p] += 4 + c;
+            else table[p] += 3 - b;
+        }
     }
 
     void add(const string &seqs, const string &seqn, bool bothStrands = true){
@@ -155,6 +192,7 @@ public:
     }
 
     void postprocess(){
+        performAddChar();
         fillcnt = 0;
         for (size_t i = 0; i < LEN; i++){
             if (table[i] == 0) continue; 
@@ -227,6 +265,9 @@ template<size_t K> class KmerConsensus {
     constexpr static const size_t M = (1LL << (K * 4 - 1 - SHIFT)) - (1LL << (K * 2 - 1 - SHIFT));
     constexpr static const size_t MASK = (1LL << (K * 2)) - 1;
 
+    constexpr static const size_t LEN = (1LL << (K * 4 - 1)) - (1LL << (K * 2 - 1));
+    constexpr static const size_t CACHE_MAX = (1LL << 20);
+
     struct Profile {
         int32_t sample[7] = { -1, -1, -1, -1, -1, -1, -1 };
         int16_t cnt = 0;
@@ -287,8 +328,11 @@ template<size_t K> class KmerConsensus {
 public:
     vector<size_t> sortedPattern, pattern2pos;
     vector<Profile> profile;
+    vector<vector<array<size_t, 3> > > cache;
+    size_t cacheSize = 0, nThreads;
 
-    KmerConsensus(const vector<size_t> &sortedPattern): sortedPattern(sortedPattern), profile(sortedPattern.size()) {
+    KmerConsensus(const vector<size_t> &sortedPattern, size_t nThreads = 1): 
+            sortedPattern(sortedPattern), profile(sortedPattern.size()), cache(nThreads), nThreads(nThreads) {
         pattern2pos.reserve(M + 1);
         size_t n = sortedPattern.size();
         for (size_t i = 0, j = 0; i < M + 1; i++) {
@@ -296,7 +340,38 @@ public:
             pattern2pos.push_back(j);
         }
     }
+    
+    void profileAdd(size_t pattern, size_t b1, size_t b2){
+        size_t threadID = (pattern * nThreads) / LEN;
+        cache[threadID].push_back({pattern, b1, b2});
+        cacheSize++;
+        if (cacheSize >= CACHE_MAX) performProfileAdd();
+    }
 
+    void performProfileAdd(){
+        vector<thread> threads;
+        for (size_t i = 1; i < nThreads; i++){
+            threads.emplace_back(&KmerConsensus<K>::performProfileAddThread, this, i);
+        }
+        performProfileAddThread(0);
+        for (thread &t: threads) t.join();
+        for (size_t i = 0; i < nThreads; i++){
+            cache[i].clear();
+        }
+        cacheSize = 0;
+    }
+
+    void performProfileAddThread(size_t threadID){
+        for (const array<size_t, 3> &e: cache[threadID]){
+            size_t pattern = e[0];
+            size_t L = pattern2pos[pattern >> SHIFT], R = pattern2pos[(pattern >> SHIFT) + 1];
+            size_t i = L;
+            while (i < R && sortedPattern[i] < pattern) i++;
+            if (sortedPattern[i] == pattern) profile[i].add(e[1], e[2]);
+        }
+    }
+
+    /*
     size_t locate(size_t pattern) {
         size_t L = pattern2pos[pattern >> SHIFT], R = pattern2pos[(pattern >> SHIFT) + 1];
         size_t i = L;
@@ -304,7 +379,8 @@ public:
         if (sortedPattern[i] == pattern) return i;
         return -1;
     }
-
+    */
+    
     void add(const string& seqs, const string& seqn, bool bothStrands = true) {
         size_t b1 = 0, b2 = 0;
         size_t m1 = 0, m2 = 0;
@@ -317,8 +393,7 @@ public:
                 size_t mb2 = (b2 & MASK);
                 if (mb1 > mb2 && m1 == 0 && m2 == 0) {
                     size_t p = mb1 * (mb1 - 1) / 2 + mb2;
-                    size_t pos = locate(p);
-                    if (pos != -1) profile[pos].add(b1, b2);
+                    profileAdd(p, b1, b2);
                 }
             }
         }
@@ -326,6 +401,7 @@ public:
     }
 
     void postprocess() {
+        performProfileAdd();
         for (int i = 0; i < sortedPattern.size(); i++) {
             profile[i].sampled = false;
         }
@@ -414,8 +490,8 @@ public:
 private:
     constexpr static const size_t MASK = 0xffffffff;
     constexpr static const size_t NMASKS = 14, MAXDIST = 3;
-    size_t masks[NMASKS] = {0x33333333, 0xcccccccc, 0x0f0f0f0f, 0xf0f0f0f0, 0x00ff00ff, 0xff00ff00, 0x0000ffff, 0xffff0000,
-                            0x3333cccc, 0xcccc3333, 0x0f0ff0f0, 0xf0f00f0f, 0x00ffff00, 0xff0000ff};
+    const size_t masks[NMASKS] = {0x33333333, 0xcccccccc, 0x0f0f0f0f, 0xf0f0f0f0, 0x00ff00ff, 0xff00ff00, 0x0000ffff, 0xffff0000,
+                                  0x3333cccc, 0xcccc3333, 0x0f0ff0f0, 0xf0f00f0f, 0x00ffff00, 0xff0000ff};
     vector<size_t> patterns;
     vector<double> weights;
     vector<int> unionfind;
@@ -438,7 +514,12 @@ private:
         return unionfind[node] = ufroot(unionfind[node]);
     }
 
-    size_t pairup(size_t b1, size_t b2) {
+    int ufrootConst(int node) const{
+        if (unionfind[node] == -1) return node;
+        return ufrootConst(unionfind[node]);
+    }
+
+    static size_t pairup(size_t b1, size_t b2) {
         if (b1 > b2) return (b1 << 32) + b2;
         else return (b2 << 32) + b1;
     }
@@ -555,7 +636,7 @@ public:
         return seq;
     }
 
-    void add(SEQ& seq, const string &seqs, const string &seqn){
+    void add(SEQ& seq, const string &seqs, const string &seqn) const{
         size_t b1 = 0, b2 = 0;
         size_t m1 = 0, m2 = 0;
         for (size_t i = 0; i + 17 < seqs.size(); i++){
@@ -571,7 +652,7 @@ public:
                 size_t mb2 = (masks[k] & b2);
                 size_t mb = pairup(mb1, mb2);
                 if (masked[k].count(mb) == 0) continue;
-                int temp = masked[k][mb], next = ufroot(temp);
+                int temp = masked[k].at(mb), next = ufrootConst(temp);
                 if ((dist(patterns[temp], b) <= MAXDIST || dist(patterns[next], b) <= MAXDIST) && (best != -1 || weights[best] < weights[next])) {
                     best = next;
                     c = seqs[i + 1];
@@ -729,7 +810,7 @@ struct Workflow {
             init<9>();
             #endif
         }
-        else readAlignment();
+        readAlignment();
 
         size_t nChunk = meta.nThreads;
         size_t pos = 0, len = nSNP;
@@ -741,6 +822,16 @@ struct Workflow {
         tripInit.nSpecies = names.size();
     }
 
+    static void processingFile(const SNP& snp, SNP::SEQ& snpseq, string file, int intqcs, int intqcn){
+        string log = string("Processing ") + file + " ...\n";
+        LOG << log;
+        SeqParser seq(file);
+        while (seq.nextSeq()){
+            string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+            snp.add(snpseq, seqs, seqn);
+        }
+    }
+    
     template<size_t K> void init(){
         vector<string> indNames, files;
         {
@@ -761,7 +852,7 @@ struct Workflow {
         if (ARG.getStringArg("continue") == ""){
             vector<pair<size_t, double> > generatedConsensus;
             unordered_set<size_t> selected;
-            KmerTable<K> table;
+            KmerTable<K> table(ARG.getIntArg("thread"));
             size_t nSample = ARG.getIntArg("sampled");
             for (size_t i = 0; i < files.size() && i < nSample; i++){
                 size_t cur = rand() % files.size();
@@ -778,9 +869,9 @@ struct Workflow {
 
             selected.clear();
             #ifdef DEBUGINFO
-            KmerConsensus<K> consensus(table.frequentPatterns(1000));
+            KmerConsensus<K> consensus(table.frequentPatterns(1000), ARG.getIntArg("thread"));
             #else
-            KmerConsensus<K> consensus(table.frequentPatterns(100000000));
+            KmerConsensus<K> consensus(table.frequentPatterns(100000000), ARG.getIntArg("thread"));
             #endif
             for (size_t i = 0; i < files.size() && i < nSample; i++){
                 size_t cur = rand() % files.size();
@@ -819,47 +910,60 @@ struct Workflow {
             pSNP = new SNP(ARG.getStringArg("continue"));
         }
         SNP &snp = *pSNP;
-        
+        string snpName = (ARG.getStringArg("output") != "<standard output>") ? ARG.getStringArg("output") + ".snps.fa" : "snps.fa";
         if (ARG.getIntArg("mode") == 3){
-            if (ARG.getStringArg("output") != "<standard output>") ofstream fin(ARG.getStringArg("output"));
+            if (ARG.getStringArg("output") != "<standard output>") ofstream fout(ARG.getStringArg("output"));
+        }
+        if (ARG.getIntArg("mode") < 3){
+            ofstream fout(snpName);
         }
         
         {
             size_t freqAT = 0, freqCG = 0;
-            for (size_t i = 0; i < files.size(); i++){
-                LOG << "Processing " << files[i] << " ...\n";
-                ind2species.push_back(name2id[meta.mappedname(indNames[i])]);
-                SeqParser seq(files[i]);
-                SNP::SEQ snpseq = snp.initSeq();
-                while (seq.nextSeq()){
-                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
-                    snp.add(snpseq, seqs, seqn);
+            size_t nThreads = ARG.getIntArg("thread");
+            for (size_t batch = 0; batch < files.size(); batch += nThreads){
+                vector<thread> threads;
+                vector<SNP::SEQ> snpseqs;
+                for (size_t i = batch; i < files.size() && i < batch + nThreads; i++){
+                    snpseqs.push_back(snp.initSeq());
                 }
-                string s = snpseq.get();
-                nSNP = s.size();
-                freqAT += snpseq.countAT();
-                freqCG += snpseq.countCG();
-
-                if (ARG.getIntArg("mode") == 3){
-                    if (ARG.getStringArg("output") == "<standard output>"){
-                        cout << ">" << indNames[i] << endl << s << endl;
+                for (size_t i = batch + 1; i < files.size() && i < batch + nThreads; i++){
+                    threads.emplace_back(Workflow::processingFile, ref(snp), ref(snpseqs[i - batch]), files[i], intqcs, intqcn);
+                }
+                processingFile(snp, snpseqs[0], files[batch], intqcs, intqcn);
+                for (size_t i = 0; i < threads.size(); i++){
+                    threads[i].join();
+                }
+                for (size_t i = 0; i < snpseqs.size(); i++){
+                    string s = snpseqs[i].get();
+                    nSNP = s.size();
+                    freqAT += snpseqs[i].countAT();
+                    freqCG += snpseqs[i].countCG();
+                    string text = string(">") + indNames[batch + i] + "\n" + s + "\n";
+                    if (ARG.getIntArg("mode") == 3){
+                        if (ARG.getStringArg("output") == "<standard output>"){
+                            cout << text;
+                        }
+                        else {
+                            ofstream fout(ARG.getStringArg("output"), ios_base::app);
+                            fout << text;
+                        }
                     }
                     else {
-                        ofstream fout(ARG.getStringArg("output"), ios_base::app);
-                        fout << ">" << indNames[i] << endl << s << endl;
+                        ofstream fout(snpName, ios_base::app);
+                        fout << text;
                     }
-                }
-                else {
-                    for (const char c: s) tripInit.seq.append(c);
-                }
 
-                #ifdef DEBUGINFO
-                snpseq.debuginfo();
-                #endif
+                    #ifdef DEBUGINFO
+                    snpseqs[i].debuginfo();
+                    #endif
+                }
             }
             GCcontent = ((double) freqCG) / (freqAT + freqCG);
             cerr << "%GC = " << GCcontent << endl;
             if (ARG.getIntArg("mode") == 3) exit(0);
+
+            ARG.getStringArg("input") = snpName;
         }
 
         /*
