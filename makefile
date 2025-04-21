@@ -69,4 +69,4 @@ tutorial: all
 	bin/astral-pro3 -H
 	bin/wastral -H
 	bin/caster-site -H
-	bin/waster-site -H
+	bin/waster -H
