@@ -1010,7 +1010,7 @@ struct Workflow {
 };
 
 int main(int argc, char** argv){
-    ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (NG)");
+    ARG.setProgramName("waster", "Without-Alignment/Assembly Species Tree EstimatoR †");
     ARG.addIntArg(0, "sampled", 16, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");

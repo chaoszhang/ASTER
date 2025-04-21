@@ -1,4 +1,4 @@
-all: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster-site waster-site_branchlength waster-ng waster-ng_branchlength
+all: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength
 	echo "*** Installation complete! ***"
 
 mac: dir astral astral-pro wastral
@@ -40,17 +40,17 @@ caster-site_branchlength: dir
 caster-pair: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair
 
-waster-site_branchlength: dir
-	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/waster-site.cpp -o bin/waster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/waster-site.cpp -o bin/waster-site_branchlength_experimental
+waster-old_branchlength: dir
+	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/waster-old.cpp -o bin/waster-old_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/waster-old.cpp -o bin/waster-old_branchlength_experimental
 	
-waster-site: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-site.cpp -o bin/waster-site || g++ -std=gnu++17 -O2 -pthread src/waster-site.cpp -o bin/waster-site
+waster-old: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-old.cpp -o bin/waster-old || g++ -std=gnu++17 -O2 -pthread src/waster-old.cpp -o bin/waster-old
 
-waster-ng_branchlength: dir
-	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/waster-ng.cpp -o bin/waster-ng_branchlength_experimental || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/waster-ng.cpp -o bin/waster-ng_branchlength_experimental
+waster_branchlength: dir
+	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/waster.cpp -o bin/waster_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/waster.cpp -o bin/waster_branchlength
 	
-waster-ng: dir
-	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster-ng.cpp -o bin/waster-ng_experimental || g++ -std=gnu++17 -O2 -pthread src/waster-ng.cpp -o bin/waster-ng_experimental
+waster: dir
+	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster.cpp -o bin/waster || g++ -std=gnu++17 -O2 -pthread src/waster.cpp -o bin/waster
 
 sister: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/sister.cpp -o bin/sister || g++ -std=gnu++17 -O2 -pthread src/sister.cpp -o bin/sister
