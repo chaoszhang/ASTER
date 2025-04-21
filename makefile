@@ -1,7 +1,7 @@
 all: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength
 	echo "*** Installation complete! ***"
 
-mac: dir astral astral-pro wastral
+mac: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength
 	echo "*** Installation complete! ***"
 
 astral: dir
