@@ -64,7 +64,7 @@ Save the output to `waster.nw`.
 (将输出文件保存到`waster.nw`)
 
 ```
-../../bin/waster-site -i input.tsv -o waster.nw
+../../bin/waster -i input.tsv -o waster.nw
 cat waster.nw
 ```
 
@@ -72,7 +72,7 @@ Now, let's try using 4 threads.
 (试着用四个线程看看)
 
 ```
-../../bin/waster-site -i input.tsv -o waster.nw -t 4
+../../bin/waster -i input.tsv -o waster.nw -t 4
 cat waster.nw
 ```
 
@@ -80,15 +80,15 @@ You can choose a single species as the outgroup.
 （您可选择单个物种作为外群）
 
 ```
-../../bin/waster-site -i input.tsv -o waster.nw -t 4 --root Orangutan
+../../bin/waster -i input.tsv -o waster.nw -t 4 --root Orangutan
 cat waster.nw
 ```
 
-Scoring an existing tree is useful when computing branch lengths, as `waster-site_branchlength` is much slower than normal `waster-site`.
-（由于`waster-site_branchlength`比`waster-site`慢很多，指定物种树的拓扑结构计算枝长可以事半功倍）
+Scoring an existing tree is useful when computing branch lengths, as `waster_branchlength` is much slower than normal `waster`.
+（由于`waster_branchlength`比`waster`慢很多，指定物种树的拓扑结构计算枝长可以事半功倍）
 
 ```
-../../bin/waster-site_branchlength -i input.tsv -C -c waster.nw -o waster_branchlength.nw -t 4 --root Orangutan
+../../bin/waster_branchlength -i input.tsv -C -c waster.nw -o waster_branchlength.nw -t 4 --root Orangutan
 cat waster_branchlength.nw
 ```
 

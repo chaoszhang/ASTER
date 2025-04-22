@@ -8,7 +8,7 @@ A family of optimatization algorithms for species tree inference:
 3. [Weighted ASTRAL](tutorial/wastral.md) (from unrooted gene trees with branch ***lengths*** and/or ***supports***)
 4. [CASTER-site](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
 5. [CASTER-pair](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
-6. [WASTER-site](tutorial/waster-site.md) (from ***raw reads***)
+6. [WASTER](tutorial/waster.md) (from ***raw reads***)
 7. SISTER (from optical-map-like distance data or shape data)
 8. MONSTER
 
