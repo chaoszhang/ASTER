@@ -703,7 +703,7 @@ bin/wastral --mode 3 -o OUTPUT_FILE INPUT_FILE
     const string ASTRAL = "astral4";
     const string WASTRAL = "wastral";
     const string CASTER = "caster-site";
-    const string WASTER = "waster-site";
+    const string WASTER = "waster";
 
     string replace(string txt, string from, string to){
         return regex_replace(txt, regex(from), to);
@@ -724,7 +724,7 @@ bin/wastral --mode 3 -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "astral4");
         if (programName == WASTRAL) return replace(SHARED_INTRO, "PROGRAM_NAME", "wastral");
         if (programName == CASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "caster-site");
-        if (programName == WASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "waster-site");
+        if (programName == WASTER) return replace(SHARED_INTRO, "PROGRAM_NAME", "waster");
         return SHARED_INTRO;
     }
 
@@ -742,7 +742,7 @@ bin/wastral --mode 3 -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "astral4"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "wastral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == CASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
-        if (programName == WASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "waster-site"), "EXAMPLE_INPUT", "waster/input_list.txt");
+        if (programName == WASTER) return replace(replace(SHARED_EXE, "PROGRAM_NAME", "waster"), "EXAMPLE_INPUT", "waster/input_list.txt");
         return SHARED_EXE;
     }
 
@@ -759,7 +759,7 @@ bin/wastral --mode 3 -o OUTPUT_FILE INPUT_FILE
         if (programName == ASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "astral4"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == WASTRAL) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "wastral"), "EXAMPLE_INPUT", "genetree.nw");
         if (programName == CASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "caster-site"), "EXAMPLE_INPUT", "genetrees.tre_1.fas");
-        if (programName == WASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "waster-site"), "EXAMPLE_INPUT", "waster/input_list.txt");
+        if (programName == WASTER) return replace(replace(SHARED_ADV, "PROGRAM_NAME", "waster"), "EXAMPLE_INPUT", "waster/input_list.txt");
         return SHARED_ADV;
     }
 
