@@ -14,13 +14,17 @@ A family of optimatization algorithms for species tree inference:
 
 # Announcements
 
-## Integrated in Phylosuite (NEW)
+## Available on Bioconda
+
+We thank Dirk-Jan M. van Workum, Joshua Zhuang, and many other contributors who make ASTER available on [Bioconda](https://bioconda.github.io/recipes/aster/README.html).
+
+## Integrated in Phylosuite
 
 Many ASTER tools have been integrated in [PhyloSuite](http://phylosuite.jushengwu.com/), an integrated and scalable desktop platform for streamlined molecular sequence data management and evolutionary phylogenetics studies.
 
 ## GUI for Windows users
 
-Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`.
+Please check out our software with GUI for ASTRAL, ASTRAL-Pro, and wASTRAL. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`.
  
 ## Bug Reports
 
