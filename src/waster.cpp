@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "4"
+#define DRIVER_VERSION "5"
 
 /* CHANGE LOG
+ * 5: De-warning
  * 4: Parallelization
  * 3: A different strategy
  * 2: Final score normalization
@@ -72,7 +73,7 @@ char REVERSE_COMPLEMENT(char c){
 
 template<size_t K> size_t REVERSE_COMPLEMENT(size_t b){
     size_t res = 0;
-    for (int i = 0; i < K; i++){
+    for (size_t i = 0; i < K; i++){
         res <<= 2;
         res |= (3 ^ (b & 3));
         b >>= 2;
@@ -238,7 +239,7 @@ public:
             freq[level]++;
         }
 
-        int threshold, num = n, denom;
+        size_t threshold, num = n, denom = freq[0];
         for (threshold = 15; threshold > 0; threshold--) {
             if (num <= freq[threshold]) {
                 denom = freq[threshold];
@@ -266,7 +267,7 @@ public:
         
         #ifdef DEBUGINFO
         for (size_t e: res){
-            size_t a1 = (static_cast<int>(floor(sqrt(8 * e + 1))) + 1) / 2;
+            size_t a1 = (static_cast<size_t>(floor(sqrt(8 * e + 1))) + 1) / 2;
             size_t a2 = e - a1 * (a1 - 1) / 2;
             cerr << print<K>(a1, a2) << " ";
         }
@@ -419,19 +420,19 @@ public:
 
     void postprocess() {
         performProfileAdd();
-        for (int i = 0; i < sortedPattern.size(); i++) {
+        for (size_t i = 0; i < sortedPattern.size(); i++) {
             if (profile[i].sampled) profile[i].sampled = false;
         }
     }
 
     vector<pair<size_t, double> > generateConsensus(size_t n) {
         vector<pair<size_t, double> > temp, res;
-        for (int i = 0; i < sortedPattern.size(); i++) {
+        for (size_t i = 0; i < sortedPattern.size(); i++) {
             pair<size_t, double> e = profile[i].output(sortedPattern[i]);
             if (e.second > 0) temp.push_back(e);
         }
         sort(temp.begin(), temp.end(), [](const pair<size_t, double> &a, const pair<size_t, double> &b){return a.second > b.second;});
-        for (int i = 0; i < n && i < temp.size(); i++){
+        for (size_t i = 0; i < n && i < temp.size(); i++){
             res.push_back(temp[i]);
         }
 
@@ -481,23 +482,23 @@ public:
         }
 
         string get(){
-            for (int i = 0; i < seq.length(); i++){
+            for (size_t i = 0; i < seq.length(); i++){
                 if (seq[i] == '\0') seq[i] = 'N';
             }
             return seq;
         }
 
         size_t countAT(){
-            int cnt = 0;
-            for (int i = 0; i < seq.length(); i++){
+            size_t cnt = 0;
+            for (size_t i = 0; i < seq.length(); i++){
                 if (seq[i] == 'A' || seq[i] == 'T') cnt++;
             }
             return cnt;
         }
 
         size_t countCG(){
-            int cnt = 0;
-            for (int i = 0; i < seq.length(); i++){
+            size_t cnt = 0;
+            for (size_t i = 0; i < seq.length(); i++){
                 if (seq[i] == 'C' || seq[i] == 'G') cnt++;
             }
             return cnt;
@@ -516,10 +517,10 @@ private:
     vector<int> id2pos;
     int npos = 0;
     
-    static int dist(size_t a, size_t b) {
-        int res = 0;
+    static size_t dist(size_t a, size_t b) {
+        size_t res = 0;
         size_t d = (a ^ b);
-        for (int i = 0; i < 32; i++) {
+        for (size_t i = 0; i < 32; i++) {
             if (d & 3) res++;
             d >>= 2;
         }
@@ -549,15 +550,15 @@ public:
             weights.push_back(e.second);
             unionfind.push_back(-1);
         }
-        for (int i = 0; i < patterns.size(); i++) {
+        for (size_t i = 0; i < patterns.size(); i++) {
             size_t b1 = (patterns[i] >> 32);
             size_t b2 = (patterns[i] & MASK);
-            for (int k = 0; k < NMASKS; k++) {
+            for (size_t k = 0; k < NMASKS; k++) {
                 size_t mb1 = (masks[k] & b1);
                 size_t mb2 = (masks[k] & b2);
                 size_t mb = pairup(mb1, mb2);
                 if (masked[k].count(mb)) {
-                    int j = masked[k][mb];
+                    size_t j = masked[k][mb];
                     if (dist(patterns[i], patterns[j]) <= MAXDIST || dist(patterns[i], REVERSE_COMPLEMENT<32>(patterns[j])) <= MAXDIST 
                             || dist(patterns[ufroot(i)], patterns[ufroot(j)]) <= MAXDIST || dist(patterns[ufroot(i)], REVERSE_COMPLEMENT<32>(patterns[ufroot(j)])) <= MAXDIST) {
                         if (weights[ufroot(i)] > weights[ufroot(j)]) {
@@ -579,13 +580,13 @@ public:
                 }
             }
         }
-        for (int i = 0; i < patterns.size(); i++) {
+        for (size_t i = 0; i < patterns.size(); i++) {
             if (unionfind[i] == -1) id2pos.push_back(npos++);
             else id2pos.push_back(-1);
         }
 
         #ifdef DEBUGINFO
-        for (int i = 0; i < patterns.size(); i++) {
+        for (size_t i = 0; i < patterns.size(); i++) {
             if (unionfind[i] == -1) cerr << print<16>(patterns[i] >> 32, patterns[i] & 0xffffffff) << " ";
         }
         cerr << endl;
@@ -594,37 +595,37 @@ public:
 
     SNP(const string &file){
         ifstream fin(file);
-        int LEN;
-        for (int k = 0; k < NMASKS; k++) {
+        size_t LEN;
+        for (size_t k = 0; k < NMASKS; k++) {
             fin >> LEN;
-            for (int i = 0; i < LEN; i++){
+            for (size_t i = 0; i < LEN; i++){
                 size_t first;
-                int second;
+                size_t second;
                 fin >> first >> second;
                 masked[k][first] = second;
             }
         }
         fin >> LEN;
-        for (int i = 0; i < LEN; i++){
+        for (size_t i = 0; i < LEN; i++){
             size_t e;
             fin >> e;
             patterns.push_back(e);
         }
         fin >> LEN;
-        for (int i = 0; i < LEN; i++){
+        for (size_t i = 0; i < LEN; i++){
             double e;
             fin >> e;
             weights.push_back(e);
         }
         fin >> LEN;
-        for (int i = 0; i < LEN; i++){
+        for (size_t i = 0; i < LEN; i++){
             int e;
             fin >> e;
             unionfind.push_back(e);
         }
         fin >> LEN;
-        for (int i = 0; i < LEN; i++){
-            int e;
+        for (size_t i = 0; i < LEN; i++){
+            size_t e;
             fin >> e;
             id2pos.push_back(e);
         }
@@ -633,7 +634,7 @@ public:
     
     void save(const string &file){
         ofstream fout(file);
-        for (int k = 0; k < NMASKS; k++) {
+        for (size_t k = 0; k < NMASKS; k++) {
             fout << masked[k].size() << endl;
             for (const auto &e: masked[k]) fout << e.first << " " << e.second << endl;
         }
@@ -664,7 +665,7 @@ public:
             size_t b = (b1 << 32) + b2, rb = (b2 << 32) + b1;
             int best = -1;
             char c;
-            for (int k = 0; k < NMASKS; k++) {
+            for (size_t k = 0; k < NMASKS; k++) {
                 size_t mb1 = (masks[k] & b1);
                 size_t mb2 = (masks[k] & b2);
                 size_t mb = pairup(mb1, mb2);
@@ -768,7 +769,7 @@ struct Workflow {
                 }
                 freqAT += countAT(line);
                 freqCG += countCG(line);
-                for (int i = 0; i < line.size(); i++){
+                for (size_t i = 0; i < line.size(); i++){
                     if ((line[i] == 'A' || line[i] == 'G') && cntAG[i] < 2) cntAG[i]++;
                     if ((line[i] == 'C' || line[i] == 'T') && cntCT[i] < 2) cntCT[i]++; 
                 }
@@ -785,7 +786,7 @@ struct Workflow {
                     continue;
                 }
                 string filtered;
-                for (int i = 0; i < line.size(); i++){
+                for (size_t i = 0; i < line.size(); i++){
                     #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
                     filtered.push_back(line[i]);
                     #else
@@ -831,7 +832,7 @@ struct Workflow {
 
         size_t nChunk = meta.nThreads;
         size_t pos = 0, len = nSNP;
-        for (int i = 0; i < nChunk; i++) {
+        for (size_t i = 0; i < nChunk; i++) {
             size_t s = i * len / nChunk, t = (i + 1) * len / nChunk;
             formatGene(pos + s, t - s, len);
         }
@@ -867,47 +868,55 @@ struct Workflow {
         }
         SNP *pSNP;
         if (ARG.getStringArg("continue") == ""){
+            size_t nSample = ARG.getIntArg("sampled");
             vector<pair<size_t, double> > generatedConsensus;
             unordered_set<size_t> selected;
-            KmerTable<K> table(ARG.getIntArg("thread"));
-            size_t nSample = ARG.getIntArg("sampled");
-            for (size_t i = 0; i < files.size() && i < nSample; i++){
-                size_t cur = rand() % files.size();
-                while (selected.count(cur)) cur = rand() % files.size();
-                selected.insert(cur);
-                LOG << "Species " << indNames[cur] << " is selected to count the most frequent patterns.\n";
-                SeqParser seq(files[cur]);
-                while (seq.nextSeq()){
-                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
-                    table.add(seqs, seqn);
+            vector<size_t> frequentPatterns;
+
+            {
+                KmerTable<K> table(ARG.getIntArg("thread"));
+                for (size_t i = 0; i < files.size() && i < nSample; i++){
+                    size_t cur = rand() % files.size();
+                    while (selected.count(cur)) cur = rand() % files.size();
+                    selected.insert(cur);
+                    LOG << "Species " << indNames[cur] << " is selected to count the most frequent patterns.\n";
+                    SeqParser seq(files[cur]);
+                    while (seq.nextSeq()){
+                        string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+                        table.add(seqs, seqn);
+                    }
+                    table.postprocess();
                 }
-                table.postprocess();
+                #ifdef DEBUGINFO
+                frequentPatterns = table.frequentPatterns(1000);
+                #else
+                frequentPatterns = table.frequentPatterns(ARG.getIntArg("pattern"));
+                #endif
             }
 
-            selected.clear();
-            #ifdef DEBUGINFO
-            KmerConsensus<K> consensus(table.frequentPatterns(1000), ARG.getIntArg("thread"));
-            #else
-            KmerConsensus<K> consensus(table.frequentPatterns(100000000), ARG.getIntArg("thread"));
-            #endif
-            for (size_t i = 0; i < files.size() && i < nSample; i++){
-                size_t cur = rand() % files.size();
-                while (selected.count(cur)) cur = rand() % files.size();
-                selected.insert(cur);
-                LOG << "Species " << indNames[cur] << " is selected to count to build consensus.\n";
-                SeqParser seq(files[cur]);
-                while (seq.nextSeq()){
-                    string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
-                    consensus.add(seqs, seqn);
+            {
+                selected.clear();
+                KmerConsensus<K> consensus(frequentPatterns, ARG.getIntArg("thread"));
+                for (size_t i = 0; i < files.size() && i < nSample; i++){
+                    size_t cur = rand() % files.size();
+                    while (selected.count(cur)) cur = rand() % files.size();
+                    selected.insert(cur);
+                    LOG << "Species " << indNames[cur] << " is selected to count to build consensus.\n";
+                    SeqParser seq(files[cur]);
+                    while (seq.nextSeq()){
+                        string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
+                        consensus.add(seqs, seqn);
+                    }
+                    consensus.postprocess();
                 }
-                consensus.postprocess();
+                frequentPatterns.clear();
+
+                #ifdef DEBUGINFO
+                generatedConsensus = consensus.generateConsensus(100);
+                #else
+                generatedConsensus = consensus.generateConsensus(ARG.getIntArg("consensus"));
+                #endif
             }
-            
-            #ifdef DEBUGINFO
-            generatedConsensus = consensus.generateConsensus(100);
-            #else
-            generatedConsensus = consensus.generateConsensus(10000000);
-            #endif
 
             LOG << generatedConsensus.size() << " consensus sequences selected.\n";
 
@@ -1014,8 +1023,10 @@ int main(int argc, char** argv){
     ARG.addIntArg(0, "sampled", 16, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");
-    ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP base (between 0-93, 30 by default)");
+    ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP bases (between 0-93, 30 by default)");
     ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");
+    ARG.addIntArg(0, "pattern", 500000000, "The number of most frequent k-mer patterns selected to generate consensus profiles");
+    ARG.addIntArg(0, "consensus", 100000000, "The number of selected cosensus profiles to generate SNP table");
 
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
