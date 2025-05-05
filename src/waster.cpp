@@ -255,6 +255,10 @@ public:
             size_t level = table[i] / 16;
             if (level > threshold) res.push_back(i);
             if (level == threshold) {
+                if (level == 0){
+                    cerr << "What? level = 0!\n";
+                    continue;
+                }
                 if (i % denom < num) {
                     res.push_back(i);
                     num--;
@@ -1026,7 +1030,7 @@ int main(int argc, char** argv){
     ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP bases (between 0-93, 30 by default)");
     ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");
     ARG.addIntArg(0, "pattern", 500000000, "The number of most frequent k-mer patterns selected to generate consensus profiles");
-    ARG.addIntArg(0, "consensus", 100000000, "The number of selected cosensus profiles to generate SNP table");
+    ARG.addIntArg(0, "consensus", 25000000, "The number of selected cosensus profiles to generate SNP table");
 
     Workflow WF(argc, argv);
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
