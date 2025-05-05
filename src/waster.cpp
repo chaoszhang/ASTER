@@ -1,7 +1,7 @@
 #define DRIVER_VERSION "5"
 
 /* CHANGE LOG
- * 5: De-warning
+ * 5: Early termination for high coverage read files
  * 4: Parallelization
  * 3: A different strategy
  * 2: Final score normalization
@@ -465,6 +465,7 @@ class SNP {
 public:
     struct SEQ{
         string seq;
+        size_t uniqCnt = 0;
 
         #ifdef DEBUGINFO
         vector<size_t> debug;
@@ -491,7 +492,9 @@ public:
         }
 
         void set(int i, char c){
-            if (seq[i] == '\0' || seq[i] == c) seq[i] = c;
+            if (seq[i] == c) return;
+            uniqCnt++;
+            if (seq[i] == '\0') seq[i] = c;
             else seq[i] = 'N';
         }
 
@@ -500,6 +503,10 @@ public:
                 if (seq[i] == '\0') seq[i] = 'N';
             }
             return seq;
+        }
+
+        size_t uniqueCount(){
+            return uniqCnt;
         }
 
         size_t countAT(){
@@ -856,11 +863,23 @@ struct Workflow {
 
     static void processingFile(const SNP& snp, SNP::SEQ& snpseq, string file, int intqcs, int intqcn){
         string log = string("Processing ") + file + " ...\n";
+        size_t lastCnt = 0, curCnt = 0, totalLen = 0, nextThreshold = (1LL << 30);
+        double thresholdRatio = 1.01;
         LOG << log;
         SeqParser seq(file);
         while (seq.nextSeq()){
             string seqs = seq.getSeq(intqcs), seqn = seq.getSeq(intqcn);
             snp.add(snpseq, seqs, seqn);
+            totalLen += seqs.size();
+            if (totalLen > nextThreshold){
+                nextThreshold += (1LL << 30);
+                curCnt = snpseq.uniqueCount();
+                if (lastCnt * thresholdRatio > curCnt){
+                    LOG << string("Early termination of ") + file + " after " + to_string(totalLen) + " base-pairs as the coverage level is sufficiently high!\n";
+                    return;
+                }
+                lastCnt = curCnt;
+            }
         }
     }
     
