@@ -492,7 +492,7 @@ public:
         }
 
         void set(int i, char c){
-            if (seq[i] == c) return;
+            if (seq[i] == c || seq[i] == 'N') return;
             uniqCnt++;
             if (seq[i] == '\0') seq[i] = c;
             else seq[i] = 'N';
