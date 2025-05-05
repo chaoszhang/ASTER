@@ -164,6 +164,15 @@ public:
         cacheSize = 0;
     }
 
+
+    /* bit table (last 3 bits) for central-mer:
+     * 0 - vacancy
+     * 3 - mutiple hits (error)
+     * 4 - A
+     * 5 - C
+     * 6 - G
+     * 7 - T
+     */
     void performAddCharThread(size_t threadID){
         for (size_t e: cache[threadID]){
             size_t p = e / 4;
@@ -207,6 +216,10 @@ public:
         }
     }
 
+    /* bit table (multiple of 8):
+     * 8 - mutiple hits (error) in previous taxa
+     * multiple of 16: valid counts in previous taxa
+     */
     void performPostprocess(size_t threadID, size_t &realcnt) {
         size_t cnt = 0;
         size_t start = (threadID * LEN) / nThreads;
@@ -255,10 +268,7 @@ public:
             size_t level = table[i] / 16;
             if (level > threshold) res.push_back(i);
             if (level == threshold) {
-                if (level == 0){
-                    cerr << "What? level = 0!\n";
-                    continue;
-                }
+                if (denom == 0) break;
                 if (i % denom < num) {
                     res.push_back(i);
                     num--;
