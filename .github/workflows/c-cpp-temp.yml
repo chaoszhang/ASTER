@@ -23,7 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: make
-      run: make mac
+      run: make
     - name: sancheck
       run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
       

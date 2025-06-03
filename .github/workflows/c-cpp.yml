@@ -34,7 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: make
-      run: make mac
+      run: make
     - name: commit
       run: |
             git config --local user.email "github-actions[bot]@github.com"
