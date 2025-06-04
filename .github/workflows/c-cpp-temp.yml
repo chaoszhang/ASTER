@@ -77,8 +77,8 @@ jobs:
           checkName: macos-sancheck
           timeoutSeconds: 1800
           intervalSeconds: 30
-    - name: Halt if macosx-sancheck failed
-      if: steps.wait-for-macosx-sancheck.outputs.conclusion != 'success'
+    - name: Halt if macos-sancheck failed
+      if: steps.wait-for-macos-sancheck.outputs.conclusion != 'success'
       run: exit 1
     - name: Wait for macosx86-sancheck to succeed
       uses: fountainhead/action-wait-for-check@v1.0.0
