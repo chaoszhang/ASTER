@@ -47,6 +47,26 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: MacOS
           force: true
+  macosx86-build:
+
+    runs-on: macos-15-large
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: make
+      run: make
+    - name: commit
+      run: |
+            git config --local user.email "github-actions[bot]@github.com"
+            git config --local user.name "github-actions[bot]"
+            git add *
+            git commit -m "Update to newest version with binaries"
+    - name: push
+      uses: chaoszhang/github-push-action@master
+      with: 
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: MacOSx86
+          force: true
   windows-build:
     runs-on: windows-latest
 

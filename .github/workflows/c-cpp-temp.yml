@@ -27,6 +27,17 @@ jobs:
     - name: sancheck
       run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
       
+  macosx86-sancheck:
+
+    runs-on: macos-15-large
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: make
+      run: make
+    - name: sancheck
+      run: for c in example/sancheck/*/sancheck.sh; do sh $c; done
+      
   windows-sancheck:
     runs-on: windows-latest
 
@@ -66,8 +77,19 @@ jobs:
           checkName: macos-sancheck
           timeoutSeconds: 1800
           intervalSeconds: 30
-    - name: Halt if windows-sancheck failed
-      if: steps.wait-for-macos-sancheck.outputs.conclusion != 'success'
+    - name: Halt if macosx-sancheck failed
+      if: steps.wait-for-macosx-sancheck.outputs.conclusion != 'success'
+      run: exit 1
+    - name: Wait for macosx86-sancheck to succeed
+      uses: fountainhead/action-wait-for-check@v1.0.0
+      id: wait-for-macosx86-sancheck
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: macosx86-sancheck
+          timeoutSeconds: 1800
+          intervalSeconds: 15
+    - name: Halt if macosx86-sancheck failed
+      if: steps.wait-for-macosx86-sancheck.outputs.conclusion != 'success'
       run: exit 1
     - name: Wait for windows-sancheck to succeed
       uses: fountainhead/action-wait-for-check@v1.0.0
@@ -76,7 +98,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           checkName: windows-sancheck
           timeoutSeconds: 1800
-          intervalSeconds: 30
+          intervalSeconds: 10
     - name: Halt if windows-sancheck failed
       if: steps.wait-for-windows-sancheck.outputs.conclusion != 'success'
       run: exit 1
