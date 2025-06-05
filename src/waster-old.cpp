@@ -523,7 +523,7 @@ struct Workflow {
 
 int main(int argc, char** argv){
     ARG.setProgramName("waster-site", "Without-Alignment/Assembly Species Tree EstimatoR † (site)\n***Running WASTER requires 64GB memory by default!***");
-    ARG.addIntArg('k', "kmer", 9, "k-mer size; 7: require >128 MB memory, 8: >2 GB memory, 9 (default): >32 GB memory, 10: >512 GB memory", true);
+    ARG.addIntArg('k', "kmer", 9, "Size k to control the length of (2k+1)-mer; 7: require >128 MB memory, 8: >2 GB memory, 9 (default): >32 GB memory, 10: >512 GB memory", true);
     ARG.addIntArg(0, "sampled", 64, "Maximum number of sampled species for generating frequent patterns");
     ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");

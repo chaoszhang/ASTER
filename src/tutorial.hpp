@@ -136,9 +136,13 @@ Contact ``chao.zhang@sund.ku.dk``, [``aster-users@googlegroups.com``](https://gr
 
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
-Download using one of two approaches:
+Install using one of three approaches:
   - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
   - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git) and checkout the branch named Windows/MacOS/Linux.
+  - For MacOS/Linux users, you can also install ASTER using [conda](https://bioconda.github.io/recipes/aster/README.html#package-aster):
+    ```
+	conda install aster
+	```
 
 Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
@@ -156,7 +160,7 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum update
       sudo yum install gcc-c++
       ```
-    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`.
+    - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`. Please ensure that Clang version is at least 14.
   - If you see "error" when running `make`, please try `make PROGRAM_NAME` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
@@ -544,12 +548,7 @@ When your dataset has no more than 50 species and no more than 500 genes, you ma
 )V0G0N";
 
 const string WASTER_UNIQUE_EXE = R"V0G0N(
-***Notice:*** By default, WASTER will create a 32 GB look-up table to find SNPs. So, if you are running on a machine with <64 GB memory, you need to shrink the look-up table size using `-k 8` or `-k 7` even for the example run.
-Using `-k 8` requires about 4 GB memory and `-k 7` only requires <1 GB memory.
-Try the following example run:
-```
-bin/waster-site -k 7 example/waster/input_list.txt
-```
+***Notice:*** WASTER requires >32 GB memory (usually <64 GB) to run and will allocate some disk space to store the SNP matrix.
 )V0G0N";
 
 const string SHARED_ADV = R"V0G0N(
