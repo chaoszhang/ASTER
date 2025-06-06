@@ -146,7 +146,7 @@ Install using one of three approaches:
 
 Binary files should be in the `exe` folder for Windows or `bin` folder otherwise. If you are lucky, these may just work as is and you may not need to build at all.
 
-## For Linux/Unix/WSL users
+## For Linux/MacOS/WSL users
 1. In terminal, `cd` into the downloaded directory and run `make`.
   - If you see `*** Installation complete! ***` then you are done!
   - If you see `Command 'g++' not found` then before rerunning `make`,
