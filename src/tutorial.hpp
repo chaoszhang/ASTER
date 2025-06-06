@@ -137,7 +137,7 @@ Contact ``chao.zhang@sund.ku.dk``, [``aster-users@googlegroups.com``](https://gr
 # INSTALLATION
 For most users, installing ASTER is ***very*** easy!
 Install using one of three approaches:
-  - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
+  - You simply need to download the zip file for [Windows](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip)/[MacOS ARM](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOS.zip)/[MacOS X86](https://github.com/chaoszhang/ASTER/archive/refs/heads/MacOSx86.zip)/[Linux](https://github.com/chaoszhang/ASTER/archive/refs/heads/Linux.zip) and extract the contents to a folder of your choice.
   - Alternatively, you can clone the [github repository](https://github.com/chaoszhang/ASTER.git) and checkout the branch named Windows/MacOS/Linux.
   - For MacOS/Linux users, you can also install ASTER using [conda](https://bioconda.github.io/recipes/aster/README.html#package-aster):
     ```
