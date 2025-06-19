@@ -112,10 +112,15 @@ A: You can still use **ASTRAL-IV**. By the way, ASTRAL-IV is also useful for fin
 
 # Contributors
 Chao Zhang
+
 Siavash Mirarab
+
 Yasamin Tabatabaee
+
 Tandy Warnow
+
 Rasmus Nielsen
+
 (Contributors are listed in chronological order)
 
 # ACKNOWLEGEMENT
