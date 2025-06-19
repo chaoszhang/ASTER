@@ -1,14 +1,23 @@
-# Without-Alignment/Assembly Species Tree EstimatoR † (WASTER)
+# Accurate Species Tree ALgorithm (ASTRAL-IV)
+ASTRAL is a tool for estimating an unrooted species tree given a set of unrooted gene trees. ASTRAL is statistically consistent under the multi-species coalescent model (and thus is useful for handling incomplete lineage sorting, i.e., ILS). ASTRAL finds the species tree that has the maximum number of shared induced quartet trees with the set of gene trees, subject to the constraint that the set of tripartitions in the species tree comes from a predefined set of tripartitions.
 
-[<img src="../misc/WASTER.png" width="500"/>](../misc/WASTER.png)
+ASTRAL-IV re-implements [ASTRAL](https://github.com/smirarab/ASTRAL) as a scalable alternative to ASTRAL on datasets for which ASTRAL is not suitable (e.g. large datasets, multi-individual, and gene trees with missing taxa).
+ASTRAL-IV also integrates [CASTLES-II](https://github.com/ytabatabaee/CASTLES) and thus computes terminal and internal branch lengths in substitution-per-site units.
 
-WASTER is a coalesence-aware ***de novo*** species tree inference tool, which means it can take as inputs raw reads in FASTQ format.
-Paticularly, WASTER can accurately infer species tree even from Illumina reads with only ***1.5X depth***.
-WASTER infers the species tree by first calling SNPs from reads/assembies and then invoking CASTER to reconstruct the species tree from the SNPs.
+As a scalable alternative to ASTRAL-III, ASTRAL-IV lacks of some features of ASTRAL-III (e.g. bootstrapping). You can work around by first computing optimal tree with ASTRAL-IV and use the ASTRAL-IV output tree as `-q` option to ASTRAL-III. 
 
 ## Publication
 
-Chao Zhang, Rasmus Nielsen, WASTER: Practical de novo phylogenomics from low-coverage short reads, bioRxiv (2025) https://doi.org/10.1101/2025.01.20.633983
+[1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
+
+[2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
+
+[3] Yasamin Tabatabaee, Chao Zhang, Tandy Warnow, Siavash Mirarab, Phylogenomic branch length estimation using quartets, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i185–i193, https://doi.org/10.1093/bioinformatics/btad221
+
+### Example of usage
+
+We obtained the species tree from gene trees using ASTRAL-IV v1.22.4.6 [1] by optimizing the objective function of ASTRAL [2].
+Branch lengths are computed using integrated CASTLES-II [3].
 
 
 # Announcements
@@ -59,7 +68,7 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
       sudo yum install gcc-c++
       ```
     - Unix (MacOS) users should be prompted for installing `g++` and please click "install". If no prompt, try `g++`. Please ensure that Clang version is at least 14.
-  - If you see "error" when running `make`, please try `make waster` instead and file a bug report.
+  - If you see "error" when running `make`, please try `make astral4` instead and file a bug report.
 2. Binary files should be in the `bin` folder.
 
 ## For Windows users
@@ -74,83 +83,68 @@ Binary files should be in the `exe` folder for Windows or `bin` folder otherwise
 
 Please check out our software with GUI. Simply download the [zip file](https://github.com/chaoszhang/ASTER/archive/refs/heads/Windows.zip), extract the contents, enter `exe` folder, and click `aster-gui.exe`. 
 
-# STOP!
-If you have ***overlapping*** paired-end sequencing reads, please make sure you have merged them using [`BBMerge`](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbmerge-guide/) or alike.
-This will improve the accuracy of WASTER on biological datasets!
-If you have non-overlapping paired-end sequencing reads, great!
-With the same sequencing depth, WASTER prefers non-overlapping reads.
-
-A detailed [walkthrough](../misc/waster-linux-walkthrough.md) is also available (English/中文).
-
 # INPUT
-The input is a text file containing a list of species names each followed by a Fasta/Fastq file (one species name and one file per line). For example:
+* The input trees can have missing taxa, polytomies (unresolved branches), and multiple individuals per species.
+* When individuals genes from the same species are available, you can ask ASTRAL to force them to be together in the species tree. You can do this in two ways.
+  1. You can give multiple individuals from the same species the same name in the input gene trees (e.g., `((species_name_A,species_name_B),(species_name_A,species_name_C));`).
+  2. OR, a mapping file needs to be provided using the `-a` option. This mapping file should have one line per genes, and each line needs to be in the following formats (e.g., for gene trees like `((individual_A1,individual_B1),(individual_A2,individual_C1));`):
 ```
-speciesA	example/waster/filename1.fa
-speciesB	example/waster/filename2.fa
-speciesC	example/waster/filename3.fq
-speciesD	example/waster/filename4.fq
-```
-Make sure input files are ***not zipped***.
-
-
-When multiple individuals from the same species are available, you need to let WASTER to know that they are from the same species.
-  1. You can give multiple individuals from the same species the same name in the input list.
-```
-speciesA	example/waster/filename1.fa
-speciesA	example/waster/filename2.fa
-speciesB	example/waster/filename3.fq
-speciesB	example/waster/filename4.fq
+individual_A1 species_name_A
+individual_A2 species_name_A
+individual_B1 species_name_B
+individual_B2 species_name_B
+individual_B3 species_name_B
 ...
 ```
-***WARNING: Never use this method to input pair-end reads files!!!***
-If your pair-end reads overlap, then merge them using [`BBMerge`](https://jgi.doe.gov/data-and-tools/software-tools/bbtools/bb-tools-user-guide/bbmerge-guide/) or alike; otherwise `cat` them into one file.
 
 # OUTPUT
 The output in is Newick format and gives:
 
 * the species tree topology
-* branch supports measured as local bootstrap support (>95.0 means good)
-* It can also annotate branches with other quantities, such as quartet scores and local bootstraps for all three topologies.
+* (NEW) branch lengths in ***substitution-per-site*** units (IQ-TREE like) for ***all*** branches
+* branch supports measured as [local posterior probabilities](http://mbe.oxfordjournals.org/content/early/2016/05/12/molbev.msw079.short?rss=1)
+* It can also annotate branches with other quantities, such as quartet supports and localPPs for all three topologies.
+
 
 # EXECUTION
 ASTER currently has no GUI. You need to run it through the command-line. In a terminal/PowerShell, go to the directory (location) where you have downloaded ASTER and issue the following command:
 
 ```
-bin/waster
+bin/astral4
 ```
 
-This will give you a list of options available. If you are using Windows, please replace `bin/waster` with `.\exe\waster.exe`.
+This will give you a list of options available. If you are using Windows, please replace `bin/astral4` with `.\exe\astral4.exe`.
 
 To find the species tree with input from in a file called `INPUT_FILE`, use:
 
 ```
-bin/waster INPUT_FILE
+bin/astral4 INPUT_FILE
 ```
 or
 ```
-bin/waster -i INPUT_FILE
+bin/astral4 -i INPUT_FILE
 ```
 
 In the first case, INPUT_FILE is ***hard-coded*** to be the ***last argument*** for backward compatibility. 
 
-For example if you want to run `waster` with input `example/waster/input_list.txt`, then run
+For example if you want to run `astral4` with input `example/genetree.nw`, then run
 
 ```
-bin/waster example/waster/input_list.txt
+bin/astral4 example/genetree.nw
 ```
 or
 ```
-bin/waster -i example/waster/input_list.txt
+bin/astral4 -i example/genetree.nw
 ```
 
 The results will be outputted to the standard output. To save the results in a file use the `-o OUTPUT_FILE` option before `INPUT_FILE`(**Strongly recommended**):
 
 ```
-bin/waster -o OUTPUT_FILE INPUT_FILE
+bin/astral4 -o OUTPUT_FILE INPUT_FILE
 ```
 or
 ```
-bin/waster -i INPUT_FILE -o OUTPUT_FILE
+bin/astral4 -i INPUT_FILE -o OUTPUT_FILE
 ```
 
 With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, from here on we will not demonstrate `-i INPUT_FILE` cases.
@@ -158,19 +152,19 @@ With `-i INPUT_FILE` option, the order does not matter anymore. For brevity, fro
 To save the logs (**also recommended**), run:
 
 ```
-bin/waster -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 For example, you can run
 
 ```
-bin/waster -o example/waster/input_list.txt.stree example/waster/input_list.txt 2>example/waster/input_list.txt.log
+bin/astral4 -o example/genetree.nw.stree example/genetree.nw 2>example/genetree.nw.log
 ```
 
 ASTER supports multi-threading. To run program with 4 threads, add `-t 4` before `INPUT_FILE`:
 
 ```
-bin/waster -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral4 -t 4 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 ASTER has very good parrallel efficiency up to 64 cores when input data is large. In fact, it often experiences super-linear speedup with 16 cores or more. So feel free to use as many cores as you want.
@@ -178,46 +172,68 @@ ASTER has very good parrallel efficiency up to 64 cores when input data is large
 ASTER also allows rooting at an given outgroup:
 
 ```
-bin/waster --root YOUR_OUTGROUP INPUT_FILE
+bin/astral4 --root YOUR_OUTGROUP INPUT_FILE
 ```
 
-***Notice:*** WASTER requires >32 GB memory (usually <64 GB) to run and will allocate some disk space to store the SNP matrix.
+For ASTRAL, correct rooting is **strongly recommended** to accurately compute branch lengths.
+
+By default, ASTRAL assumes multiple individuals from the same species in the same input gene trees having the same name. Alternatively, a mapping file needs to be provided using the `-a` option (see INPUT section). For example,
+
+```
+bin/astral4 -a example/genetree.map example/genetree.nw
+```
+
+When your dataset has no more than 50 species and no more than 500 genes, you may want to run with more rounds using `-R` (see below). 
 
 ## Advanced Options
 
 ASTER algorithm first performs `R` (4 by default) rounds of search and then repeatedly performs `S` (4 by default) rounds of subsampling and exploration until no improvement found.
 
 ```
-bin/waster -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral4 -r R -s S -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to run with more rounds of placement for ensured optimality, then you can run with
 ```
-bin/waster -r 16 -s 16 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral4 -r 16 -s 16 -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 or simply
 ```
-bin/waster -R -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
+bin/astral4 -R -o OUTPUT_FILE INPUT_FILE 2>LOG_FILE
 ```
 
 If you want to place taxa on an existing ***fully resolved*** species tree, you can use `-c SPECIES_TREE_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/waster -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral4 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 Specifically, you can score and annotate a ***fully resolved*** species tree containing all taxa with `-c SPECIES_TREE_IN_NEWICK_FORMAT`. If want to score a species tree or you want to place only ***one*** taxon onto the tree, you can use
 
 ```
-bin/waster -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral4 -r 1 -s 0 -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 or simply,
 ```
-bin/waster -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral4 -C -o OUTPUT_FILE -c SPECIES_TREE_IN_NEWICK_FORMAT INPUT_FILE
 ```
 
 If you want to give hints by providing candidate species trees or trees similar to the species tree, you can use `-g SPECIES_TREES_IN_NEWICK_FORMAT` before `INPUT_FILE`:
 
 ```
-bin/waster -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+bin/astral4 -o OUTPUT_FILE -g SPECIES_TREES_IN_NEWICK_FORMAT INPUT_FILE
+```
+
+Add `-u 0` before `INPUT_FILE` if you want to compute species tree topology only; Add `-u 2` before `INPUT_FILE` if you support and local-PP for all three resolutions of each branch.
+
+```
+bin/astral4 -u 0 -o OUTPUT_FILE INPUT_FILE
+bin/astral4 -u 2 -o OUTPUT_FILE INPUT_FILE
+```
+
+Species tree with more than **5000** taxa may cause **overflow**. Use the following command instead:
+
+```
+make astral_int128
+bin/astral4_int128 -o OUTPUT_FILE INPUT_FILE
 ```
