@@ -825,7 +825,7 @@ struct Workflow {
     Workflow(int argc, char** argv){
         //string mappingFile;
         meta.initialize(argc, argv);
-        LOG << "Make sure you have run 'waster-site -h', read about '-k' command, and ensured you have enough memory to proceed!\n";
+        LOG << "Make sure you have enough memory to proceed! (about 64GB)\n";
         if (ARG.getStringArg("root") != "") addName(ARG.getStringArg("root"));
         tripInit.nThreads = meta.nThreads;
 

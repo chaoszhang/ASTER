@@ -110,5 +110,13 @@ Q: I have gene trees but they do not satisfy the requirements for wASTRAL.
 
 A: You can still use **ASTRAL-IV**. By the way, ASTRAL-IV is also useful for finding the supertree.
 
+# Contributors
+Chao Zhang
+Siavash Mirarab
+Yasamin Tabatabaee
+Tandy Warnow
+Rasmus Nielsen
+(Contributors are listed in chronological order)
+
 # ACKNOWLEGEMENT
 ASTER code uses Regularized Incomplete Beta Function by Lewis Van Winkle under zlib License. Code is contributed by Chao Zhang supervised by Siavash Mirarab and Rasmus Nielsen.
