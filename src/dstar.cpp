@@ -15,7 +15,7 @@
 
 using namespace std;
 
-template<typename FreqType = unsigned short, typename EqFreqType = double, typename ScoreType = double, typename CounterType = long long> class MasterSiteQuadrupartitionScorer{
+template<typename FreqType, typename EqFreqType, typename ScoreType, typename CounterType> class DStarQuadrupartitionScorer{
 public:
     struct DataType{
         array<vector<FreqType>, 4> cnt0, cnt1, cnt2, cnt3;
@@ -100,13 +100,13 @@ public:
     }
 };
 
-typedef MasterSiteQuadrupartitionScorer<bool, double, double, bool> MasterSiteQuartetOneHotScorer;
-typedef MasterSiteQuadrupartitionScorer<unsigned char, double, double, int> MasterSiteSmallCountQuadrupartitionScorer;
-typedef MasterSiteQuadrupartitionScorer<unsigned short, double, double, long long> MasterSiteNormalQuadrupartitionScorer;
+// typedef DStarQuadrupartitionScorer<bool, double, double, bool> DStarQuartetOneHotScorer;
+// typedef DStarQuadrupartitionScorer<unsigned char, double, double, int> DStarSmallCountQuadrupartitionScorer;
+typedef DStarQuadrupartitionScorer<unsigned short, double, double, long long> DStarNormalQuadrupartitionScorer;
 
 /*
-MasterSiteQuartetOneHotScorer::DataType parseSubstring(const string &s1, const string &s2, const string &s3, const string &s4, int start, int end){
-    MasterSiteQuartetOneHotScorer::DataType res;
+DStarQuartetOneHotScorer::DataType parseSubstring(const string &s1, const string &s2, const string &s3, const string &s4, int start, int end){
+    DStarQuartetOneHotScorer::DataType res;
     array<const string*, 4> lst = {&s1, &s2, &s3, &s4};
     array<array<vector<bool>, 4>*, 4> cntlst = {&res.cnt0, &res.cnt1, &res.cnt2, &res.cnt3};
     for (int i = 0; i < 4; i++){
@@ -125,9 +125,9 @@ MasterSiteQuartetOneHotScorer::DataType parseSubstring(const string &s1, const s
     return res;
 }
 
-MasterSiteSmallCountQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned char>, 4> &f1, const array<vector<unsigned char>, 4> &f2, 
+DStarSmallCountQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned char>, 4> &f1, const array<vector<unsigned char>, 4> &f2, 
         const array<vector<unsigned char>, 4> &f3, const array<vector<unsigned char>, 4> &f4, int start, int end){
-    MasterSiteSmallCountQuadrupartitionScorer::DataType res;
+    DStarSmallCountQuadrupartitionScorer::DataType res;
     array<const array<vector<unsigned char>, 4>*, 4> lst = {&f1, &f2, &f3, &f4};
     array<array<vector<unsigned char>, 4>*, 4> cntlst = {&res.cnt0, &res.cnt1, &res.cnt2, &res.cnt3};
     for (int i = 0; i < 4; i++){
@@ -146,9 +146,9 @@ MasterSiteSmallCountQuadrupartitionScorer::DataType parseFreqs(const array<vecto
 }
 */
 
-MasterSiteNormalQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned short>, 4> &f1, const array<vector<unsigned short>, 4> &f2, 
+DStarNormalQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned short>, 4> &f1, const array<vector<unsigned short>, 4> &f2, 
         const array<vector<unsigned short>, 4> &f3, const array<vector<unsigned short>, 4> &f4, int start, int end, int windowSize){
-    MasterSiteNormalQuadrupartitionScorer::DataType res;
+    DStarNormalQuadrupartitionScorer::DataType res;
 	res.windowSize = windowSize;
 	res.pi.resize((end - start + windowSize - 1) / windowSize);
     array<const array<vector<unsigned short>, 4>*, 4> lst = {&f1, &f2, &f3, &f4};
@@ -170,7 +170,7 @@ MasterSiteNormalQuadrupartitionScorer::DataType parseFreqs(const array<vector<un
     return res;
 }
 
-template<typename FreqType = unsigned short, typename Scorer = MasterSiteNormalQuadrupartitionScorer>
+template<typename FreqType, typename Scorer>
     string multiind(string input, string mapping = "", int intervalSize = 1000000, int windowSize = 10000, bool header = true)
 {
     string name[4];
@@ -290,6 +290,6 @@ int main(int argc, char *argv[])
 	if (mapping == "-") mapping = "";
 	int size = (argc > 3) ? stoi(argv[3]) : 10000;
 	
-    cout << multiind<>(fasta, mapping, size);
+    cout << multiind<unsigned short, DStarNormalQuadrupartitionScorer>(fasta, mapping, size);
     return 0;
 }
