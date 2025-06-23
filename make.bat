@@ -13,4 +13,5 @@ g++ -std=gnu++11 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread -static -
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/caster-pair.cpp -o exe/caster-pair.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/waster.cpp -o exe/waster.exe
 g++ -std=gnu++11 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread -static -static-libgcc -static-libstdc++ src/waster.cpp -o exe/waster_branchlength.exe
+g++ -std=gnu++11 -O2 -static -static-libgcc -static-libstdc++ src/dstar.cpp -o exe/dstar.exe
 g++ -std=gnu++11 -O2 -pthread -static -static-libgcc -static-libstdc++ src/sister.cpp -o exe/sister.exe
