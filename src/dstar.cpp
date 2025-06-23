@@ -4,14 +4,10 @@
 #include<fstream>
 #include<sstream>
 #include<unordered_map>
-#include<unordered_set>
-#include<cstdio>
 #include<cstdlib>
 #include<cstring>
-#include<algorithm>
-#include<random>
-#include<thread>
-#include<mutex>
+#include<vector>
+#include<array>
 
 using namespace std;
 
@@ -60,12 +56,7 @@ public:
         for (int i = start; i < end; i++) res += scoreSite(i, cnt0, cnt1, cnt2, cnt3, pi);
         return res;
     }
-	/*
-    static ScoreType score(const array<vector<FreqType>, 4> &cnt0, const array<vector<FreqType>, 4> &cnt1,
-            const array<vector<FreqType>, 4> &cnt2, const array<vector<FreqType>, 4> &cnt3, const array<EqFreqType, 4> &pi){
-        return scoreInterval(0, cnt0[0].size(), cnt0, cnt1, cnt2, cnt3, pi);
-    }
-	*/
+	
     static vector<ScoreType> Dstar(int windowSize, const array<vector<FreqType>, 4> &cnt0, const array<vector<FreqType>, 4> &cnt1,
             const array<vector<FreqType>, 4> &cnt2, const array<vector<FreqType>, 4> &cnt3, const vector<array<EqFreqType, 4> > &pi){
         vector<ScoreType> res;
@@ -100,51 +91,7 @@ public:
     }
 };
 
-// typedef DStarQuadrupartitionScorer<bool, double, double, bool> DStarQuartetOneHotScorer;
-// typedef DStarQuadrupartitionScorer<unsigned char, double, double, int> DStarSmallCountQuadrupartitionScorer;
 typedef DStarQuadrupartitionScorer<unsigned short, double, double, long long> DStarNormalQuadrupartitionScorer;
-
-/*
-DStarQuartetOneHotScorer::DataType parseSubstring(const string &s1, const string &s2, const string &s3, const string &s4, int start, int end){
-    DStarQuartetOneHotScorer::DataType res;
-    array<const string*, 4> lst = {&s1, &s2, &s3, &s4};
-    array<array<vector<bool>, 4>*, 4> cntlst = {&res.cnt0, &res.cnt1, &res.cnt2, &res.cnt3};
-    for (int i = 0; i < 4; i++){
-        const string &s = *(lst[i]);
-        array<vector<bool>, 4> &cnt = *(cntlst[i]);
-        for (int j = start; j < end; j++){
-            cnt[0].push_back(s[j] == 'A' || s[j] == 'a');
-            cnt[1].push_back(s[j] == 'C' || s[j] == 'c');
-            cnt[2].push_back(s[j] == 'G' || s[j] == 'g');
-            cnt[3].push_back(s[j] == 'T' || s[j] == 't');
-            for (int k = 0; k < 4; k++) res.pi[k] += cnt[k].back();
-        }
-    }
-    double sum = res.pi[0] + res.pi[1] + res.pi[2] + res.pi[3];
-    for (int k = 0; k < 4; k++) res.pi[k] /= sum;
-    return res;
-}
-
-DStarSmallCountQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned char>, 4> &f1, const array<vector<unsigned char>, 4> &f2, 
-        const array<vector<unsigned char>, 4> &f3, const array<vector<unsigned char>, 4> &f4, int start, int end){
-    DStarSmallCountQuadrupartitionScorer::DataType res;
-    array<const array<vector<unsigned char>, 4>*, 4> lst = {&f1, &f2, &f3, &f4};
-    array<array<vector<unsigned char>, 4>*, 4> cntlst = {&res.cnt0, &res.cnt1, &res.cnt2, &res.cnt3};
-    for (int i = 0; i < 4; i++){
-        const array<vector<unsigned char>, 4> &f = *(lst[i]);
-        array<vector<unsigned char>, 4> &cnt = *(cntlst[i]);
-        for (int k = 0; k < 4; k++) {
-            for (int j = start; j < end; j++){
-                cnt[k].push_back(f[k][j]);
-                res.pi[k] += f[k][j];
-            }
-        }
-    }
-    double sum = res.pi[0] + res.pi[1] + res.pi[2] + res.pi[3];
-    for (int k = 0; k < 4; k++) res.pi[k] = (sum == 0) ? 0 : res.pi[k] / sum;
-    return res;
-}
-*/
 
 DStarNormalQuadrupartitionScorer::DataType parseFreqs(const array<vector<unsigned short>, 4> &f1, const array<vector<unsigned short>, 4> &f2, 
         const array<vector<unsigned short>, 4> &f3, const array<vector<unsigned short>, 4> &f4, int start, int end, int windowSize){
