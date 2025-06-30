@@ -4,22 +4,9 @@
 
 # Installation
 
-You can choose to clone or download from GitHub: 
-
 ```
-git clone https://github.com/chaoszhang/MASTERWORK
-cd MASTERWORK
-git checkout experimental
-make
-```
-
-or
-
-```
-wget https://github.com/chaoszhang/MASTERWORK/archive/refs/heads/experimental.zip
-unzip experimental.zip
-mv MASTERWORK-experimental MASTERWORK
-cd MASTERWORK
+git clone https://github.com/chaoszhang/ASTER
+cd ASTER
 make
 ```
 
@@ -28,7 +15,7 @@ make
 Now we enter the directory for our CASTER sliding window demo.
 
 ```
-cd YOUR_PATH/ASTER/example/caster-sliding-window
+cd example/caster-sliding-window
 ```
 
 To run sliding window program, you need to prepare two files, an alignment in FASTA format and a mapping file representing a branch of interest.
@@ -45,14 +32,14 @@ The mapping file represents a partition of taxa into four groups corresponding t
 Then you can run sliding window program:
 
 ```
-YOUR_PATH/MASTERWORK/bin/slidingwindow ape.fa mapping.tsv > slidingwindow.tsv
+../../bin/dstar ape.fa mapping.tsv > slidingwindow.tsv
 head slidingwindow.tsv
 ```
 
 You can also adjust window size (default: 10000):
 
 ```
-YOUR_PATH/MASTERWORK/bin/slidingwindow ape.fa mapping.tsv 50000
+../../bin/dstar ape.fa mapping.tsv 50000
 ```
 
 # Interpreting the result
