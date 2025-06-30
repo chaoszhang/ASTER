@@ -96,6 +96,8 @@ Chao Zhang, Rasmus Nielsen, Siavash Mirarab, CASTER: Direct species tree inferen
 
 Since CASTER-site and CASTER-pair assume different models, please run both and choose the result that makes more sense if you can.
 
+CASTER-site [sliding-window analysis](../misc/caster-sliding-window-walkthrough.md) uses anthor stand-alone tool called `dstar`. 
+
 )V0G0N";
 
 const string WASTER_UNIQUE_INTRO = R"V0G0N(# Without-Alignment/Assembly Species Tree EstimatoR † (WASTER)

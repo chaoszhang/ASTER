@@ -111,15 +111,11 @@ Q: I have gene trees but they do not satisfy the requirements for wASTRAL.
 A: You can still use **ASTRAL-IV**. By the way, ASTRAL-IV is also useful for finding the supertree.
 
 # Contributors
-Chao Zhang
-
-Siavash Mirarab
-
-Yasamin Tabatabaee
-
-Tandy Warnow
-
-Rasmus Nielsen
+- Chao Zhang
+- Siavash Mirarab
+- Yasamin Tabatabaee
+- Tandy Warnow
+- Rasmus Nielsen
 
 (Contributors are listed in chronological order)
 
