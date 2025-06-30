@@ -35,7 +35,7 @@ caster-site: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-site.cpp -o bin/caster-site || g++ -std=gnu++17 -O2 -pthread src/caster-site.cpp -o bin/caster-site
 
 caster-site_branchlength: dir
-	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/caster-site.cpp -o bin/caster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/caster-site.cpp -o bin/caster-site_branchlength_experimental
+	g++ -std=gnu++11 -march=native -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -Ofast -pthread src/caster-site.cpp -o bin/caster-site_branchlength || g++ -std=gnu++17 -D CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH -O2 -pthread src/caster-site.cpp -o bin/caster-site_branchlength
 	
 caster-pair: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/caster-pair.cpp -o bin/caster-pair || g++ -std=gnu++17 -O2 -pthread src/caster-pair.cpp -o bin/caster-pair

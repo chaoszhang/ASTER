@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "5"
+#define DRIVER_VERSION "6"
 
 /* CHANGE LOG
+ * 6: Fix corner case bug
  * 5: Final score normalization & Updating Eqfreq
  * 4: Updating Eqfreq calculation
  * 3: Updating input file parser
@@ -142,7 +143,8 @@ struct Workflow {
                     }
                     offset += sites[i].size();
                     double total = sumFreq[0] + sumFreq[1] + sumFreq[2] + sumFreq[3];
-                    eqfreq.push_back({ sumFreq[0] / total, sumFreq[1] / total, sumFreq[2] / total, sumFreq[3] / total });
+                    if (total > 0) eqfreq.push_back({ sumFreq[0] / total, sumFreq[1] / total, sumFreq[2] / total, sumFreq[3] / total });
+					else eqfreq.push_back({ 0.25, 0.25, 0.25, 0.25 });
                 }
             }
             {
