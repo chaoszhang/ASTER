@@ -86,7 +86,7 @@ Please click the link below:
 
 # HELP ME CHOOSE A SUITABLE TOOL
 ## Chao's preference in a nutshell
-[<img src="misc/ASTER.png" width="500"/>](misc/toolpick.png)
+[<img src="misc/toolpick.png" width="500"/>](misc/toolpick.png)
 
 ## FAQ
 Q: I want to reconstruct a phylogenetic tree without alignments.
