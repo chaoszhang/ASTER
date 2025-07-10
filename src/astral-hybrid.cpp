@@ -7,8 +7,6 @@
  * 4: add weighting by tree and other options
  */
 
-#define ROOTING
-
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -259,10 +257,12 @@ int main(int argc, char** argv){
 	ARG.addIntArg(0, "mode", 1, "1: hybrid weighting, 2: support only, 3: length only, 4: unweighted");
 	ARG.addStringArg(0, "treeweights", "", "A file containing a list of gene tree weights, space/tab/new-line separated (default: uniform weights)");
 
-	int dupType = 1;
-	string mappingFile;
 	meta.initialize(argc, argv);
-	mappingFile = ARG.getStringArg("mapping");
+	ARG.getStringArg("length") = "CULength";
+	ARG.getStringArg("annotation") = "localPP";
+	
+	string mappingFile = ARG.getStringArg("mapping");
+	int dupType = 1;
 	maxv = ARG.getDoubleArg("max");
 	minv = ARG.getDoubleArg("min");
 	defaultv = ARG.getDoubleArg("default");

@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.22"
+#define ALG_VERSION "v1.23"
 
 /* CHANGE LOG
+ * 1.23: adding support for both CU and SU branch lengths
  * 1.22: adding back freqQuad.csv
  * 1.21: de-warning and new species tree representation
  * 1.20: updating NNI algorithm
@@ -37,6 +38,7 @@ typedef unsigned __int128 hash_t;
 #include<cmath>
 #include<memory>
 #include<iomanip>
+#include<limits>
 
 #include "incbeta.c"
 #include "argparser.hpp"
@@ -1663,219 +1665,6 @@ struct ConstrainedOptimizationAlgorithm{
 		}	
 	}
 
-	/*
-	string printOptimalSubtreeWithSupport(Quadrupartition &quad, int v, int u, int support, double lambda,
-			unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo, double weight, shared_ptr<AnnotatedTree::Node> node, bool toplevel = false){
-		if (nodes[v].leafId != -1) {
-			int i = nodes[v].leafId;
-			array<double, 3> t;
-			if (support == 3) qInfo[v] = make_tuple(t, t, names[i]);
-			node->taxon = i;
-			node->name = names[i];
-			return names[i];
-		}
-		//r|u|c0c1|-
-		string res;
-		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
-		//ru|c1|c0|-
-		switchSubtree(quad, u, 1, 0);
-		switchSubtree(quad, get<1>(c), 2, 1);
-		string resL = printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(node));
-		//ru|c0|c1|-
-		switchSubtree(quad, get<0>(c), 2, 1);
-		switchSubtree(quad, get<1>(c), 1, 2);
-		string resR = printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(node));
-		//r|u|c1|c0
-		switchSubtree(quad, u, 0, 1);
-		switchSubtree(quad, get<0>(c), 1, 3);
-		#ifdef CUSTOMIZED_ANNOTATION
-		node->annot = quad.annotate();
-		#endif
-		array<double, 3> score = quad.score();
-		//r|u|c0c1|-
-		switchSubtree(quad, get<0>(c), 3, 2);
-		score[0] /= weight; score[1] /= weight; score[2] /= weight;
-		double tscore = score[0] + score[1] + score[2];
-		#ifdef SUPPORT
-		double support0, support1, support2;
-		if (tscore < 1e-8){
-			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
-		}
-		else if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)){
-			support0 = 1; support1 = 0; support2 = 0;
-		}
-		else if (tscore > 1000 && score[0] - max(score[1], score[2]) > 5 * sqrt((score[0] + max(score[1], score[2])) * 0.25)){
-			support0 = 1; support1 = 0; support2 = 0;
-		}
-		else {
-			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
-			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
-			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
-			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2);
-			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2);
-			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2);
-			support0 = i0 / (i0 + i1 * exp(log(2.0) * (score[1] - score[0]) + lb1 - lb0) + i2 * exp(log(2.0) * (score[2] - score[0]) + lb2 - lb0));
-			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
-			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
-		}
-		if (support == 1) res += to_string(support0);
-		else {
-			array<double, 3> p = {support0, support1, support2};
-			res += "'[pp1=" + to_string(p[0]) + ";pp2=" + to_string(p[1]) + ";pp3=" + to_string(p[2]) + ";f1=" + to_string(score[0]) + ";f2=" + to_string(score[1]) + ";f3=" + to_string(score[2]) 
-				+ ";q1=" + to_string(score[0] / tscore) + ";q2=" + to_string(score[1] / tscore) + ";q3=" + to_string(score[2] / tscore) + "]'";
-			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
-		}
-		node->s = support0;
-		#endif
-		#ifdef LOCAL_BOOTSTRAP
-		array<int, 3> bs = node->annot.bootstrap();
-		double nbs = node->annot.bs.size() / 100.0;
-		if (support == 1) res += formatBootstrap(bs[0] / nbs);
-		else {
-			res += "'[bs1=" + to_string(bs[0]) + ";bs2=" + to_string(bs[1]) + ";bs3=" + to_string(bs[2]) + 
-				   ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) +
-				   ";q1=" + to_string(score[0] / tscore) + ";q2=" + to_string(score[1] / tscore) + ";q3=" + to_string(score[2] / tscore) + "]'";;
-		}
-		#endif
-		#ifdef G_SUPPORT
-		double p0 = gTest(score[0], score[1], score[2]);
-		double p1 = gTest(score[1], score[2], score[0]);
-		double p2 = gTest(score[2], score[0], score[1]);
-		if (support == 1) res += to_string(p0);
-		else {
-			array<double, 3> p = {p0, p1, p2};
-			res += "'[p=" + to_string(p0) + ";p2=" + to_string(p1) + ";p3=" + to_string(p2)
-				+ ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
-			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
-		}
-		node->s = p0;
-		#endif
-		#ifdef CUSTOMIZED_LENGTH
-		node->len = quad.length(score);
-		if (support != 0) res += string(":") + to_string(node->len);
-		#endif
-		#ifdef CUSTOMIZED_ANNOTATION_LENGTH
-		if (support != 0) {
-			array<score_t, 5> lengths = node->annot.lengths();
-			res += string(":") + to_string(lengths[0]);
-		}
-		#endif
-		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-		if (support != 0) {
-			array<score_t, 5> lengths = node->annot.lengths();
-			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(lengths[4]);
-			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(lengths[3]);
-			res += string(":") + to_string(lengths[0]);
-			if (toplevel) {
-				tempRoot = lengths[1];
-				tempSibling = lengths[2];
-			}
-		}
-		#endif
-		#ifdef CASTLES
-		if (support != 0) {
-			CastlesNode castles(node->annot, ARG.getDoubleArg("genelength"), ARG.getIntArg("numgenetrees"));
-			if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(castles.leftEdgeLength);
-			if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(castles.rightEdgeLength);
-			res += string(":") + to_string(castles.edgeLengthOtherwise);
-			if (toplevel) {
-				tempSibling = castles.siblingEdgeLength;
-			}
-		}
-		#else
-		#ifdef SUPPORT
-		if (3 * score[0] > tscore) node->len = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
-		else node->len = 0;
-		res += ":" + to_string(node->len);
-		#endif
-		#endif
-		return string("(") + resL + "," + resR + ")" + res;
-	}
-	
-	void printFreqQuadCSV(int v, int u, string top, ostream &fcsv, unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > &qInfo){
-		if (nodes[v].leafId != -1) return;
-		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
-		printFreqQuadCSV(get<0>(c), get<1>(c), top + "," + get<2>(qInfo[u]), fcsv, qInfo);
-		printFreqQuadCSV(get<1>(c), get<0>(c), top + "," + get<2>(qInfo[u]), fcsv, qInfo);
-		double tscore = get<0>(get<0>(qInfo[v])) + get<1>(get<0>(qInfo[v])) + get<2>(get<0>(qInfo[v]));
-		fcsv << "N" << v << "\tt1\t{" << get<2>(qInfo[get<0>(c)]) << "}|{" << get<2>(qInfo[get<1>(c)]) << "}#{" << get<2>(qInfo[u]) << "}|{" << top << "}\t"
-			<< get<0>(get<1>(qInfo[v])) << "\t" << get<0>(get<0>(qInfo[v])) << "\t" << tscore << endl;
-		fcsv << "N" << v << "\tt2\t{" << top << "}|{" << get<2>(qInfo[get<1>(c)]) << "}#{" << get<2>(qInfo[u]) << "}|{" << get<2>(qInfo[get<0>(c)]) << "}\t"
-			<< get<1>(get<1>(qInfo[v])) << "\t" << get<1>(get<0>(qInfo[v])) << "\t" << tscore << endl;
-		fcsv << "N" << v << "\tt3\t{" << get<2>(qInfo[get<0>(c)]) << "}|{" << top << "}#{" << get<2>(qInfo[u]) << "}|{" << get<2>(qInfo[get<1>(c)]) << "}\t"
-			<< get<2>(get<1>(qInfo[v])) << "\t" << get<2>(get<0>(qInfo[v])) << "\t" << tscore << endl;
-		
-	}
-	
-	string printOptimalTreeWithSupport(int support, double lambda, double weight){
-		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-		score_t siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
-		#else
-		#ifdef CASTLES
-		length_t siblingL = 0, siblingR = 0, rootSum = 0, rootCount = 0;
-		#endif
-		#endif
-		annotTree.reset(new AnnotatedTree());
-		shared_ptr<AnnotatedTree::Node> root = annotTree->addRoot();
-		shared_ptr<AnnotatedTree::Node> left = annotTree->addLeft(root);
-		shared_ptr<AnnotatedTree::Node> right = annotTree->addRight(root);
-		right->taxon = 0;
-		right->name = names[0];
-
-		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> > qInfo;
-		
-		Quadrupartition quad(tripInit);
-		quad.update(0, 0);
-		for (size_t i = 1; i < names.size(); i++) quad.update(2, i);
-		int v = hash[-taxonHash[0]];
-		tuple<int, int, score_t> c = nodes[v].children[nodes[v].bestChild];
-		//0|c1|c0|-
-		switchSubtree(quad, get<1>(c), 2, 1);
-		string resL = printOptimalSubtreeWithSupport(quad, get<0>(c), get<1>(c), support, lambda, qInfo, weight, annotTree->addLeft(left), true);
-		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-		if (nodes[get<0>(c)].leafId == -1) {
-			siblingL = tempSibling;
-			rootSum += tempRoot;
-			rootCount++;
-		}
-		#else
-		#ifdef CASTLES
-		if (nodes[get<0>(c)].leafId == -1) siblingL = tempSibling;
-		#endif
-		#endif
-		//0|c0|c1|-
-		switchSubtree(quad, get<1>(c), 1, 2);
-		switchSubtree(quad, get<0>(c), 2, 1);
-		string resR = printOptimalSubtreeWithSupport(quad, get<1>(c), get<0>(c), support, lambda, qInfo, weight, annotTree->addRight(left), true);
-		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
-		if (nodes[get<1>(c)].leafId == -1) {
-			siblingR = tempSibling;
-			rootSum += tempRoot;
-			rootCount++;
-		}
-		if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(siblingR);
-		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
-		string res = string(":") + to_string(rootSum/rootCount/2) + "," + names[0] + ":" + to_string(rootSum/rootCount/2);
-		#else
-		#ifdef CASTLES
-		if (nodes[get<1>(c)].leafId == -1) siblingR = tempSibling;
-		if (nodes[get<0>(c)].leafId != -1) resL += string(":") + to_string(siblingR);
-		if (nodes[get<1>(c)].leafId != -1) resR += string(":") + to_string(siblingL);
-		string res = string(":") + to_string(ARG.getDoubleArg("outgrouplength")/2) + "," + names[0] + ":" + to_string(ARG.getDoubleArg("outgrouplength")/2);
-		#else
-		string res = string(",") + names[0];
-		#endif
-		#endif
-
-		if (support == 3) {
-			ofstream fcsv("freqQuad.csv");
-			printFreqQuadCSV(get<0>(c), get<1>(c), names[0], fcsv, qInfo);
-			printFreqQuadCSV(get<1>(c), get<0>(c), names[0], fcsv, qInfo);
-		}
-		return string("((") + resL + "," + resR + ")" + res + ");";
-	}
-	*/
-
 	void computeOptimalSubtreeWithSupport(SpeciesTree &tree, Quadrupartition& quad, int v, int u,
 		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> >& qInfo, shared_ptr<SpeciesTree::Node> node, bool toplevel = false) {
 		if (nodes[v].leafId != -1) {
@@ -1904,13 +1693,19 @@ struct ConstrainedOptimizationAlgorithm{
 		array<double, 3> score = quad.score();
 		//r|u|c0c1|-
 		switchSubtree(quad, get<0>(c), 3, 2);
+		double lambda = tree.temp["lambda"];
 		double weight = tree.temp["weight"];
 		score[0] /= weight; score[1] /= weight; score[2] /= weight;
 		double tscore = score[0] + score[1] + score[2];
+		node->attributes["q1"] = score[0] / tscore;
+		node->attributes["q2"] = score[1] / tscore;
+		node->attributes["q3"] = score[2] / tscore;
+		if (score[0] < 0 || tscore < 0 || score[0] >= tscore) node->attributes["CULength"] = numeric_limits<double>::quiet_NaN();
+		else if (3 * score[0] > tscore) node->attributes["CULength"] = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
+		else node->attributes["CULength"] = 0;
 
 		#ifdef SUPPORT
 		double support0, support1, support2;
-		double lambda = tree.temp["lambda"];
 		if (tscore < 1e-8) {
 			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
 		}
@@ -1931,31 +1726,24 @@ struct ConstrainedOptimizationAlgorithm{
 			support1 = i1 / (i1 + i0 * exp(log(2.0) * (score[0] - score[1]) + lb0 - lb1) + i2 * exp(log(2.0) * (score[2] - score[1]) + lb2 - lb1));
 			support2 = i2 / (i2 + i1 * exp(log(2.0) * (score[1] - score[2]) + lb1 - lb2) + i0 * exp(log(2.0) * (score[0] - score[2]) + lb0 - lb2));
 		}
-		node->attributes["support"] = support0;
+		node->attributes["localPP"] = support0;
 		node->attributes["pp1"] = support0;
 		node->attributes["pp2"] = support1;
 		node->attributes["pp3"] = support2;
 		node->attributes["f1"] = score[0];
 		node->attributes["f2"] = score[1];
 		node->attributes["f3"] = score[2];
-		node->attributes["q1"] = score[0] / tscore;
-		node->attributes["q2"] = score[1] / tscore;
-		node->attributes["q3"] = score[2] / tscore;
-		//if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		#endif
 		#ifdef LOCAL_BOOTSTRAP
 		array<int, 3> bs = annot.bootstrap();
 		double nbs = annot.bs.size() / 100.0;
-		node->attributes["support"] = bs[0] / nbs;
+		node->attributes["BootstrapSupport"] = bs[0] / nbs;
 		node->attributes["bs1"] = bs[0];
 		node->attributes["bs2"] = bs[1];
 		node->attributes["bs3"] = bs[2];
 		node->attributes["s1"] = score[0];
 		node->attributes["s2"] = score[1];
 		node->attributes["s3"] = score[2];
-		node->attributes["q1"] = score[0] / tscore;
-		node->attributes["q2"] = score[1] / tscore;
-		node->attributes["q3"] = score[2] / tscore;
 		#endif
 		#ifdef G_SUPPORT
 		double p0 = gTest(score[0], score[1], score[2]);
@@ -1964,24 +1752,18 @@ struct ConstrainedOptimizationAlgorithm{
 		if (support == 1) res += to_string(p0);
 		else {
 			array<double, 3> p = { p0, p1, p2 };
-			res += "'[p=" + to_string(p0) + ";p2=" + to_string(p1) + ";p3=" + to_string(p2)
-				+ ";s1=" + to_string(score[0]) + ";s2=" + to_string(score[1]) + ";s3=" + to_string(score[2]) + "]'";
-			if (support == 3) qInfo[v] = make_tuple(score, p, get<2>(qInfo[get<0>(c)]) + "," + get<2>(qInfo[get<1>(c)]));
 		}
 		node->s = p0;
 		#endif
-		#ifdef CUSTOMIZED_LENGTH
-		node->attributes["length"] = quad.length(score);
-		#endif
 		#ifdef CUSTOMIZED_ANNOTATION_LENGTH
 		array<score_t, 5> lengths = annot.lengths();
-		node->attributes["length"] = lengths[0];
+		node->attributes["SULength"] = lengths[0];
 		#endif
 		#ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 		array<score_t, 5> lengths = annot.lengths();
-		node->attributes["length"] = lengths[0];
-		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["length"] = lengths[4];
-		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["length"] = lengths[3];
+		node->attributes["SULength"] = lengths[0];
+		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["SULength"] = lengths[4];
+		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["SULength"] = lengths[3];
 		if (toplevel) {
 			tree.temp["rootlengthsum"] += lengths[1];
 			tree.temp["rootlengthcnt"]++;
@@ -1990,17 +1772,12 @@ struct ConstrainedOptimizationAlgorithm{
 		#endif
 		#ifdef CASTLES
 		CastlesNode castles(annot, ARG.getDoubleArg("genelength"), ARG.getIntArg("numgenetrees"));
-		node->attributes["length"] = castles.edgeLengthOtherwise;
-		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["length"] = castles.leftEdgeLength;
-		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["length"] = castles.rightEdgeLength;
+		node->attributes["SULength"] = castles.edgeLengthOtherwise;
+		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["SULength"] = castles.leftEdgeLength;
+		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["SULength"] = castles.rightEdgeLength;
 		if (toplevel) {
 			tree.temp["rootsiblinglength"] = castles.siblingEdgeLength;
 		}
-		#else
-		#ifdef SUPPORT
-		if (3 * score[0] > tscore) node->attributes["length"] = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
-		else node->attributes["length"] = 0;
-		#endif
 		#endif
 	}
 
@@ -2033,12 +1810,12 @@ struct ConstrainedOptimizationAlgorithm{
 		switchSubtree(quad, get<0>(c), 2, 1);
 		computeOptimalSubtreeWithSupport(tree, quad, get<1>(c), get<0>(c), qInfo, tree.addRight(left), true);
 		#if defined(CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH) || defined(CASTLES)
-		if (nodes[get<0>(c)].leafId != -1) left->lc->attributes["length"] = tree.temp["rootsiblinglength"];
-		if (nodes[get<1>(c)].leafId != -1) left->rc->attributes["length"] = tree.temp["rootsiblinglength"];
+		if (nodes[get<0>(c)].leafId != -1) left->lc->attributes["SULength"] = tree.temp["rootsiblinglength"];
+		if (nodes[get<1>(c)].leafId != -1) left->rc->attributes["SULength"] = tree.temp["rootsiblinglength"];
 		#ifdef CASTLES
-		left->attributes["length"] = ARG.getDoubleArg("outgrouplength");
+		left->attributes["SULength"] = ARG.getDoubleArg("outgrouplength");
 		#else
-		left->attributes["length"] = tree.temp["rootlengthsum"] / tree.temp["rootlengthcnt"];
+		left->attributes["SULength"] = tree.temp["rootlengthsum"] / tree.temp["rootlengthcnt"];
 		#endif
 		#endif
 
@@ -2125,28 +1902,24 @@ struct MetaAlgorithm{
 		ARG.addIntArg('t', "thread", 1, "Number of threads", true);
 		ARG.addIntArg(0, "seed", 233, "Seed for pseudorandomness");
 		ARG.addIntArg('v', "verbose", 2, "Level of logging (1: minimum, 2: normal)");
+		ARG.addStringArg(0, "root", "", "Root at the given species");
+		ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
 		ARG.addFlag('C', "scoring", "Scoring the full species tree file after `-c` without exploring other topologies (`-r 1 -s 0`)", [&]() {
 			ARG.getIntArg("round") = 1; ARG.getIntArg("subsample") = 0;
-			}, true);
+		}, true);
 		ARG.addFlag('R', "moreround", "More rounds of placements and subsampling (`-r 16 -s 16`)", [&]() {
 			ARG.getIntArg("round") = 16; ARG.getIntArg("subsample") = 16;
-			}, true);
+		}, true);
 	#ifdef SUPPORT
 		ARG.addDoubleArg('l', "lambda", 0.5, "Rate lambda of Yule process under which the species tree is modeled");
 		ARG.addDoubleArg('w', "downweightrepeat", 1, "The number of trees sampled for each locus");
-		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: branch local posterior probability, 2: detailed, 3: freqQuad.csv)");
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no branch or support, 1: length and support only, 2: detailed, 3: freqQuad.csv)");
 	#endif
 	#ifdef G_SUPPORT
-		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: Grubbs's test p-value, 2: detailed, 3: freqQuad.csv)");
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no support, 1: Grubbs's test p-value, 2: detailed, 3: freqQuad.csv)");
 	#endif
 	#ifdef LOCAL_BOOTSTRAP
-		ARG.addIntArg('u', "support", 1, "Output support option (0: no output support value, 1: local bootstrap, 2: detailed)");
-	#endif
-	#ifdef ROOTING
-		ARG.addStringArg(0, "root", "", "Root at the given species");
-	#endif
-	#ifdef NAME_MAPPING
-		ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
+		ARG.addIntArg('u', "support", 1, "Output support option (0: no branch or support, 1: length and support only, 2: detailed)");
 	#endif
 	
 		ARG.parse(argc, argv);
@@ -2173,7 +1946,6 @@ struct MetaAlgorithm{
 		int loglevel = ARG.getIntArg("verbose");
 		LOG.enabled = (loglevel >= 2);
 	
-	#ifdef NAME_MAPPING
 		string mappingFile;
 		mappingFile = ARG.getStringArg("mapping");
 		if (mappingFile != ""){
@@ -2184,8 +1956,6 @@ struct MetaAlgorithm{
 				leafname_mapping[gname] = sname;
 			}
 		}
-	#endif
-
 	}
 
 	string mappedname(string name){
@@ -2255,8 +2025,8 @@ struct MetaAlgorithm{
 		#endif
 		if (support) {
 			SpeciesTree tree = alg.optimalTreeWithSupport(lambda, w);
-			if (support == 1) output = tree.simpleTree("length", "support");
-			else output = tree.annotatedTree("length");
+			if (support == 1) output = tree.simpleTree(ARG.getStringArg("length"), ARG.getStringArg("annotation"));
+			else output = tree.annotatedTree(ARG.getStringArg("length"));
 			if (support == 3) alg.printFreqQuadCSV(tree);
 		}
 		#endif

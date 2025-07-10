@@ -7,12 +7,6 @@
  * 3: Add support for polytomies
  */
 
-#define ROOTING
-
-#ifndef COALESCENT_UNIT
-#define CASTLES
-#endif
-
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -22,6 +16,8 @@
 #include<string>
 
 using namespace std;
+
+#define CASTLES
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -47,11 +43,7 @@ double from_string(const string s){
 #include "argparser.hpp"
 #include "multitree.hpp"
 #include "treeutils.hpp"
-
-#ifdef CASTLES
 #include "castles.hpp"
-#endif
-
 #include "algorithms.hpp"
 
 const bool VERBOSE = true;
@@ -525,13 +517,9 @@ double computeOutgroupLength(){
 }
 
 int main(int argc, char** argv){
-	#ifdef CASTLES
 	ARG.setProgramName("astral-pro3", "ASTRAL for PaRalogs and Orthologs III (ASTRAL-Pro3)\n*** NOW with integrated CASTLES-Pro ***");
 	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
-	#else
-	ARG.setProgramName("astral-pro", "ASTRAL for PaRalogs and Orthologs");
-	#endif
-	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab", true);
+	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
 	ARG.addIntArg('e', "exit", 0, "0: print warning when input contains polytomies; 1: resolving polytomies; 2: printing rooted and tagged gene trees and exit");
 	ARG.addFlag('E', "noexit", "No warning when input contains polytomies (`-e 1`)", [&](){
 			ARG.getIntArg("exit") = 1;
@@ -539,9 +527,10 @@ int main(int argc, char** argv){
 	ARG.addFlag('T', "tagging", "Just printing rooted and tagged gene trees (`-e 2`)", [&](){
 			ARG.getIntArg("exit") = 2;
 	});
-	string mappingFile;
 	meta.initialize(argc, argv);
-	mappingFile = ARG.getStringArg("mapping");
+	ARG.getStringArg("annotation") = "localPP";
+
+	string mappingFile = ARG.getStringArg("mapping");
 	resolvePolytomies = (ARG.getIntArg("exit") != 0);
 	rootNtag = (ARG.getIntArg("exit") == 2);
 

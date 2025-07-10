@@ -9,12 +9,6 @@
  * 1: Use genetreewithbinaryweight.hpp instead of genetree.hpp 
  */
 
-#define ROOTING
-
-#ifndef COALESCENT_UNIT
-#define CASTLES
-#endif
-
 #include<iostream>
 #include<fstream>
 #include<unordered_map>
@@ -24,6 +18,8 @@
 #include<string>
 
 using namespace std;
+
+#define CASTLES
 
 //#define LARGE_DATA
 #ifdef LARGE_DATA
@@ -49,23 +45,19 @@ double from_string(const string s){
 #include "argparser.hpp"
 #include "genetreewithbinaryweight.hpp"
 #include "treeutils.hpp"
-
-#ifdef CASTLES
 #include "castles.hpp"
-#endif
-
 #include "algorithms.hpp"
 
 MetaAlgorithm meta;
 TripartitionInitializer &tripInit = meta.tripInit;
 
-unordered_map<string, string> leafname_mapping;
 string TEXT;
 int pos = 0;
 int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
+unordered_map<string, string> &leafname_mapping = meta.leafname_mapping;
 
 int MAPPING(int begin, int end){
 	string s;
@@ -220,18 +212,14 @@ double computeOutgroupLength(){
 }
 
 int main(int argc, char** argv){
-	#ifdef CASTLES
 	ARG.setProgramName("astral4", "Accurate Species TRee ALgorithm IV (ASTRAL-IV)\n*** NOW with integrated CASTLES-2 ***");
 	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
-	#else
-	ARG.setProgramName("astral", "Accurate Species TRee ALgorithm (wASTRAL-unweighted)");
-	#endif
+	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
 	
-	ARG.addStringArg('a', "mapping", "", "A list of gene name to taxon name maps, each line contains one gene name followed by one taxon name separated by a space or tab");
-	
-	string mappingFile;
 	meta.initialize(argc, argv);
-	mappingFile = ARG.getStringArg("mapping");
+	ARG.getStringArg("annotation") = "localPP";
+	
+	string mappingFile = ARG.getStringArg("mapping");
 
 	for (int i = 0; i < meta.nThreads; i++){
 		tripInit.nodes.emplace_back();
@@ -259,12 +247,5 @@ int main(int argc, char** argv){
 
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
-
-	/*
-	#ifdef CASTLES
-	examplePrintSubtreeWithSupport(meta.annotTree->root());
-	cout << ";\n";
-	#endif
-	*/
 	return 0;
 }

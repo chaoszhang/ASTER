@@ -21,11 +21,6 @@
 #include<thread>
 #include<mutex>
 
-//#define DEBUGINFO
-
-#define ROOTING
-#define NAME_MAPPING
-
 //#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 #ifdef CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
 //#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH_ROUGH
@@ -1060,8 +1055,11 @@ int main(int argc, char** argv){
     ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");
     ARG.addIntArg(0, "pattern", 500000000, "The number of most frequent k-mer patterns selected to generate consensus profiles");
     ARG.addIntArg(0, "consensus", 25000000, "The number of selected cosensus profiles to generate SNP table");
+	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
 
     Workflow WF(argc, argv);
+	ARG.getStringArg("annotation") = "BootstrapSupport";
+
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
     LOG << "Normalized score: " << (double) res.first / 4 << endl;

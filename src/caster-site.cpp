@@ -21,8 +21,6 @@
 #include<thread>
 #include<mutex>
 
-#define ROOTING
-#define NAME_MAPPING
 #define BLOCK_BOOTSTRAP
 
 //#define CUSTOMIZED_ANNOTATION_TERMINAL_LENGTH
@@ -188,6 +186,7 @@ struct Workflow {
 
 int main(int argc, char** argv){
     ARG.setProgramName("caster-site", "Coalescence-aware Alignment-based Species Tree EstimatoR (Site)");
+	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
     ARG.addStringArg('f', "format", "auto", "Input file type, fasta: one fasta file for the whole alignment, list: a txt file containing a list of FASTA files, phylip: a phylip file for the whole alignment, auto (default): detect format automatically", true);
     ARG.addIntArg(0, "ambiguity", 0, "0 (default): ambiguity codes are treated as N, 1: ambiguity codes are treated as diploid unphased sites");
     ARG.addIntArg(0, "chunk", 10000, "The chunk size of each local region for parameter estimation");
@@ -197,6 +196,8 @@ int main(int argc, char** argv){
     #endif
 
     Workflow WF(argc, argv);
+	ARG.getStringArg("annotation") = "BootstrapSupport";
+
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
     LOG << "Normalized score: " << (double) res.first / 4 << endl;

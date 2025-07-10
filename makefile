@@ -1,7 +1,4 @@
-all: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength dstar
-	echo "*** Installation complete! ***"
-
-mac: dir astral astral_coalescent_unit astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength dstar
+all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength dstar
 	echo "*** Installation complete! ***"
 
 astral: dir
@@ -11,18 +8,12 @@ astral: dir
 astral_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral.cpp -o bin/astral4_int128
 
-astral_coalescent_unit:	
-	g++ -std=gnu++11 -march=native -D COALESCENT_UNIT -Ofast -pthread src/astral.cpp -o bin/astral4_coalescent_unit || g++ -std=c++17 -D COALESCENT_UNIT -O2 -pthread src/astral.cpp -o bin/astral4_coalescent_unit
-
 astral-pro: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3 || g++ -std=c++17 -O2 -pthread src/astral-pro.cpp -o bin/astral-pro3
 	cp bin/astral-pro3 bin/astral-pro
 	
 astral-pro_int128: dir
 	g++ -std=gnu++11 -march=native -D LARGE_DATA -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3_int128
-
-astral-pro_coalescent_unit: dir
-	g++ -std=gnu++11 -march=native -D COALESCENT_UNIT -Ofast -pthread src/astral-pro.cpp -o bin/astral-pro3_coalescent_unit || g++ -std=c++17 -D COALESCENT_UNIT -O2 -pthread src/astral-pro.cpp -o bin/astral-pro3_coalescent_unit
 
 wastral: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/astral-hybrid.cpp -o bin/wastral || g++ -std=c++17 -O2 -pthread src/astral-hybrid.cpp -o bin/wastral

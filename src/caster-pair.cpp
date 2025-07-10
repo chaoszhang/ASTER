@@ -21,8 +21,6 @@
 #include<thread>
 #include<mutex>
 
-#define ROOTING
-#define NAME_MAPPING
 #define BLOCK_BOOTSTRAP
 
 //#define LARGE_DATA
@@ -233,6 +231,8 @@ int main(int argc, char** argv){
     ARG.addIntArg(0, "objective", 1, "Objective function, 1:RY only, 2: RY+WS+KM, 3: auto-select");
 
     Workflow WF(argc, argv);
+	ARG.getStringArg("annotation") = "BootstrapSupport";
+
     LOG << "#Base: " << WF.meta.tripInit.seq.len() << endl;
     auto res = WF.meta.run();
     LOG << "Normalized score: " << (double) res.first / 4 << endl;

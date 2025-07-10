@@ -9,9 +9,6 @@
 #include<cstdlib>
 #include<cstring>
 
-#define ROOTING
-#define NAME_MAPPING
-
 typedef double score_t;
 
 #include "numerical.hpp"
