@@ -13,7 +13,7 @@ ASTRAL-Pro3 also integrates [CASTLES-Pro](https://github.com/ytabatabaee/CASTLES
 
 ## Publication
 
-[1] Chao Zhang, Siavash Mirarab, ASTRAL-Pro 2: ultrafast species tree reconstruction from multi-copy gene family trees, Bioinformatics, 2022, btac620, https://doi.org/10.1093/bioinformatics/btac620
+[1] Chao Zhang, Rasmus Nielsen, Siavash Mirarab, ASTER: A Package for Large-scale Phylogenomic Reconstructions, Molecular Biology and Evolution, 2025, msaf172, https://doi.org/10.1093/molbev/msaf172
 
 [2] Chao Zhang, Celine Scornavacca, Erin K Molloy, Siavash Mirarab, ASTRAL-Pro: Quartet-Based Species-Tree Inference despite Paralogy, Molecular Biology and Evolution, Volume 37, Issue 11, November 2020, Pages 3292–3307, https://doi.org/10.1093/molbev/msaa139
 
@@ -36,16 +36,13 @@ As a scalable alternative to ASTRAL-III, ASTRAL-IV lacks of some features of AST
 
 ## Publication
 
-[1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
+[1] Chao Zhang, Rasmus Nielsen, Siavash Mirarab, ASTER: A Package for Large-scale Phylogenomic Reconstructions, Molecular Biology and Evolution, 2025, msaf172, https://doi.org/10.1093/molbev/msaf172
 
-[2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
-
-[3] Yasamin Tabatabaee, Chao Zhang, Tandy Warnow, Siavash Mirarab, Phylogenomic branch length estimation using quartets, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i185–i193, https://doi.org/10.1093/bioinformatics/btad221
+[2] Yasamin Tabatabaee, Chao Zhang, Tandy Warnow, Siavash Mirarab, Phylogenomic branch length estimation using quartets, Bioinformatics, Volume 39, Issue Supplement_1, June 2023, Pages i185–i193, https://doi.org/10.1093/bioinformatics/btad221
 
 ### Example of usage
 
-We obtained the species tree from gene trees using ASTRAL-IV VERSION [1] by optimizing the objective function of ASTRAL [2].
-Branch lengths are computed using integrated CASTLES-II [3].
+We obtained the species tree from gene trees using ASTRAL-IV VERSION [1] with branch lengths computed using integrated CASTLES-II [2].
 
 )V0G0N";
 
@@ -61,12 +58,9 @@ Weighted ASTRAL series introduce threshold-free weighting schemes for the quarte
 
 [1] Chao Zhang, Siavash Mirarab, Weighting by Gene Tree Uncertainty Improves Accuracy of Quartet-based Species Trees, Molecular Biology and Evolution, 2022, msac215, https://doi.org/10.1093/molbev/msac215
 
-(OPTIONAL) [2] Chao Zhang, Maryam Rabiee, Erfan Sayyari, and Siavash Mirarab. 2018. “ASTRAL-III: Polynomial Time Species Tree Reconstruction from Partially Resolved Gene Trees.” BMC Bioinformatics 19 (S6): 153. [doi:10.1186/s12859-018-2129-y](https://doi.org/10.1186/s12859-018-2129-y).
-
 ### Example of usage
 
-We obtained the species tree from gene trees using wASTRAL VERSION [1]. 
-(OPTIONAL) This method reimplements ASTRAL-III [2] and takes into account phylogenetic uncertainty by intergrating signals from branch length and branch support in gene trees.
+We obtained the species tree from gene trees using wASTRAL VERSION [1].
 
 )V0G0N";
 
@@ -111,6 +105,8 @@ WASTER infers the species tree by first calling SNPs from reads/assembies and th
 ## Publication
 
 Chao Zhang, Rasmus Nielsen, WASTER: Practical de novo phylogenomics from low-coverage short reads, bioRxiv (2025) https://doi.org/10.1101/2025.01.20.633983
+
+(Alternative) Chao Zhang, Rasmus Nielsen, Siavash Mirarab, ASTER: A Package for Large-scale Phylogenomic Reconstructions, Molecular Biology and Evolution, 2025, msaf172, https://doi.org/10.1093/molbev/msaf172
 
 )V0G0N";
 
