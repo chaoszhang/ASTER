@@ -1049,7 +1049,7 @@ struct Workflow {
 int main(int argc, char** argv){
     ARG.setProgramName("waster", "Without-Alignment/Assembly Species Tree EstimatoR †");
     ARG.addIntArg(0, "sampled", 16, "Maximum number of sampled species for generating frequent patterns");
-    ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inferece, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
+    ARG.addIntArg(0, "mode", 1, "1 (default): run the whole inference, 2: only generate frequent patterns, 3: only generate SNPs, 4: start from SNPs");
     ARG.addStringArg(0, "continue", "", "Continue from provided frequent patterns");
     ARG.addIntArg(0, "qcs", 30, "Quality control threshold for the SNP bases (between 0-93, 30 by default)");
     ARG.addIntArg(0, "qcn", 20, "Quality control threshold for non-SNP bases (between 0-93, 20 by default)");
