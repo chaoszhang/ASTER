@@ -73,7 +73,7 @@ Genome-wide data have the promise of dramatically improving phylogenetic inferen
 We introduce a new site-based species tree inference method that seeks to address these challenges without reconstructing gene trees. Our method, called CASTER (Coalescence-aware Alignment-based Species Tree EstimatoR), has two flavors: CASTER-site and CASTER-pair. The first is based on patterns in individual sites and the second is based on pairs of sites.
 
 CASTER has several outstanding features:
-1. CASTER introduces two new optimization objectives based on genomic site patterns of four species; we show that optimizing these objectives produces two estimators: CASTER-site is statistically consistent under MSC+HKY model while allowing mutation rate to change across sites and across species tree branches; CASTER-pair is statistically consistent under MSC+GTR model under further assumptions.
+1. CASTER introduces two new optimization objectives based on genomic site patterns of four species; we show that optimizing these objectives produces two estimators: CASTER-site is statistically consistent under MSC+F84 model while allowing mutation rate to change across sites and across species tree branches; CASTER-pair is statistically consistent under MSC+LM model under further assumptions.
 2. CASTER comes with a scalable algorithm to optimize the objectives summed over all species quartets. Remarkably, its time complexity is linear to the number of sites and at most quasi-quadratic with respect to the number of species.
 3. CASTER can handle multiple samples per species, and CASTER-site specifically can work with allele frequencies of unphased multiploid.
 4. CASTER is extremenly memory efficent, requiring <1 byte per SNP per sample
