@@ -187,7 +187,7 @@ struct AlignmentParser{
     queue<string> fastaQueue;
     string bufferName, bufferSeq, nextLine;
     size_t length;
-    int line, phylipNspecies;
+    int phylipNspecies;
     bool firstFastaSeq;
     ifstream fin;
 
@@ -220,7 +220,7 @@ struct AlignmentParser{
         else return false;
     }
 
-    int getLength(){
+    size_t getLength(){
         return length;
     }
 
