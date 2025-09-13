@@ -123,7 +123,7 @@ Please check out our software with GUI. Simply download the [zip file](https://g
 
 ## Bug Reports
 
-Contact ``chao.zhang@sund.ku.dk``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
+Contact ``chaozhang@pku.edu.cn``, [``aster-users@googlegroups.com``](https://groups.google.com/forum/#!forum/aster-users), or post on [ASTER issues page](https://github.com/chaoszhang/ASTER/issues).
 
 # Documentations
 - The rest of this TUTORIAL file
