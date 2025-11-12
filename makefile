@@ -43,6 +43,9 @@ waster_branchlength: dir
 waster: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/waster.cpp -o bin/waster || g++ -std=gnu++17 -O2 -pthread src/waster.cpp -o bin/waster
 
+waster-test: waster
+	bash example/sancheck/wasterExample/sancheck-local.sh
+
 dstar: dir
 	g++ -std=gnu++11 -march=native -Ofast src/dstar.cpp -o bin/dstar || g++ -std=gnu++17 -O2 src/dstar.cpp -o bin/dstar
 
