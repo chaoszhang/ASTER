@@ -27,7 +27,7 @@ struct CastlesNode{
     length_t edgeLengthChildOfRootSiblingLeaf, edgeLengthOtherwise;
     length_t leftEdgeLength, rightEdgeLength, siblingEdgeLength;
 
-    CastlesNode(const CustomizedAnnotation &annot, length_t s = 1000, length_t ngts = 1000){
+    CastlesNode(const CustomizedAnnotation &annot, length_t s = 1000, length_t ngts = 1000, int sulengthtype = 1){
         length_t LR_SO_quartetCnt = annot.ab_cd.quartetCnt, LR_SO_sumInternal = annot.ab_cd.sumInternalLength;
         length_t LR_SO_sumL = annot.ab_cd.sumLengthD, LR_SO_sumR = annot.ab_cd.sumLengthC, LR_SO_sumS = annot.ab_cd.sumLengthB, LR_SO_sumO = annot.ab_cd.sumLengthA;
         length_t LS_RO_quartetCnt = annot.ac_bd.quartetCnt, LS_RO_sumInternal = annot.ac_bd.sumInternalLength;
@@ -59,7 +59,8 @@ struct CastlesNode{
             length_t l_lambert = (delta + lambertw(-1.0 / 3.0 * exp(-delta - 1.0) * (2.0 * delta + 3.0)) + 1.0) * ln_i;
             length_t threshold = log10(ngts);
             length_t w_mean = threshold * d_est, w_lambert = 1.0 / (threshold * d_est);
-            l_est = (w_mean * lm_i + w_lambert * l_lambert) / (w_mean + w_lambert);
+			if (sulengthtype == 1) l_est = (w_mean * lm_i + w_lambert * l_lambert) / (w_mean + w_lambert);
+			else l_est = lm_i;
         }
         length_t mu1_est = l_est / d_est;
         

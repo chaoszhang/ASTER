@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.23"
+#define ALG_VERSION "v1.24"
 
 /* CHANGE LOG
+ * 1.24: adding support for genic branch length
  * 1.23: adding support for both CU and SU branch lengths
  * 1.22: adding back freqQuad.csv
  * 1.21: de-warning and new species tree representation
@@ -1771,7 +1772,7 @@ struct ConstrainedOptimizationAlgorithm{
 		}
 		#endif
 		#ifdef CASTLES
-		CastlesNode castles(annot, ARG.getDoubleArg("genelength"), ARG.getIntArg("numgenetrees"));
+		CastlesNode castles(annot, ARG.getDoubleArg("genelength"), ARG.getIntArg("numgenetrees"), ARG.getIntArg("sulengthtype"));
 		node->attributes["SULength"] = castles.edgeLengthOtherwise;
 		if (nodes[get<0>(c)].leafId != -1) node->lc->attributes["SULength"] = castles.leftEdgeLength;
 		if (nodes[get<1>(c)].leafId != -1) node->rc->attributes["SULength"] = castles.rightEdgeLength;

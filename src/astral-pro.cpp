@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "6"
+#define DRIVER_VERSION "7"
 
 /* CHANGE LOG
+ * 7: Adding support for genic branch length
  * 6: Adding compiler flag for coalescent unit
  * 5: Integrate CASTLES-Pro
  * 4: Add support for CASTLES
@@ -520,6 +521,7 @@ int main(int argc, char** argv){
 	ARG.setProgramName("astral-pro3", "ASTRAL for PaRalogs and Orthologs III (ASTRAL-Pro3)\n*** NOW with integrated CASTLES-Pro ***");
 	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
 	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
+	ARG.addIntArg(0, "sulengthtype", 1, "1: species tree branch length; 2: mean gene tree branch length");
 	ARG.addIntArg('e', "exit", 0, "0: print warning when input contains polytomies; 1: resolving polytomies; 2: printing rooted and tagged gene trees and exit");
 	ARG.addFlag('E', "noexit", "No warning when input contains polytomies (`-e 1`)", [&](){
 			ARG.getIntArg("exit") = 1;
@@ -559,20 +561,12 @@ int main(int argc, char** argv){
 		exit(0);
 	}
 
-	#ifdef CASTLES
 	ARG.getDoubleArg("outgrouplength") = computeOutgroupLength();
 	ARG.getIntArg("numgenetrees") = K;
-	#endif
 
 	score_t score = meta.run().first;
 	LOG << "#EqQuartets: " << NUM_EQ_CLASSES << endl;
 	LOG << "Score: " << score << endl;
 
-	/*
-	#ifdef CASTLES
-	examplePrintSubtreeWithSupport(meta.annotTree->root());
-	cout << ";\n";
-	#endif
-	*/
 	return 0;
 }

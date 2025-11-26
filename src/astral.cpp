@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "6"
+#define DRIVER_VERSION "7"
 
 /* CHANGE LOG
+ * 7: Adding support for genic branch length
  * 6: Adding compiler flag for coalescent unit
  * 5: Integrating CASTLES-II
  * 4: Adding rooting option
@@ -215,7 +216,7 @@ int main(int argc, char** argv){
 	ARG.setProgramName("astral4", "Accurate Species TRee ALgorithm IV (ASTRAL-IV)\n*** NOW with integrated CASTLES-2 ***");
 	ARG.addDoubleArg(0, "genelength", 1000, "Average gene sequence length");
 	ARG.addStringArg(0, "length", "SULength", "SULength: substitution-per-site unit; CULength: coalescent unit");
-	
+	ARG.addIntArg(0, "sulengthtype", 1, "1: species tree branch length; 2: mean gene tree branch length");
 	meta.initialize(argc, argv);
 	ARG.getStringArg("annotation") = "localPP";
 	
@@ -240,10 +241,8 @@ int main(int argc, char** argv){
 	
 	LOG << "#Genetrees: " << K << endl;
 	
-	#ifdef CASTLES
 	ARG.getDoubleArg("outgrouplength") = computeOutgroupLength();
 	ARG.getIntArg("numgenetrees") = K;
-	#endif
 
 	score_t score = meta.run().first;
 	LOG << "Score: " << score << endl;
