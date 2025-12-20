@@ -1,4 +1,4 @@
-all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength dstar
+all: dir astral astral-pro wastral caster-site caster-site_branchlength caster-pair waster waster_branchlength dstar dstar-branch
 	echo "*** Installation complete! ***"
 
 astral: dir
@@ -48,6 +48,9 @@ waster-test: waster
 
 dstar: dir
 	g++ -std=gnu++11 -march=native -Ofast src/dstar.cpp -o bin/dstar || g++ -std=gnu++17 -O2 src/dstar.cpp -o bin/dstar
+
+dstar-branch: dir
+	g++ -std=gnu++11 -march=native -Ofast src/dstar-branch.cpp -o bin/dstar-branch || g++ -std=gnu++17 -O2 src/dstar-branch.cpp -o bin/dstar-branch
 
 sister: dir
 	g++ -std=gnu++11 -march=native -Ofast -pthread src/sister.cpp -o bin/sister || g++ -std=gnu++17 -O2 -pthread src/sister.cpp -o bin/sister

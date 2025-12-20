@@ -10,7 +10,7 @@ A family of optimatization algorithms for species tree inference:
 5. [CASTER-pair](tutorial/caster-site.md) (from ***whole genome alignments*** or aligned sequences)
 6. [WASTER](tutorial/waster.md) (from ***raw reads***)
 7. SISTER (from optical-map-like distance data or shape data)
-8. MONSTER
+8. D\* statistic (interspecific hybridization detection)
 
 # Announcements
 
