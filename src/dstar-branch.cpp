@@ -90,7 +90,7 @@ struct Tree{
                         << "\t" << (output[i].abbaM - output[i].babaM) / (output[i].abbaM + output[i].babaM + output[i].bbaaM) << "\t" << "multiple" << "\t" << "undirected" << endl;
                 }
                 else {
-                    string direction = (neighbor && i == output.size() - 1) ? "directed" : "undirected";
+                    string direction = (neighbor && i == output.size() - 1) ? "undirected" : "directed";
                     fout << prefix << "\t" << output[i].src->label << "\t" << tgt1->label << "\t" << output[i].abbaS << "\t" << output[i].babaS << "\t" << output[i].bbaaS 
                         << "\t" << (output[i].abbaS - output[i].babaS) / (output[i].abbaS + output[i].babaS + output[i].bbaaS) << "\t" << "single" << "\t" << direction << endl;
                     fout << prefix << "\t" << output[i].src->label << "\t" << tgt2->label << "\t" << output[i].babaS << "\t" << output[i].abbaS << "\t" << output[i].bbaaS 
