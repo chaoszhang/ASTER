@@ -22,17 +22,19 @@ struct Birow{
 
 const string HELP = R"V0G0N(Merge D* Branch Outputs & Take Diagnal Minimum
 dstar-branch-merge-diag TSV_FILE1 [ TSV_FILE2 TSV_FILE3 ... ]
+dstar-branch-merge-diag FILE_LIST
 
 TSV_FILE1: output file of dstar-branch
 TSV_FILE2: another output file for the same species tree
+FILE_LIST: a list of dstar-branch tsv files in a list file, one line per each tsv file
 
 outputs:
 dstar-branch.merged.tsv: merged results
 dstar-branch.merged.diag.tsv: merged results taking diagnal mininum
 
 example:
-dstar-branch alignment.fasta speices.nw output.tsv
-dstar-branch alignment.fasta speices.nw output.tsv 128
+dstar-branch-merge-diag chr1.tsv chr2.tsv chr3.tsv
+dstar-branch-merge-diag chr_tsv_list.txt
 )V0G0N";
 
 int main(int argc, char *argv[])
@@ -42,12 +44,39 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	
+	bool isTsv = true;
+	vector<string> files;
 	string data, src, tgt, abba, baba, bbaa, dstar, outgroup, direction;
 	vector<Row> rows;
 	unordered_map<string, unordered_map<string, Birow> > single, multiple;
 	
-	{
+	if (argc == 2) {
+		string line;
 		ifstream fin(argv[1]);
+		getline(fin, line);
+		stringstream sline(line);
+		if (isTsv && !(sline >> data && data == "data")) isTsv = false;
+		if (isTsv && !(sline >> src && src == "src")) isTsv = false;
+		if (isTsv && !(sline >> tgt && tgt == "tgt")) isTsv = false;
+		if (isTsv && !(sline >> abba && abba == "abba")) isTsv = false;
+		if (isTsv && !(sline >> baba && baba == "baba")) isTsv = false;
+		if (isTsv && !(sline >> bbaa && bbaa == "bbaa")) isTsv = false;
+		if (isTsv && !(sline >> dstar && dstar == "dstar")) isTsv = false;
+		if (isTsv && !(sline >> outgroup && outgroup == "outgroup")) isTsv = false;
+		if (isTsv && !(sline >> direction && direction == "direction")) isTsv = false;
+	}
+
+	if (isTsv) {
+		for (int i = 1; i < argc; i++) files.push_back(argv[i]);
+	}
+	else {
+		string line;
+		ifstream fin(argv[1]);
+		while(getline(fin, line)) files.push_back(line);
+	}
+
+	{
+		ifstream fin(files[0]);
 		fin >> data >> src >> tgt >> abba >> baba >> bbaa >> dstar >> outgroup >> direction;
 		while (fin >> data){
 			Row r;
@@ -56,8 +85,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	for (int i = 2; i < argc; i++){
-		ifstream fin(argv[i]);
+	for (int i = 1; i < files.size(); i++){
+		ifstream fin(files[i]);
 		fin >> data >> src >> tgt >> abba >> baba >> bbaa >> dstar >> outgroup >> direction;
 		for (int j = 0; j < rows.size(); j++){
 			Row r;
@@ -69,7 +98,7 @@ int main(int argc, char *argv[])
 	}
 	
 	{
-		ifstream fin(argv[1]);
+		ifstream fin(files[0]);
 		ofstream fout("dstar-branch.merged.tsv");
 		fin >> data >> src >> tgt >> abba >> baba >> bbaa >> dstar >> outgroup >> direction;
 		fout << "src" << "\t" << "tgt" << "\t" << "abba" << "\t" << "baba" << "\t" << "bbaa" << "\t" << "dstar" << "\t" << "dstarbranch" << "\t" << "outgroup" << "\t" << "direction" << endl;
@@ -86,7 +115,7 @@ int main(int argc, char *argv[])
 	}
 	
 	{
-		ifstream fin(argv[1]);
+		ifstream fin(files[0]);
 		ofstream fout("dstar-branch.merged.diag.tsv");
 		fin >> data >> src >> tgt >> abba >> baba >> bbaa >> dstar >> outgroup >> direction;
 		fout << "src" << "\t" << "tgt" << "\t" << "dstarbranch" << "\t" << "outgroup" << "\t" << "direction" << endl;
