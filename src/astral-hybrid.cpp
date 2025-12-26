@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "7"
+#define DRIVER_VERSION "8"
 
 /* CHANGE LOG
+ * 8: bug fix for huge input
  * 7: bug fix
  * 6: auto-detect support type
  * 5: merge all versions of weighted astral
@@ -48,7 +49,7 @@ TripartitionInitializer &tripInit = meta.tripInit;
 unordered_map<string, unordered_set<string> > reverse_mapping;
 unordered_map<string, string> leafname_mapping;
 string TEXT;
-int pos = 0;
+long long pos = 0;
 int K = 0;
 int part = 0, iBatch = 0;
 vector<string> &names = meta.names;

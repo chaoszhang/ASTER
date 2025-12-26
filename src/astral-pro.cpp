@@ -1,6 +1,7 @@
-#define DRIVER_VERSION "7"
+#define DRIVER_VERSION "8"
 
 /* CHANGE LOG
+ * 8: bug fix for huge input
  * 7: Adding support for genic branch length
  * 6: Adding compiler flag for coalescent unit
  * 5: Integrate CASTLES-Pro
@@ -56,7 +57,7 @@ unordered_map<string, string> leafname_mapping;
 string TEXT;
 int duploss = 0;
 int nodecnt = 0;
-int pos = 0;
+long long pos = 0;
 int K = 0;
 vector<string> &id2name = meta.names;
 string rootNtagTrees;
