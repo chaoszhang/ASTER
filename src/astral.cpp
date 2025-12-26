@@ -61,9 +61,9 @@ vector<string> &names = meta.names;
 unordered_map<string, int> &name2id = meta.name2id;
 unordered_map<string, string> &leafname_mapping = meta.leafname_mapping;
 
-int MAPPING(int begin, int end){
+int MAPPING(long long begin, long long end){
 	string s;
-	for (int i = begin; i < end && TEXT[i] != ':'; i++){
+	for (long long i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
 	if (leafname_mapping.count(s)) s = leafname_mapping[s];
@@ -77,8 +77,8 @@ int MAPPING(int begin, int end){
 	return name2id[s];
 }
 
-double LENGTH(int begin, int end){
-	int i = begin;
+double LENGTH(long long begin, long long end){
+	long long i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 0;
 	else return from_string(TEXT.substr(i + 1, end - i - 1));
@@ -119,13 +119,13 @@ void parse(int parent = -1, bool isLeft = true){
 			pos++;
 			parse(up, false);
 		}
-		int i = ++pos;
+		long long i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		tripInit.nodes[part][cur].isGhostBranch = false;
 		tripInit.nodes[part][cur].length = LENGTH(i, pos);
 	} 
 	else {
-		int i = pos;
+		long long i = pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
 		tripInit.leafParent[part][MAPPING(i, pos)].push_back(cur);
 		tripInit.nodes[part][cur].isGhostBranch = false;

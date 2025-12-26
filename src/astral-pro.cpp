@@ -340,32 +340,32 @@ public:
 	}
 };
 
-string MAPPING(int begin, int end){
+string MAPPING(long long begin, long long end){
 	string s;
-	for (int i = begin; i < end && TEXT[i] != ':'; i++){
+	for (long long i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
 	if (leafname_mapping.count(s)) return leafname_mapping[s];
 	else return s;
 }
 
-string GET_NAME(int begin, int end){
+string GET_NAME(long long begin, long long end){
 	string s;
-	for (int i = begin; i < end && TEXT[i] != ':'; i++){
+	for (long long i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
 	return s;
 }
 
-double LENGTH(int begin, int end){
-	int i = begin;
+double LENGTH(long long begin, long long end){
+	long long i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 0;
 	else return from_string(TEXT.substr(i + 1, end - i - 1));
 }
 
 long long parse(unordered_map<long long, string> &leafname, unordered_map<long long, tuple<long long, long long, bool> > &children, unordered_map<long long, length_t> &edgelength, bool isRoot = false){
-	int i = pos;
+	long long i = pos;
 	long long cur;
 	while (TEXT[pos] != '(' && TEXT[pos] != ',' && TEXT[pos] != ')') pos++;
 	if (TEXT[pos] != '(') {
@@ -431,7 +431,7 @@ void annotate(string input, string mapping){
 		while (pos < TEXT.size() && TEXT[pos] != '(') pos++;
 		if (pos < TEXT.size()) {
 			int leafCnt = 1, internalCnt = 0;
-			for (int i = pos; i < TEXT.size() && TEXT[i] != ';'; i++){
+			for (long long i = pos; i < TEXT.size() && TEXT[i] != ';'; i++){
 				if (TEXT[i] == '(') internalCnt++;
 				if (TEXT[i] == ',') leafCnt++;
 			}

@@ -59,9 +59,9 @@ score_t maxv = 100, minv = 0, defaultv = 0;
 double lengthFactor = -1;
 bool useSupport = true, useLength = true;
 
-int MAPPING(int begin, int end){
+int MAPPING(long long begin, long long end){
 	string s;
-	for (int i = begin; i < end && TEXT[i] != ':'; i++){
+	for (long long i = begin; i < end && TEXT[i] != ':'; i++){
 		if (TEXT[i] != '\"' && TEXT[i] != '\'') s += TEXT[i];
 	}
 	if (leafname_mapping.count(s)) {
@@ -81,9 +81,9 @@ int MAPPING(int begin, int end){
 	return name2id[s];
 }
 
-score_t WEIGHT_S(int begin, int end){
+score_t WEIGHT_S(long long begin, long long end){
 	if (!useSupport) return 1;
-	int i = begin;
+	long long i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == begin) return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 	else return max((score_t)0.0, (from_string(TEXT.substr(begin, i - begin)) - minv) / (maxv - minv));
@@ -93,9 +93,9 @@ score_t DEFAULT_WEIGHT_S(){
 	if (!useSupport) return 0;
 	else return max((score_t)0.0, (defaultv - minv) / (maxv - minv));
 }
-score_t WEIGHT_L(int begin, int end){
+score_t WEIGHT_L(long long begin, long long end){
 	if (!useLength) return 1;
-	int i = begin;
+	long long i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == end) return 1;
 	else return exp(lengthFactor * from_string(TEXT.substr(i + 1, end - i - 1)));
@@ -138,14 +138,14 @@ void parse(score_t treeweight, int parent = -1, bool isLeft = true){
 			pos++;
 			parse(treeweight, up, false);
 		}
-		int i = ++pos;
+		long long i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		tripInit.nodes[part][cur].weight = WEIGHT_S(i, pos);
 		tripInit.nodes[part][cur].length = WEIGHT_L(i, pos);
 		tripInit.nodes[part][cur].treeweight = treeweight;
 	} 
 	else {
-		int i = pos;
+		long long i = pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',') pos++;
 		tripInit.leafParent[part][MAPPING(i, pos)].push_back(cur);
 		tripInit.nodes[part][cur].weight = 1;
@@ -180,8 +180,8 @@ void readInputTrees(string input, string mapping, string treeweights) {
 	}
 }
 
-void DETECT(int begin, int end){
-	int i = begin;
+void DETECT(long long begin, long long end){
+	long long i = begin;
 	while (i < end && TEXT[i] != ':') i++;
 	if (i == begin) return;
 	score_t s = from_string(TEXT.substr(begin, i - begin));
@@ -199,7 +199,7 @@ void detectSupport(){
 			pos++;
 			detectSupport();
 		}
-		int i = ++pos;
+		long long i = ++pos;
 		while (TEXT[pos] != ')' && TEXT[pos] != ',' && TEXT[pos] != ';') pos++;
 		DETECT(i, pos);
 	} 
