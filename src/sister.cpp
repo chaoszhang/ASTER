@@ -8,6 +8,7 @@
 #include<cstdio>
 #include<cstdlib>
 #include<cstring>
+#include<cmath>
 
 typedef double score_t;
 
@@ -33,22 +34,21 @@ int main(int argc, char** argv){
     ARG.setProgramName("sister", "Synteny/Shape Inspired Species Tree EstimatoR");
     
     meta.initialize(argc, argv);
-    if (ARG.getStringArg("root") != "") addName(ARG.getStringArg("root"));
-
     ifstream fin(ARG.getStringArg("input"));
-    string line;
     int m = 0, nSample = 0;
     vector<vector<double> > &M = tripInit.M, &cnt = tripInit.cnt;
 
-    while (getline(fin, line)){
-        nSample++;
-        stringstream strin(line);
-        double v;
+    fin >> nSample >> m;
+    if (ARG.getStringArg("root") != "") {
+        addName(ARG.getStringArg("root"));
+        M.emplace_back(m);
+        cnt.emplace_back(m);
+    }
+
+    
+    for (int t = 0; t < nSample; t++){
         string indName;
-        vector<double> arr;
-        strin >> indName;
-        while (strin >> v) arr.push_back(v);
-        if (m == 0) m = arr.size();
+        fin >> indName;
         addName(meta.mappedname(indName));
         int i = name2id[meta.mappedname(indName)];
         if (i == M.size()){
@@ -56,10 +56,29 @@ int main(int argc, char** argv){
             cnt.emplace_back(m);
         }
         for (int j = 0; j < m; j++){
-            if (arr[j] < 0) continue;
-            M[i][j] += arr[j];
-            cnt[i][j]++;
+            string s;
+            fin >> s;
+            if (s == "NAN" || s == "NaN" || s == "NA" || s == "nan" || s == "na") continue;
+            try{
+                double v = stod(s);
+                if (!isnan(v)){
+                    M[i][j] += v;
+                    cnt[i][j]++;
+                }
+            }
+            catch(...){
+
+            }
         }
+        
+    }
+
+    for (int i = 0; i < 10; i++){
+        cerr << names[i];
+        for (int j = 0; j < 20; j++){
+            cerr << "\t" << M[i][j] << ":" << cnt[i][j];
+        }
+        cerr << endl;
     }
     
     for (int j = 0; j < M[0].size(); j++){
