@@ -565,7 +565,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-    if (argv[1] == "-a"){
+    if (string(argv[1]) == string("-a")){
         ifstream fin(argv[2]);
         string indName, speciesName;
         while(fin >> indName){
