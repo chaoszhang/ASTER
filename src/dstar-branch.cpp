@@ -376,7 +376,7 @@ public:
 
 int WINDOW_SIZE = 10000;
 
-template<typename FreqType> array<vector<FreqType>, 4>& operator+=(array<vector<FreqType>, 4>&a, const array<vector<bool>, 4> &b){
+template<typename FreqType> array<vector<FreqType>, 4>& operator+=(array<vector<FreqType>, 4>&a, const array<vector<unsigned short>, 4> &b){
     for (int i = 0; i < 4; i++){
         for (int j = 0; j < b[i].size(); j++){
             a[i][j] += b[i][j];
@@ -385,19 +385,21 @@ template<typename FreqType> array<vector<FreqType>, 4>& operator+=(array<vector<
     return a;
 }
 
+unordered_map<string, string> namemap;
+
 struct Algorithm{
     typedef DataType8 DataType;
     typedef DStarQuadrupartitionScorer<DataType> Scorer;
 
-    vector<array<vector<bool>, 4> > seqs;
+    vector<array<vector<unsigned short>, 4> > seqs;
     vector<string> names;
     unordered_map<string, int> name2id;
     int len, nWindow;
     array<vector<DataType::FreqType>, 4> outgroup;
     vector<array<DataType::EqFreqType, 4> > pi;
 
-    static array<vector<bool>, 4> string2seq(const string &s){
-        array<vector<bool>, 4> res;
+    static array<vector<unsigned short>, 4> string2seq(const string &s){
+        array<vector<unsigned short>, 4> res;
         for (char c: s) res[0].push_back(c == 'A' || c == 'a');
         for (char c: s) res[1].push_back(c == 'C' || c == 'c');
         for (char c: s) res[2].push_back(c == 'G' || c == 'g');
@@ -412,7 +414,7 @@ struct Algorithm{
         }
     }
 
-    void convert(array<vector<DataType::FreqType>, 4> &res, const array<vector<bool>, 4> &a){
+    void convert(array<vector<DataType::FreqType>, 4> &res, const array<vector<unsigned short>, 4> &a){
         cntReset(res);
         res += a;
     }
@@ -482,11 +484,17 @@ struct Algorithm{
         while(getline(ffa, line)){
             if (line[0] == '>'){
                 if (tempSeq.size()){
-                    name2id[tempName] = names.size();
-                    names.push_back(tempName);
-                    seqs.push_back(string2seq(tempSeq));
+                    if (name2id.count(tempName)){
+                        seqs[name2id[tempName]] += string2seq(tempSeq);
+                    }
+                    else {
+                        name2id[tempName] = names.size();
+                        names.push_back(tempName);
+                        seqs.push_back(string2seq(tempSeq));
+                    }
                 }
                 tempName = line.substr(1);
+                if (namemap.count(tempName)) tempName = namemap[tempName];
                 tempSeq.clear();
             }
             else tempSeq += line;
@@ -531,15 +539,23 @@ struct Algorithm{
 
 const string HELP = R"V0G0N(D* branch
 dstar-branch FASTA_FILE TREE_FILE OUTPUT_FILE [ NUM_THREADS ]
+dstar-branch -a NAME_MAP FASTA_FILE TREE_FILE OUTPUT_FILE [ NUM_THREADS ]
 
 FASTA_FILE: alignment file, currently only supporting FASTA format
 TREE_FILE: species tree file, currently only supporting NEWICK format and already rooted at one outgroup species
 OUTPUT_TILE: output file in TSV format
 NUM_THREADS: number of threads (default: 1)
+NAME_MAP: a TSV file mapping sample names to species names, one line per sample name followed by species name, spaces not allowed in names
 
 example:
 dstar-branch alignment.fasta speices.nw output.tsv
 dstar-branch alignment.fasta speices.nw output.tsv 128
+dstar-branch -a namemap.tsv alignment.fasta speices.nw output.tsv 128
+
+example namemap.tsv:
+Sample1 Human
+Sample2 Human
+Sample3 Chimp
 )V0G0N";
 
 int main(int argc, char *argv[])
@@ -548,9 +564,21 @@ int main(int argc, char *argv[])
 		cerr << HELP;
 		return 0;
 	}
-	
-	int nThread = (argc > 4) ? stoi(argv[4]) : 1;
-	
-    Algorithm alg(argv[1], argv[2], argv[3], nThread);
+
+    if (argv[1] == "-a"){
+        ifstream fin(argv[2]);
+        string indName, speciesName;
+        while(fin >> indName){
+            fin >> speciesName;
+            namemap[indName] = speciesName;
+        }
+	    int nThread = (argc > 6) ? stoi(argv[6]) : 1;
+        Algorithm alg(argv[3], argv[4], argv[5], nThread);
+    }
+	else {
+	    int nThread = (argc > 4) ? stoi(argv[4]) : 1;
+        Algorithm alg(argv[1], argv[2], argv[3], nThread);
+    }
+    
     return 0;
 }
