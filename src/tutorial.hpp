@@ -104,9 +104,7 @@ WASTER infers the species tree by first calling SNPs from reads/assembies and th
 
 ## Publication
 
-Chao Zhang, Rasmus Nielsen, WASTER: Practical de novo phylogenomics from low-coverage short reads, bioRxiv (2025) https://doi.org/10.1101/2025.01.20.633983
-
-(Alternative) Chao Zhang, Rasmus Nielsen, Siavash Mirarab, ASTER: A Package for Large-scale Phylogenomic Reconstructions, Molecular Biology and Evolution, 2025, msaf172, https://doi.org/10.1093/molbev/msaf172
+Chao Zhang, Rasmus Nielsen, WASTER: Practical de novo phylogenomics from low-coverage short reads, Molecular Biology and Evolution, 2026, msag073, https://doi.org/10.1093/molbev/msag073
 
 )V0G0N";
 
