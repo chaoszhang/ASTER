@@ -1,6 +1,7 @@
-#define ALG_VERSION "v1.24"
+#define ALG_VERSION "v1.25"
 
 /* CHANGE LOG
+ * 1.25: numerical bug fixed for LPP support
  * 1.24: adding support for genic branch length
  * 1.23: adding support for both CU and SU branch lengths
  * 1.22: adding back freqQuad.csv
@@ -1704,7 +1705,6 @@ struct ConstrainedOptimizationAlgorithm{
 		if (score[0] < 0 || tscore < 0 || score[0] >= tscore) node->attributes["CULength"] = numeric_limits<double>::quiet_NaN();
 		else if (3 * score[0] > tscore) node->attributes["CULength"] = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
 		else node->attributes["CULength"] = 0;
-
 		#ifdef SUPPORT
 		double support0, support1, support2;
 		if (tscore < 1e-8) {
@@ -1717,6 +1717,9 @@ struct ConstrainedOptimizationAlgorithm{
 			support0 = 1; support1 = 0; support2 = 0;
 		}
 		else {
+			if (score[0] < 0) score[0] = 0;
+			if (score[1] < 0) score[1] = 0;
+			if (score[2] < 0) score[2] = 0;
 			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
 			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
 			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
