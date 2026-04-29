@@ -1702,11 +1702,15 @@ struct ConstrainedOptimizationAlgorithm{
 		node->attributes["q1"] = score[0] / tscore;
 		node->attributes["q2"] = score[1] / tscore;
 		node->attributes["q3"] = score[2] / tscore;
-		if (score[0] < 0 || tscore < 0 || score[0] >= tscore) node->attributes["CULength"] = numeric_limits<double>::quiet_NaN();
+		if (score[0] < 0 || tscore < 0 || score[0] >= tscore + lambda * 2) node->attributes["CULength"] = numeric_limits<double>::quiet_NaN();
 		else if (3 * score[0] > tscore) node->attributes["CULength"] = max(0.0, -log(1.5 - 1.5 * score[0] / (tscore + lambda * 2)));
 		else node->attributes["CULength"] = 0;
 		#ifdef SUPPORT
 		double support0, support1, support2;
+		if (score[0] < 0) score[0] = 0;
+		if (score[1] < 0) score[1] = 0;
+		if (score[2] < 0) score[2] = 0;
+
 		if (tscore < 1e-8) {
 			support0 = 1.0 / 3; support1 = 1.0 / 3; support2 = 1.0 / 3;
 		}
@@ -1717,9 +1721,6 @@ struct ConstrainedOptimizationAlgorithm{
 			support0 = 1; support1 = 0; support2 = 0;
 		}
 		else {
-			if (score[0] < 0) score[0] = 0;
-			if (score[1] < 0) score[1] = 0;
-			if (score[2] < 0) score[2] = 0;
 			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
 			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
 			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
