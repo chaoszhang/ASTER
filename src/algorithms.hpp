@@ -1721,9 +1721,9 @@ struct ConstrainedOptimizationAlgorithm{
 			support0 = 1; support1 = 0; support2 = 0;
 		}
 		else {
-			double i0 = 1.0 - incbeta(score[0] + 1.0, tscore + lambda * 2 - score[0], 1.0 / 3.0);
-			double i1 = 1.0 - incbeta(score[1] + 1.0, tscore + lambda * 2 - score[1], 1.0 / 3.0);
-			double i2 = 1.0 - incbeta(score[2] + 1.0, tscore + lambda * 2 - score[2], 1.0 / 3.0);
+			double i0 = 1.0 - incbeta(score[0] + 1.0 + 1e-12, tscore + lambda * 2 - score[0], 1.0 / 3.0);
+			double i1 = 1.0 - incbeta(score[1] + 1.0 + 1e-12, tscore + lambda * 2 - score[1], 1.0 / 3.0);
+			double i2 = 1.0 - incbeta(score[2] + 1.0 + 1e-12, tscore + lambda * 2 - score[2], 1.0 / 3.0);
 			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2);
 			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2);
 			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2);
