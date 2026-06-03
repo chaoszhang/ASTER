@@ -1,6 +1,7 @@
-#define OBJECTIVE_VERSION "3"
+#define OBJECTIVE_VERSION "4"
 
 /* CHANGE LOG
+ * 4: fix effective gene tree counts
  * 3: add weighting by tree
  */
 
@@ -152,7 +153,7 @@ struct Quadrupartition{
 			score_t weight = 1, length = 1;
 		};
 		
-		array<score_t, 3> normal(Node& w){
+		void normal(Node& w){
 			Node& u = nodes[w.small];
 			Node& v = nodes[w.large];
 			
@@ -193,67 +194,63 @@ struct Quadrupartition{
 					+ u.ab_c * v.d + v.ab_c * u.d
 					+ u.ab_d * v.c + v.ab_d * u.c
 					+ u.a_cd * v.b + v.a_cd * u.b
-					+ u.b_cd * v.a + v.b_cd * u.a;
+					+ u.b_cd * v.a + v.b_cd * u.a
+					+ u.ab_cd + v.ab_cd;
 			w.ac_bd = u.acx * v.bdx - u.acy * v.bdy + v.acx * u.bdx - v.acy * u.bdy
 					+ u.ac_b * v.d + v.ac_b * u.d
 					+ u.a_bd * v.c + v.a_bd * u.c
 					+ u.ac_d * v.b + v.ac_d * u.b
-					+ u.c_bd * v.a + v.c_bd * u.a;
+					+ u.c_bd * v.a + v.c_bd * u.a
+					+ u.ac_bd + v.ac_bd;
 			w.ad_bc = u.adx * v.bcx - u.ady * v.bcy + v.adx * u.bcx - v.ady * u.bcy
 					+ u.a_bc * v.d + v.a_bc * u.d
 					+ u.ad_b * v.c + v.ad_b * u.c
 					+ u.ad_c * v.b + v.ad_c * u.b
-					+ u.d_bc * v.a + v.d_bc * u.a;
-			return {w.ab_cd - ab_cd, w.ac_bd - ac_bd, w.ad_bc - ad_bc};
+					+ u.d_bc * v.a + v.d_bc * u.a
+					+ u.ad_bc + v.ad_bc;
 		}
 		
 		vector<vector<int> > leafParent;
-		score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, cnt[4] = {}, totalSqrScore = 0, gtCnt = 0;
 		vector<Node> nodes;
-		vector<score_t> rootScores;
+		vector<int> roots;
 		vector<int> color;
 		vector<int> nameCnts;
 		
-		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), rootScores(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
+		Partition(TripartitionInitializer init, int p): leafParent(init.leafParent[p]), nodes(init.nodes[p].size()), color(init.leafParent[p].size(), -1), nameCnts(init.nameCnts){
 			for (int i = 0; i < nodes.size(); i++){
 				nodes[i].up = init.nodes[p][i].up;
 				nodes[i].small = init.nodes[p][i].small;
 				nodes[i].large = init.nodes[p][i].large;
 				nodes[i].weight = init.nodes[p][i].weight;
 				nodes[i].length = init.nodes[p][i].length;
+				if (nodes[i].up == -1) roots.push_back(i);
 			}
 		}
 		
 		void update(int x, int i){
 			int y = color[i];
 			if (x == y) return;
-			if (y != -1) cnt[y] -= nameCnts[i];
-			if (x != -1) cnt[x] += nameCnts[i];
 			for (int u: leafParent[i]){
 				score_t s1 = 0, s2 = 0, s3 = 0;
 				if (y != -1) ((y == 0) ? nodes[u].a : (y == 1) ? nodes[u].b : (y == 2) ? nodes[u].c : nodes[u].d) -= nodes[u].length;
 				if (x != -1) ((x == 0) ? nodes[u].a : (x == 1) ? nodes[u].b : (x == 2) ? nodes[u].c : nodes[u].d) += nodes[u].length;
-				int w = nodes[u].up;
-				while (w != -1){
-					array<score_t, 3> s = normal(nodes[w]);
-					s1 += s[0]; s2 += s[1]; s3 += s[2];
-					u = w;
-					w = nodes[u].up;
-				}
-				totalScore1 += s1;
-				totalScore2 += s2;
-				totalScore3 += s3;
-				totalSqrScore -= rootScores[u] * rootScores[u];
-				if (rootScores[u] > 1e-9) gtCnt--;
-				rootScores[u] += s1 + s2 + s3;
-				totalSqrScore += rootScores[u] * rootScores[u];
-				if (rootScores[u] > 1e-9) gtCnt++;
+				
+				for (int w = nodes[u].up; w != -1; w = nodes[w].up) normal(nodes[w]);
 			}
 			color[i] = x;
 		}
 		
-		array<score_t, 5> score(){
-			return {totalScore1, totalScore2, totalScore3, totalSqrScore, gtCnt};
+		array<score_t, 4> score(){
+			score_t totalScore1 = 0, totalScore2 = 0, totalScore3 = 0, totalSqrScore = 0;
+			for (int i: roots){
+				Node &node = nodes[i];
+				score_t s = node.ab_cd + node.ac_bd + node.ad_bc;
+				totalScore1 += node.ab_cd;
+				totalScore2 += node.ac_bd;
+				totalScore3 += node.ad_bc;
+				totalSqrScore += s * s;
+			}
+			return {totalScore1, totalScore2, totalScore3, totalSqrScore};
 		}
 	};
 	
@@ -276,18 +273,18 @@ struct Quadrupartition{
 		res[1] = 0;
 		res[2] = 0;
 		double sqrsum = 0;
-		double cnt = 0;
 		for (int p = 0; p < parts.size(); p++){
 			auto t = parts[p].score();
 			res[0] += t[0];
 			res[1] += t[1];
 			res[2] += t[2];
 			sqrsum += t[3];
-			cnt += t[4];
 		}
-		res[0] = (cnt < 0.5) ? 0 : res[0] * sqrt(cnt / sqrsum);
-		res[1] = (cnt < 0.5) ? 0 : res[1] * sqrt(cnt / sqrsum);
-		res[2] = (cnt < 0.5) ? 0 : res[2] * sqrt(cnt / sqrsum);
+		double sum = res[0] + res[1] + res[2];
+		double mul = (sum * sum * 2 >= sqrsum) ? sum / sqrsum : 0;
+		res[0] *= mul;
+		res[1] *= mul;
+		res[2] *= mul;
 		return res;
 	}
 };
