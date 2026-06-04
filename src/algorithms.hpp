@@ -1717,8 +1717,20 @@ struct ConstrainedOptimizationAlgorithm{
 		else if (tscore > 100 && score[0] - max(score[1], score[2]) > 5 * sqrt(tscore)) {
 			support0 = 1; support1 = 0; support2 = 0;
 		}
+		else if (tscore > 100 && score[1] - max(score[0], score[2]) > 5 * sqrt(tscore)) {
+			support0 = 0; support1 = 1; support2 = 0;
+		}
+		else if (tscore > 100 && score[2] - max(score[0], score[1]) > 5 * sqrt(tscore)) {
+			support0 = 0; support1 = 0; support2 = 1;
+		}
 		else if (tscore > 1000 && score[0] - max(score[1], score[2]) > 5 * sqrt((score[0] + max(score[1], score[2])) * 0.25)) {
 			support0 = 1; support1 = 0; support2 = 0;
+		}
+		else if (tscore > 1000 && score[1] - max(score[0], score[2]) > 5 * sqrt((score[1] + max(score[0], score[2])) * 0.25)) {
+			support0 = 0; support1 = 1; support2 = 0;
+		}
+		else if (tscore > 1000 && score[2] - max(score[0], score[1]) > 5 * sqrt((score[2] + max(score[0], score[1])) * 0.25)) {
+			support0 = 0; support1 = 0; support2 = 1;
 		}
 		else {
 			double i0 = 1.0 - incbeta(score[0] + 1.0 + 1e-12, tscore + lambda * 2 - score[0], 1.0 / 3.0);
