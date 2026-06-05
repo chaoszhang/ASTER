@@ -1667,6 +1667,12 @@ struct ConstrainedOptimizationAlgorithm{
 		}	
 	}
 
+	static double myincbeta(double a, double b, double c){
+		if (a + b < 1000) return incbeta(a, b, c);
+		double z = (c * (a + b) - a) * sqrt((a + b + 1) / (a * b));
+		return (1.0 + erf(z / sqrt(2.0))) / 2.0;
+	}
+
 	void computeOptimalSubtreeWithSupport(SpeciesTree &tree, Quadrupartition& quad, int v, int u,
 		unordered_map<int, tuple<array<double, 3>, array<double, 3>, string> >& qInfo, shared_ptr<SpeciesTree::Node> node, bool toplevel = false) {
 		if (nodes[v].leafId != -1) {
@@ -1733,9 +1739,9 @@ struct ConstrainedOptimizationAlgorithm{
 			support0 = 0; support1 = 0; support2 = 1;
 		}
 		else {
-			double i0 = 1.0 - incbeta(score[0] + 1.0 + 1e-12, tscore + lambda * 2 - score[0], 1.0 / 3.0);
-			double i1 = 1.0 - incbeta(score[1] + 1.0 + 1e-12, tscore + lambda * 2 - score[1], 1.0 / 3.0);
-			double i2 = 1.0 - incbeta(score[2] + 1.0 + 1e-12, tscore + lambda * 2 - score[2], 1.0 / 3.0);
+			double i0 = 1.0 - myincbeta(score[0] + 1.0 + 1e-12, tscore + lambda * 2 - score[0], 1.0 / 3.0);
+			double i1 = 1.0 - myincbeta(score[1] + 1.0 + 1e-12, tscore + lambda * 2 - score[1], 1.0 / 3.0);
+			double i2 = 1.0 - myincbeta(score[2] + 1.0 + 1e-12, tscore + lambda * 2 - score[2], 1.0 / 3.0);
 			double lb0 = lgamma(score[0] + 1.0) + lgamma(tscore - score[0] + lambda * 2);
 			double lb1 = lgamma(score[1] + 1.0) + lgamma(tscore - score[1] + lambda * 2);
 			double lb2 = lgamma(score[2] + 1.0) + lgamma(tscore - score[2] + lambda * 2);
