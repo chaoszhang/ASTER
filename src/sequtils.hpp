@@ -190,6 +190,8 @@ struct AlignmentParser{
     int phylipNspecies;
     bool firstFastaSeq;
     ifstream fin;
+    vector<char> file_buffer;
+    static size_t constexpr BUFFER_SIZE = 1024 * 1024 * 64;
 
     bool ambiguitySecond = true;
     
@@ -300,6 +302,7 @@ private:
     void initPhylip(const string &fileName){
         isPhylip = true;
         fin.open(fileName);
+        fin.rdbuf()->pubsetbuf(file_buffer.data(), BUFFER_SIZE);
     }
 
     void initFasta(const string &fileName){
@@ -344,6 +347,7 @@ private:
         cerr << "Processing " << fileName << " ... \n";
         fin.close();
         fin.open(fileName);
+        fin.rdbuf()->pubsetbuf(file_buffer.data(), BUFFER_SIZE);
         if (!parseSeqFasta()) {
             cerr << "Error: FASTA file empty!\n";
             exit(0);
